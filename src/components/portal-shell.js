@@ -55,12 +55,6 @@ export function PortalShell() {
             >
               Full Search
             </Link>
-            <Link
-              className="inline-flex h-10 items-center justify-center rounded-md border border-border bg-card px-4 text-sm font-semibold transition hover:border-primary hover:text-primary"
-              href="/demo"
-            >
-              Demo Hub
-            </Link>
           </nav>
         </header>
 
