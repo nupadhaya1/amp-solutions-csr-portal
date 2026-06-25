@@ -7,9 +7,32 @@ import {
   UserRound,
 } from "lucide-react";
 
-export function PortalShell({ viewModel }) {
-  const { criticalQueue, recentCustomers, stats } = viewModel;
+const stats = [
+  { label: "Total customers", value: "6" },
+  { label: "Active subscriptions", value: "5" },
+  { label: "Open critical issues", value: "1" },
+  { label: "Failed payments", value: "1" },
+];
 
+const recentCustomers = [
+  {
+    name: "Jordan Ellis",
+    context: "Overdue subscription",
+    status: "Critical",
+  },
+  {
+    name: "Marcus Reed",
+    context: "New vehicle transfer",
+    status: "Active",
+  },
+  {
+    name: "Alicia Brown",
+    context: "Recent refund question",
+    status: "Active",
+  },
+];
+
+export function PortalShell() {
   return (
     <main className="min-h-screen bg-background text-foreground">
       <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-5 py-5 sm:px-8 lg:px-10">
@@ -68,7 +91,8 @@ export function PortalShell({ viewModel }) {
               <div>
                 <p className="font-semibold text-critical">Critical queue</p>
                 <p className="mt-2 text-sm leading-6">
-                  {criticalQueue.message}
+                  One account needs attention because subscription access is
+                  blocked by a payment issue.
                 </p>
               </div>
             </div>
@@ -103,7 +127,7 @@ export function PortalShell({ viewModel }) {
               {recentCustomers.map((customer) => (
                 <div
                   className="flex items-center justify-between gap-4 py-4 first:pt-0 last:pb-0"
-                  key={customer.id}
+                  key={customer.name}
                 >
                   <div>
                     <p className="font-semibold">{customer.name}</p>
