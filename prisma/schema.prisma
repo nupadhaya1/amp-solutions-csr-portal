@@ -1,0 +1,191 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum CustomerStatus {
+  ACTIVE
+  OVERDUE
+  CANCELLED
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  OVERDUE
+  CANCELLED
+  PAUSED
+}
+
+enum PurchaseType {
+  SINGLE_WASH
+  MEMBERSHIP_PAYMENT
+  COUPON_REDEMPTION
+}
+
+enum PurchaseStatus {
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum AuditEventType {
+  ACCOUNT_UPDATED
+  VEHICLE_ADDED
+  VEHICLE_UPDATED
+  SUBSCRIPTION_ADDED
+  SUBSCRIPTION_CANCELLED
+  SUBSCRIPTION_TRANSFERRED
+  SUBSCRIPTION_PLAN_CHANGED
+  SUPPORT_NOTE_ADDED
+  PAYMENT_FAILED
+  SUBSCRIPTION_OVERDUE
+}
+
+enum ActorType {
+  CSR
+  SYSTEM
+}
+
+model Customer {
+  id            String         @id @default(cuid())
+  firstName     String
+  lastName      String
+  email         String         @unique
+  phone         String
+  status        CustomerStatus @default(ACTIVE)
+  vehicles      Vehicle[]
+  subscriptions Subscription[]
+  purchases     Purchase[]
+  supportNotes  SupportNote[]
+  auditEvents   AuditEvent[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model Vehicle {
+  id                   String                @id @default(cuid())
+  customerId           String
+  year                 Int
+  make                 String
+  model                String
+  color                String
+  licensePlate         String                @unique
+  customer             Customer              @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  subscriptionVehicles SubscriptionVehicle[]
+  purchases            Purchase[]
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+
+  @@index([customerId])
+  @@index([licensePlate])
+}
+
+model SubscriptionPlan {
+  id            String         @id @default(cuid())
+  name          String         @unique
+  description   String
+  monthlyPrice  Decimal
+  maxVehicles   Int
+  cleaningTier  String
+  subscriptions Subscription[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model Subscription {
+  id              String                @id @default(cuid())
+  customerId      String
+  planId          String
+  status          SubscriptionStatus    @default(ACTIVE)
+  startedAt       DateTime
+  nextBillingDate DateTime?
+  customer        Customer              @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  plan            SubscriptionPlan      @relation(fields: [planId], references: [id])
+  vehicles        SubscriptionVehicle[]
+  purchases       Purchase[]
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  @@index([customerId])
+  @@index([planId])
+  @@index([status])
+}
+
+model SubscriptionVehicle {
+  id             String       @id @default(cuid())
+  subscriptionId String
+  vehicleId      String
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  vehicle        Vehicle      @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  assignedAt     DateTime     @default(now())
+  removedAt      DateTime?
+
+  @@index([subscriptionId])
+  @@index([vehicleId])
+}
+
+model Purchase {
+  id             String         @id @default(cuid())
+  customerId     String
+  vehicleId      String?
+  subscriptionId String?
+  type           PurchaseType
+  status         PurchaseStatus
+  amount         Decimal
+  description    String
+  purchasedAt    DateTime
+  customer       Customer       @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  vehicle        Vehicle?       @relation(fields: [vehicleId], references: [id])
+  subscription   Subscription?  @relation(fields: [subscriptionId], references: [id])
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@index([customerId])
+  @@index([vehicleId])
+  @@index([subscriptionId])
+  @@index([status])
+  @@index([type])
+}
+
+model SupportNote {
+  id         String   @id @default(cuid())
+  customerId String
+  note       String
+  csrName    String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@index([customerId])
+}
+
+model AuditEvent {
+  id         String         @id @default(cuid())
+  customerId String
+  type       AuditEventType
+  message    String
+  metadata   Json?
+  actorName  String
+  actorType  ActorType
+  customer   Customer       @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  createdAt  DateTime       @default(now())
+
+  @@index([customerId])
+  @@index([type])
+}
+
+model FaqArticle {
+  id        String   @id @default(cuid())
+  title     String
+  question  String
+  answer    String
+  category  String
+  keywords  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category])
+}
