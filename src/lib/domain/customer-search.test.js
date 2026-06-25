@@ -8,10 +8,10 @@ import {
 
 const customers = [
   {
-    id: "customer_jordan",
-    firstName: "Jordan",
-    lastName: "Ellis",
-    email: "jordan.ellis@example.com",
+    id: "customer_alex",
+    firstName: "Alex",
+    lastName: "Morgan",
+    email: "alex.morgan@example.com",
     phone: "404-555-0181",
     status: "OVERDUE",
     vehicles: [
@@ -20,7 +20,7 @@ const customers = [
         make: "Honda",
         model: "Civic",
         color: "Blue",
-        licensePlate: "AMP1234",
+        licensePlate: "CZR4821",
       },
     ],
     subscriptions: [
@@ -57,7 +57,7 @@ const customers = [
         make: "Ford",
         model: "F-150",
         color: "Red",
-        licensePlate: "NEW889",
+        licensePlate: "MQL6187",
       },
     ],
     subscriptions: [
@@ -78,13 +78,13 @@ test("expands required natural-language support phrases with operational synonym
 });
 
 test("finds customers by name and license plate", () => {
-  assert.equal(searchCustomers(customers, "Jordan")[0].id, "customer_jordan");
-  assert.equal(searchCustomers(customers, "AMP1234")[0].id, "customer_jordan");
-  assert.equal(searchCustomers(customers, "NEW889")[0].id, "customer_marcus");
+  assert.equal(searchCustomers(customers, "Alex")[0].id, "customer_alex");
+  assert.equal(searchCustomers(customers, "CZR4821")[0].id, "customer_alex");
+  assert.equal(searchCustomers(customers, "MQL6187")[0].id, "customer_marcus");
 });
 
 test("finds the hero customer with support-language queries", () => {
-  assert.equal(searchCustomers(customers, "can't wash")[0].id, "customer_jordan");
-  assert.equal(searchCustomers(customers, "failed payment")[0].id, "customer_jordan");
-  assert.equal(searchCustomers(customers, "overdue")[0].id, "customer_jordan");
+  assert.equal(searchCustomers(customers, "can't wash")[0].id, "customer_alex");
+  assert.equal(searchCustomers(customers, "failed payment")[0].id, "customer_alex");
+  assert.equal(searchCustomers(customers, "overdue")[0].id, "customer_alex");
 });

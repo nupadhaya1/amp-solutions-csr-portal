@@ -164,21 +164,21 @@ async function seedCustomers(plans) {
   const customers = [
     {
       customer: {
-        firstName: "Jordan",
-        lastName: "Ellis",
-        email: "jordan.ellis@example.com",
+        firstName: "Alex",
+        lastName: "Morgan",
+        email: "alex.morgan@example.com",
         phone: "404-555-0181",
         status: "OVERDUE",
       },
       vehicles: [
-        { year: 2021, make: "Honda", model: "Civic", color: "Blue", licensePlate: "AMP1234" },
+        { year: 2021, make: "Honda", model: "Civic", color: "Blue", licensePlate: "CZR4821" },
       ],
       subscription: {
         planName: "Signature Wash",
         status: "OVERDUE",
         startedAt: date("2026-02-01"),
         nextBillingDate: date("2026-06-20"),
-        coveredPlates: ["AMP1234"],
+        coveredPlates: ["CZR4821"],
       },
       purchases: [
         {
@@ -187,7 +187,7 @@ async function seedCustomers(plans) {
           amount: "39.99",
           description: "Monthly membership payment failed.",
           purchasedAt: date("2026-06-20"),
-          licensePlate: "AMP1234",
+          licensePlate: "CZR4821",
           subscriptionLinked: true,
         },
         {
@@ -196,7 +196,7 @@ async function seedCustomers(plans) {
           amount: "12.00",
           description: "Single express wash before membership issue.",
           purchasedAt: date("2026-05-12"),
-          licensePlate: "AMP1234",
+          licensePlate: "CZR4821",
           subscriptionLinked: false,
         },
       ],
@@ -220,7 +220,7 @@ async function seedCustomers(plans) {
           message: "Subscription marked overdue after failed membership payment.",
           system: true,
           createdAt: date("2026-06-20"),
-          metadata: { licensePlate: "AMP1234" },
+          metadata: { licensePlate: "CZR4821" },
         },
       ],
     },
@@ -233,15 +233,15 @@ async function seedCustomers(plans) {
         status: "ACTIVE",
       },
       vehicles: [
-        { year: 2022, make: "Toyota", model: "RAV4", color: "White", licensePlate: "CLEAN22" },
-        { year: 2020, make: "Honda", model: "Accord", color: "Black", licensePlate: "FAMILY2" },
+        { year: 2022, make: "Toyota", model: "RAV4", color: "White", licensePlate: "RJP5294" },
+        { year: 2020, make: "Honda", model: "Accord", color: "Black", licensePlate: "KMD7138" },
       ],
       subscription: {
         planName: "Family Unlimited Signature",
         status: "ACTIVE",
         startedAt: date("2026-03-03"),
         nextBillingDate: date("2026-07-03"),
-        coveredPlates: ["CLEAN22", "FAMILY2"],
+        coveredPlates: ["RJP5294", "KMD7138"],
       },
       purchases: [
         {
@@ -250,7 +250,7 @@ async function seedCustomers(plans) {
           amount: "69.99",
           description: "Family Unlimited Signature monthly payment.",
           purchasedAt: date("2026-06-03"),
-          licensePlate: "CLEAN22",
+          licensePlate: "RJP5294",
           subscriptionLinked: true,
         },
         {
@@ -259,7 +259,7 @@ async function seedCustomers(plans) {
           amount: "14.00",
           description: "Interior add-on wash purchase.",
           purchasedAt: date("2026-05-14"),
-          licensePlate: "FAMILY2",
+          licensePlate: "KMD7138",
           subscriptionLinked: false,
         },
       ],
@@ -275,15 +275,15 @@ async function seedCustomers(plans) {
         status: "ACTIVE",
       },
       vehicles: [
-        { year: 2018, make: "Ford", model: "F-150", color: "Gray", licensePlate: "OLD889" },
-        { year: 2024, make: "Ford", model: "F-150", color: "Red", licensePlate: "NEW889" },
+        { year: 2018, make: "Ford", model: "F-150", color: "Gray", licensePlate: "TGB9042" },
+        { year: 2024, make: "Ford", model: "F-150", color: "Red", licensePlate: "MQL6187" },
       ],
       subscription: {
         planName: "Signature Wash",
         status: "ACTIVE",
         startedAt: date("2026-01-18"),
         nextBillingDate: date("2026-07-18"),
-        coveredPlates: ["OLD889"],
+        coveredPlates: ["TGB9042"],
       },
       purchases: [
         {
@@ -292,7 +292,7 @@ async function seedCustomers(plans) {
           amount: "29.99",
           description: "Signature Wash monthly payment.",
           purchasedAt: date("2026-06-18"),
-          licensePlate: "OLD889",
+          licensePlate: "TGB9042",
           subscriptionLinked: true,
         },
       ],
@@ -308,7 +308,7 @@ async function seedCustomers(plans) {
           type: "VEHICLE_ADDED",
           message: "New 2024 Ford F-150 added to account.",
           createdAt: date("2026-06-22"),
-          metadata: { licensePlate: "NEW889" },
+          metadata: { licensePlate: "MQL6187" },
         },
       ],
     },
@@ -321,14 +321,14 @@ async function seedCustomers(plans) {
         status: "ACTIVE",
       },
       vehicles: [
-        { year: 2020, make: "Nissan", model: "Altima", color: "Silver", licensePlate: "WASH90" },
+        { year: 2020, make: "Nissan", model: "Altima", color: "Silver", licensePlate: "LXC2409" },
       ],
       subscription: {
         planName: "Essential Wash",
         status: "ACTIVE",
         startedAt: date("2026-04-01"),
         nextBillingDate: date("2026-07-01"),
-        coveredPlates: ["WASH90"],
+        coveredPlates: ["LXC2409"],
       },
       purchases: [
         {
@@ -337,7 +337,7 @@ async function seedCustomers(plans) {
           amount: "11.00",
           description: "Single wash purchase.",
           purchasedAt: date("2026-06-08"),
-          licensePlate: "WASH90",
+          licensePlate: "LXC2409",
           subscriptionLinked: false,
         },
         {
@@ -346,7 +346,7 @@ async function seedCustomers(plans) {
           amount: "0.00",
           description: "Summer shine coupon redemption.",
           purchasedAt: date("2026-06-09"),
-          licensePlate: "WASH90",
+          licensePlate: "LXC2409",
           subscriptionLinked: false,
         },
         {
@@ -355,7 +355,7 @@ async function seedCustomers(plans) {
           amount: "11.00",
           description: "Refunded duplicate single wash.",
           purchasedAt: date("2026-06-10"),
-          licensePlate: "WASH90",
+          licensePlate: "LXC2409",
           subscriptionLinked: false,
         },
       ],
@@ -371,14 +371,14 @@ async function seedCustomers(plans) {
         status: "ACTIVE",
       },
       vehicles: [
-        { year: 2019, make: "Jeep", model: "Grand Cherokee", color: "Green", licensePlate: "END123" },
+        { year: 2019, make: "Jeep", model: "Grand Cherokee", color: "Green", licensePlate: "HNV6631" },
       ],
       subscription: {
         planName: "Essential Wash",
         status: "ACTIVE",
         startedAt: date("2026-05-01"),
         nextBillingDate: date("2026-07-01"),
-        coveredPlates: ["END123"],
+        coveredPlates: ["HNV6631"],
       },
       purchases: [
         {
@@ -387,7 +387,7 @@ async function seedCustomers(plans) {
           amount: "19.99",
           description: "Essential Wash monthly payment.",
           purchasedAt: date("2026-06-01"),
-          licensePlate: "END123",
+          licensePlate: "HNV6631",
           subscriptionLinked: true,
         },
       ],
@@ -409,16 +409,16 @@ async function seedCustomers(plans) {
         status: "ACTIVE",
       },
       vehicles: [
-        { year: 2022, make: "Toyota", model: "RAV4", color: "White", licensePlate: "SOPH22" },
-        { year: 2020, make: "Honda", model: "Accord", color: "Black", licensePlate: "SOPH20" },
-        { year: 2024, make: "Subaru", model: "Outback", color: "Blue", licensePlate: "ROAD44" },
+        { year: 2022, make: "Toyota", model: "RAV4", color: "White", licensePlate: "RYW3815" },
+        { year: 2020, make: "Honda", model: "Accord", color: "Black", licensePlate: "QBT5726" },
+        { year: 2024, make: "Subaru", model: "Outback", color: "Blue", licensePlate: "PDK8460" },
       ],
       subscription: {
         planName: "Family Unlimited Signature",
         status: "ACTIVE",
         startedAt: date("2026-02-14"),
         nextBillingDate: date("2026-07-14"),
-        coveredPlates: ["SOPH22", "SOPH20", "ROAD44"],
+        coveredPlates: ["RYW3815", "QBT5726", "PDK8460"],
       },
       purchases: [
         {
@@ -427,7 +427,7 @@ async function seedCustomers(plans) {
           amount: "69.99",
           description: "Family plan payment before downgrade discussion.",
           purchasedAt: date("2026-06-14"),
-          licensePlate: "ROAD44",
+          licensePlate: "PDK8460",
           subscriptionLinked: true,
         },
       ],
