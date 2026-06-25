@@ -4,7 +4,7 @@ A support portal for resolving customer membership, vehicle, subscription, and p
 
 ## MVP Focus
 
-The primary workflow is a customer calling because they cannot get a wash. The CSR should be able to search for Jordan Ellis or plate `AMP1234`, open the customer profile, see the overdue subscription, find the failed membership payment, and take a support action.
+The primary workflow is a customer calling because they cannot get a wash. The CSR should be able to search by caller details or a realistic license plate, open the customer profile, see the overdue subscription, find the failed membership payment, and take a support action.
 
 ## Tech Stack
 
@@ -50,16 +50,16 @@ npm run db:reset
 
 ## Seeded Demo Customers
 
-- Jordan Ellis: failed membership payment and overdue subscription, plate `AMP1234`
+- Alex Morgan: failed membership payment and overdue subscription
 - Priya Shah: healthy family plan account
-- Marcus Reed: vehicle transfer workflow, plates `OLD889` and `NEW889`
+- Marcus Reed: vehicle transfer workflow
 - Alicia Brown: purchase and refund history workflow
 - Ethan Brooks: cancellation workflow
 - Sophia Nguyen: multi-vehicle downgrade workflow
 
 ## Planned Routes
 
-- `/`: project landing page
+- `/`: CSR portal dashboard
 - `/csr`: CSR dashboard
 - `/csr/search`: customer search
 - `/csr/customers/[id]`: customer profile

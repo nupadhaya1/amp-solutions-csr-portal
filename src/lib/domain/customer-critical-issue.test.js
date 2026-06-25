@@ -5,7 +5,7 @@ import { getCustomerCriticalIssue } from "./customer-critical-issue.js";
 
 test("returns a critical unable-to-wash issue for an overdue subscription with a failed membership payment", () => {
   const issue = getCustomerCriticalIssue({
-    subscriptions: [{ id: "sub_jordan", status: "OVERDUE" }],
+    subscriptions: [{ id: "sub_alex", status: "OVERDUE" }],
     purchases: [
       {
         id: "purchase_failed",
@@ -21,7 +21,7 @@ test("returns a critical unable-to-wash issue for an overdue subscription with a
     message:
       "Subscription overdue because the latest membership payment failed.",
     rootCause: "FAILED_MEMBERSHIP_PAYMENT",
-    affectedSubscriptionId: "sub_jordan",
+    affectedSubscriptionId: "sub_alex",
     relatedPurchaseId: "purchase_failed",
     recommendedAction:
       "Review failed payment and update customer payment details.",

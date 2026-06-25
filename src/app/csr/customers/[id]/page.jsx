@@ -12,10 +12,17 @@ import {
   UserRound,
 } from "lucide-react";
 
+import {
+  addCustomerVehicle,
+  cancelCustomerSubscription,
+  updateCustomerAccount,
+} from "@/lib/data/customer-actions";
 import { customerInclude } from "@/lib/data/customers";
 import { createCustomerProfileViewModel } from "@/lib/domain/customer-profile-view-model";
 import { prisma } from "@/lib/prisma";
 import { supportNoteSchema } from "@/lib/validation/support-note";
+
+const CSR_NAME = "Bob Roberts";
 
 async function addSupportNote(formData) {
   "use server";
@@ -34,7 +41,7 @@ async function addSupportNote(formData) {
       data: {
         customerId,
         note: parsed.data.note,
-        csrName: "Bob Roberts",
+        csrName: CSR_NAME,
       },
     }),
     prisma.auditEvent.create({
@@ -43,7 +50,7 @@ async function addSupportNote(formData) {
         type: "SUPPORT_NOTE_ADDED",
         message: "Support note added by CSR.",
         metadata: { notePreview: parsed.data.note.slice(0, 80) },
-        actorName: "Bob Roberts",
+        actorName: CSR_NAME,
         actorType: "CSR",
       },
     }),
@@ -51,6 +58,81 @@ async function addSupportNote(formData) {
 
   revalidatePath(`/csr/customers/${customerId}`);
   redirect(`/csr/customers/${customerId}?note=added`);
+}
+
+async function updateAccount(formData) {
+  "use server";
+
+  const customerId = String(formData.get("customerId") || "");
+
+  try {
+    await updateCustomerAccount({
+      prismaClient: prisma,
+      customerId,
+      actorName: CSR_NAME,
+      input: {
+        firstName: String(formData.get("firstName") || ""),
+        lastName: String(formData.get("lastName") || ""),
+        email: String(formData.get("email") || ""),
+        phone: String(formData.get("phone") || ""),
+      },
+    });
+  } catch {
+    redirect(`/csr/customers/${customerId}?action=invalid-account`);
+  }
+
+  revalidatePath(`/csr/customers/${customerId}`);
+  redirect(`/csr/customers/${customerId}?action=account-updated`);
+}
+
+async function addVehicle(formData) {
+  "use server";
+
+  const customerId = String(formData.get("customerId") || "");
+
+  try {
+    await addCustomerVehicle({
+      prismaClient: prisma,
+      customerId,
+      actorName: CSR_NAME,
+      input: {
+        year: String(formData.get("year") || ""),
+        make: String(formData.get("make") || ""),
+        model: String(formData.get("model") || ""),
+        color: String(formData.get("color") || ""),
+        licensePlate: String(formData.get("licensePlate") || ""),
+      },
+    });
+  } catch {
+    redirect(`/csr/customers/${customerId}?action=invalid-vehicle`);
+  }
+
+  revalidatePath(`/csr/customers/${customerId}`);
+  redirect(`/csr/customers/${customerId}?action=vehicle-added`);
+}
+
+async function cancelSubscription(formData) {
+  "use server";
+
+  const customerId = String(formData.get("customerId") || "");
+  const subscriptionId = String(formData.get("subscriptionId") || "");
+
+  try {
+    await cancelCustomerSubscription({
+      prismaClient: prisma,
+      customerId,
+      subscriptionId,
+      actorName: CSR_NAME,
+      input: {
+        reason: String(formData.get("reason") || ""),
+      },
+    });
+  } catch {
+    redirect(`/csr/customers/${customerId}?action=invalid-cancel`);
+  }
+
+  revalidatePath(`/csr/customers/${customerId}`);
+  redirect(`/csr/customers/${customerId}?action=subscription-cancelled`);
 }
 
 function Section({ children, icon: Icon, title }) {
@@ -124,22 +206,75 @@ export default async function CustomerProfilePage({ params, searchParams }) {
           </div>
         ) : null}
 
+        {query?.action ? (
+          <div className="mt-6 rounded-lg border border-border bg-card p-4 text-sm font-semibold text-primary">
+            {query.action === "account-updated"
+              ? "Customer account updated and audit timeline updated."
+              : null}
+            {query.action === "vehicle-added"
+              ? "Vehicle added and audit timeline updated."
+              : null}
+            {query.action === "subscription-cancelled"
+              ? "Subscription cancelled and audit timeline updated."
+              : null}
+            {query.action?.startsWith("invalid")
+              ? "Action could not be completed. Check the form details and try again."
+              : null}
+          </div>
+        ) : null}
+
         <div className="mt-6 grid gap-5 lg:grid-cols-[1fr_380px]">
           <div className="grid gap-5">
             <Section icon={UserRound} title="Customer account">
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-                {[
-                  ["Email", profile.email],
-                  ["Phone", profile.phone],
-                  ["Created", profile.createdAt],
-                  ["Updated", profile.updatedAt],
-                ].map(([label, value]) => (
-                  <div className="rounded-md border border-border bg-background p-4" key={label}>
-                    <p className="text-sm text-muted">{label}</p>
-                    <p className="mt-1 font-semibold">{value}</p>
-                  </div>
-                ))}
-              </div>
+              <form action={updateAccount} className="grid gap-4">
+                <input type="hidden" name="customerId" value={profile.id} />
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <label className="grid gap-2">
+                    <span className="text-sm font-semibold">First name</span>
+                    <input
+                      className="h-11 rounded-md border border-border bg-background px-3 text-sm outline-none focus:border-primary"
+                      defaultValue={customer.firstName}
+                      name="firstName"
+                    />
+                  </label>
+                  <label className="grid gap-2">
+                    <span className="text-sm font-semibold">Last name</span>
+                    <input
+                      className="h-11 rounded-md border border-border bg-background px-3 text-sm outline-none focus:border-primary"
+                      defaultValue={customer.lastName}
+                      name="lastName"
+                    />
+                  </label>
+                  <label className="grid gap-2">
+                    <span className="text-sm font-semibold">Email</span>
+                    <input
+                      className="h-11 rounded-md border border-border bg-background px-3 text-sm outline-none focus:border-primary"
+                      defaultValue={profile.email}
+                      name="email"
+                      type="email"
+                    />
+                  </label>
+                  <label className="grid gap-2">
+                    <span className="text-sm font-semibold">Phone</span>
+                    <input
+                      className="h-11 rounded-md border border-border bg-background px-3 text-sm outline-none focus:border-primary"
+                      defaultValue={profile.phone}
+                      name="phone"
+                    />
+                  </label>
+                </div>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <p className="text-sm text-muted">
+                    Created {profile.createdAt} · Updated {profile.updatedAt}
+                  </p>
+                  <button
+                    className="inline-flex h-11 items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:brightness-95"
+                    type="submit"
+                  >
+                    Save account
+                  </button>
+                </div>
+              </form>
             </Section>
 
             <Section icon={CarFront} title="Vehicles and subscriptions">
@@ -175,10 +310,64 @@ export default async function CustomerProfilePage({ params, searchParams }) {
                       <p className="mt-2 text-sm">
                         Covers {subscription.coveredVehicles.length} of {subscription.maxVehicles} vehicles
                       </p>
+                      {subscription.status !== "CANCELLED" ? (
+                        <form action={cancelSubscription} className="mt-4 grid gap-2">
+                          <input type="hidden" name="customerId" value={profile.id} />
+                          <input type="hidden" name="subscriptionId" value={subscription.id} />
+                          <input
+                            className="h-10 rounded-md border border-border bg-card px-3 text-sm outline-none focus:border-primary"
+                            name="reason"
+                            placeholder="Cancellation reason"
+                          />
+                          <button
+                            className="inline-flex h-10 items-center justify-center rounded-md border border-critical px-4 text-sm font-semibold text-critical transition hover:bg-critical-background"
+                            type="submit"
+                          >
+                            Cancel subscription
+                          </button>
+                        </form>
+                      ) : null}
                     </div>
                   ))}
                 </div>
               </div>
+              <form action={addVehicle} className="mt-5 grid gap-3 rounded-md border border-border bg-background p-4">
+                <input type="hidden" name="customerId" value={profile.id} />
+                <p className="font-semibold">Add vehicle</p>
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+                  <input
+                    className="h-10 rounded-md border border-border bg-card px-3 text-sm outline-none focus:border-primary"
+                    name="year"
+                    placeholder="Year"
+                  />
+                  <input
+                    className="h-10 rounded-md border border-border bg-card px-3 text-sm outline-none focus:border-primary"
+                    name="make"
+                    placeholder="Make"
+                  />
+                  <input
+                    className="h-10 rounded-md border border-border bg-card px-3 text-sm outline-none focus:border-primary"
+                    name="model"
+                    placeholder="Model"
+                  />
+                  <input
+                    className="h-10 rounded-md border border-border bg-card px-3 text-sm outline-none focus:border-primary"
+                    name="color"
+                    placeholder="Color"
+                  />
+                  <input
+                    className="h-10 rounded-md border border-border bg-card px-3 text-sm uppercase outline-none focus:border-primary"
+                    name="licensePlate"
+                    placeholder="CZR4821"
+                  />
+                </div>
+                <button
+                  className="inline-flex h-10 w-fit items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:brightness-95"
+                  type="submit"
+                >
+                  Add vehicle
+                </button>
+              </form>
             </Section>
 
             <Section icon={CreditCard} title="Purchase history">

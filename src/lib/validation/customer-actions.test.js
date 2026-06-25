@@ -8,9 +8,9 @@ import {
 
 test("validates account update fields", () => {
   const parsed = updateCustomerSchema.safeParse({
-    firstName: "Jordan",
-    lastName: "Ellis",
-    email: "jordan.ellis@example.com",
+    firstName: "Alex",
+    lastName: "Morgan",
+    email: "alex.morgan@example.com",
     phone: "404-555-0181",
   });
 
@@ -23,9 +23,9 @@ test("normalizes vehicle license plates when adding a vehicle", () => {
     make: "Ford",
     model: "F-150",
     color: "Red",
-    licensePlate: "new889",
+    licensePlate: "mql6187",
   });
 
   assert.equal(parsed.year, 2024);
-  assert.equal(parsed.licensePlate, "NEW889");
+  assert.equal(parsed.licensePlate, "MQL6187");
 });

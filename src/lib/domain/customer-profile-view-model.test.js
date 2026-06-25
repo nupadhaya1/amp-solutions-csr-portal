@@ -10,9 +10,9 @@ test("formats money for purchase and plan values", () => {
 test("builds customer profile coverage and critical issue details", () => {
   const profile = createCustomerProfileViewModel({
     id: "customer_1",
-    firstName: "Jordan",
-    lastName: "Ellis",
-    email: "jordan@example.com",
+    firstName: "Alex",
+    lastName: "Morgan",
+    email: "alex@example.com",
     phone: "404-555-0181",
     status: "OVERDUE",
     createdAt: "2026-01-01T00:00:00.000Z",
@@ -24,7 +24,7 @@ test("builds customer profile coverage and critical issue details", () => {
         make: "Honda",
         model: "Civic",
         color: "Blue",
-        licensePlate: "AMP1234",
+        licensePlate: "CZR4821",
         subscriptionVehicles: [
           {
             removedAt: null,
@@ -65,7 +65,7 @@ test("builds customer profile coverage and critical issue details", () => {
     auditEvents: [],
   });
 
-  assert.equal(profile.fullName, "Jordan Ellis");
+  assert.equal(profile.fullName, "Alex Morgan");
   assert.equal(profile.criticalIssue.title, "Unable to wash");
   assert.equal(profile.vehicles[0].coverageStatus, "Signature Wash · OVERDUE");
 });

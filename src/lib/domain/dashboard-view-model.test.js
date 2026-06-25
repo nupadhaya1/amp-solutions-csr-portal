@@ -7,12 +7,12 @@ test("builds dashboard cards and critical queue copy from customer data", () => 
   const viewModel = createPortalDashboardViewModel([
     {
       id: "customer_1",
-      firstName: "Jordan",
-      lastName: "Ellis",
-      email: "jordan@example.com",
+      firstName: "Alex",
+      lastName: "Morgan",
+      email: "alex@example.com",
       phone: "404-555-0181",
       status: "OVERDUE",
-      vehicles: [{ year: 2021, make: "Honda", model: "Civic", licensePlate: "AMP1234" }],
+      vehicles: [{ year: 2021, make: "Honda", model: "Civic", licensePlate: "CZR4821" }],
       subscriptions: [{ status: "OVERDUE", plan: { name: "Signature Wash" } }],
       purchases: [{ type: "MEMBERSHIP_PAYMENT", status: "FAILED" }],
     },
