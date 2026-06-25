@@ -21,8 +21,11 @@ The primary workflow is a customer calling because they cannot get a wash. The C
 
 ```bash
 npm install
-cp .env.example .env
+cp .env.local.example .env.local
+docker compose up -d
 npm run db:generate
+npm run db:migrate
+npm run db:seed
 npm run dev
 ```
 
@@ -30,14 +33,17 @@ The local app runs at `http://localhost:3000`.
 
 ## Database
 
-Set `DATABASE_URL` to a Postgres connection string, then run:
+Development uses local Postgres through Docker Compose. Production should use the Vercel-connected Neon database. Do not commit `.env.local` or production connection strings.
+
+For local development:
 
 ```bash
+docker compose up -d
 npm run db:migrate
 npm run db:seed
 ```
 
-To reset seeded data during development:
+To reset seeded data during local development:
 
 ```bash
 npm run db:reset

@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: amp-csr-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: amp_csr
+      POSTGRES_PASSWORD: amp_csr_dev_password
+      POSTGRES_DB: amp_csr
+    ports:
+      - "5432:5432"
+    volumes:
+      - amp_csr_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U amp_csr -d amp_csr"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  amp_csr_postgres_data:
