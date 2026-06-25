@@ -21,8 +21,10 @@ The primary workflow is a customer calling because they cannot get a wash. The C
 
 ```bash
 npm install
-cp .env.example .env
+vercel env pull .env.development.local
 npm run db:generate
+npm run db:push
+npm run db:seed
 npm run dev
 ```
 
@@ -30,10 +32,13 @@ The local app runs at `http://localhost:3000`.
 
 ## Database
 
-Set `DATABASE_URL` to a Postgres connection string, then run:
+Development, preview, and production use the Vercel-connected Neon database resource named `nupadhaya`, with this app using the separate `amp_csr` database inside that Neon project. Do not commit `.env.development.local`, `.env.local`, or production connection strings.
+
+For local development, pull the Vercel development environment variables:
 
 ```bash
-npm run db:migrate
+vercel env pull .env.development.local
+npm run db:push
 npm run db:seed
 ```
 
@@ -69,7 +74,7 @@ npm run build
 npm run lint
 npm test
 npm run db:generate
-npm run db:migrate
+npm run db:push
 npm run db:seed
 npm run db:reset
 ```
