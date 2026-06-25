@@ -15,6 +15,8 @@ import {
 import {
   addCustomerVehicle,
   cancelCustomerSubscription,
+  changeSubscriptionPlan,
+  transferSubscriptionVehicle,
   updateCustomerAccount,
 } from "@/lib/data/customer-actions";
 import { customerInclude } from "@/lib/data/customers";
@@ -135,6 +137,55 @@ async function cancelSubscription(formData) {
   redirect(`/csr/customers/${customerId}?action=subscription-cancelled`);
 }
 
+async function transferVehicleCoverage(formData) {
+  "use server";
+
+  const customerId = String(formData.get("customerId") || "");
+  const subscriptionId = String(formData.get("subscriptionId") || "");
+
+  try {
+    await transferSubscriptionVehicle({
+      prismaClient: prisma,
+      customerId,
+      subscriptionId,
+      actorName: CSR_NAME,
+      input: {
+        fromVehicleId: String(formData.get("fromVehicleId") || ""),
+        toVehicleId: String(formData.get("toVehicleId") || ""),
+      },
+    });
+  } catch {
+    redirect(`/csr/customers/${customerId}?action=invalid-transfer`);
+  }
+
+  revalidatePath(`/csr/customers/${customerId}`);
+  redirect(`/csr/customers/${customerId}?action=subscription-transferred`);
+}
+
+async function changePlan(formData) {
+  "use server";
+
+  const customerId = String(formData.get("customerId") || "");
+  const subscriptionId = String(formData.get("subscriptionId") || "");
+
+  try {
+    await changeSubscriptionPlan({
+      prismaClient: prisma,
+      customerId,
+      subscriptionId,
+      actorName: CSR_NAME,
+      input: {
+        planId: String(formData.get("planId") || ""),
+      },
+    });
+  } catch {
+    redirect(`/csr/customers/${customerId}?action=invalid-plan`);
+  }
+
+  revalidatePath(`/csr/customers/${customerId}`);
+  redirect(`/csr/customers/${customerId}?action=plan-changed`);
+}
+
 function Section({ children, icon: Icon, title }) {
   return (
     <section className="rounded-lg border border-border bg-card p-5 shadow-sm">
@@ -157,6 +208,9 @@ export default async function CustomerProfilePage({ params, searchParams }) {
 
   if (!customer) notFound();
 
+  const plans = await prisma.subscriptionPlan.findMany({
+    orderBy: [{ monthlyPrice: "asc" }, { name: "asc" }],
+  });
   const profile = createCustomerProfileViewModel(customer);
 
   return (
@@ -216,6 +270,12 @@ export default async function CustomerProfilePage({ params, searchParams }) {
               : null}
             {query.action === "subscription-cancelled"
               ? "Subscription cancelled and audit timeline updated."
+              : null}
+            {query.action === "subscription-transferred"
+              ? "Subscription coverage transferred and audit timeline updated."
+              : null}
+            {query.action === "plan-changed"
+              ? "Subscription plan changed and audit timeline updated."
               : null}
             {query.action?.startsWith("invalid")
               ? "Action could not be completed. Check the form details and try again."
@@ -310,22 +370,97 @@ export default async function CustomerProfilePage({ params, searchParams }) {
                       <p className="mt-2 text-sm">
                         Covers {subscription.coveredVehicles.length} of {subscription.maxVehicles} vehicles
                       </p>
+                      {subscription.coveredVehicles.length > 0 ? (
+                        <ul className="mt-2 grid gap-1 text-sm text-muted">
+                          {subscription.coveredVehicles.map((vehicle) => (
+                            <li key={vehicle.id}>{vehicle.label}</li>
+                          ))}
+                        </ul>
+                      ) : null}
                       {subscription.status !== "CANCELLED" ? (
-                        <form action={cancelSubscription} className="mt-4 grid gap-2">
-                          <input type="hidden" name="customerId" value={profile.id} />
-                          <input type="hidden" name="subscriptionId" value={subscription.id} />
-                          <input
-                            className="h-10 rounded-md border border-border bg-card px-3 text-sm outline-none focus:border-primary"
-                            name="reason"
-                            placeholder="Cancellation reason"
-                          />
-                          <button
-                            className="inline-flex h-10 items-center justify-center rounded-md border border-critical px-4 text-sm font-semibold text-critical transition hover:bg-critical-background"
-                            type="submit"
-                          >
-                            Cancel subscription
-                          </button>
-                        </form>
+                        <div className="mt-4 grid gap-4">
+                          <form action={changePlan} className="grid gap-2">
+                            <input type="hidden" name="customerId" value={profile.id} />
+                            <input type="hidden" name="subscriptionId" value={subscription.id} />
+                            <label className="grid gap-2">
+                              <span className="text-sm font-semibold">Change plan</span>
+                              <select
+                                className="h-10 rounded-md border border-border bg-card px-3 text-sm outline-none focus:border-primary"
+                                defaultValue={subscription.planId}
+                                name="planId"
+                              >
+                                {plans.map((plan) => (
+                                  <option key={plan.id} value={plan.id}>
+                                    {plan.name} · ${Number(plan.monthlyPrice).toFixed(2)}
+                                  </option>
+                                ))}
+                              </select>
+                            </label>
+                            <button
+                              className="inline-flex h-10 items-center justify-center rounded-md border border-border bg-card px-4 text-sm font-semibold transition hover:border-primary hover:text-primary"
+                              type="submit"
+                            >
+                              Save plan
+                            </button>
+                          </form>
+
+                          {subscription.coveredVehicles.length > 0 && profile.vehicles.length > 1 ? (
+                            <form action={transferVehicleCoverage} className="grid gap-2">
+                              <input type="hidden" name="customerId" value={profile.id} />
+                              <input type="hidden" name="subscriptionId" value={subscription.id} />
+                              <div className="grid gap-2 sm:grid-cols-2">
+                                <label className="grid gap-2">
+                                  <span className="text-sm font-semibold">From vehicle</span>
+                                  <select
+                                    className="h-10 rounded-md border border-border bg-card px-3 text-sm outline-none focus:border-primary"
+                                    name="fromVehicleId"
+                                  >
+                                    {subscription.coveredVehicles.map((vehicle) => (
+                                      <option key={vehicle.id} value={vehicle.id}>
+                                        {vehicle.label}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </label>
+                                <label className="grid gap-2">
+                                  <span className="text-sm font-semibold">To vehicle</span>
+                                  <select
+                                    className="h-10 rounded-md border border-border bg-card px-3 text-sm outline-none focus:border-primary"
+                                    name="toVehicleId"
+                                  >
+                                    {profile.vehicles.map((vehicle) => (
+                                      <option key={vehicle.id} value={vehicle.id}>
+                                        {vehicle.label} · {vehicle.licensePlate}
+                                      </option>
+                                    ))}
+                                  </select>
+                                </label>
+                              </div>
+                              <button
+                                className="inline-flex h-10 items-center justify-center rounded-md border border-border bg-card px-4 text-sm font-semibold transition hover:border-primary hover:text-primary"
+                                type="submit"
+                              >
+                                Transfer coverage
+                              </button>
+                            </form>
+                          ) : null}
+
+                          <form action={cancelSubscription} className="grid gap-2">
+                            <input type="hidden" name="customerId" value={profile.id} />
+                            <input type="hidden" name="subscriptionId" value={subscription.id} />
+                            <input
+                              className="h-10 rounded-md border border-border bg-card px-3 text-sm outline-none focus:border-primary"
+                              name="reason"
+                              placeholder="Cancellation reason"
+                            />
+                            <button
+                              className="inline-flex h-10 items-center justify-center rounded-md border border-critical px-4 text-sm font-semibold text-critical transition hover:bg-critical-background"
+                              type="submit"
+                            >
+                              Cancel subscription
+                            </button>
+                          </form>
+                        </div>
                       ) : null}
                     </div>
                   ))}

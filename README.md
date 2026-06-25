@@ -65,6 +65,7 @@ npm run db:reset
 - `/csr/customers/[id]`: customer profile
 - `/mobile`: mock mobile companion
 - `/presentation`: browser presentation
+- `/demo`: manual demo launcher
 
 ## Scripts
 
@@ -86,3 +87,13 @@ npm run db:reset
 - No real payment processing, proration, refunds, or tax calculations
 - Mock mobile companion is demo-only
 - AWS architecture will be documented in the presentation, while MVP deployment targets Vercel and Neon
+
+## Demo Walkthrough
+
+1. Open `/` for the CSR portal dashboard.
+2. Search by caller details or license plate `CZR4821`.
+3. Open the customer profile and review the critical unable-to-wash banner.
+4. Confirm the overdue subscription and failed membership payment.
+5. Add a support note or complete a CSR action such as plan change, vehicle transfer, or cancellation.
+6. Review the audit timeline update.
+7. Open `/presentation` for the reviewer walkthrough and `/mobile` for the companion demo.

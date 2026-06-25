@@ -20,3 +20,17 @@ export const addVehicleSchema = z.object({
 export const cancelSubscriptionSchema = z.object({
   reason: z.string().trim().max(300).optional(),
 });
+
+export const transferSubscriptionSchema = z
+  .object({
+    fromVehicleId: z.string().trim().min(1, "Select the current vehicle."),
+    toVehicleId: z.string().trim().min(1, "Select the new vehicle."),
+  })
+  .refine((value) => value.fromVehicleId !== value.toVehicleId, {
+    message: "Choose two different vehicles.",
+    path: ["toVehicleId"],
+  });
+
+export const changeSubscriptionPlanSchema = z.object({
+  planId: z.string().trim().min(1, "Select a plan."),
+});
