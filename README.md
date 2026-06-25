@@ -1,2 +1,83 @@
-# amp-solutions-csr-portal
-AMP Solutions take home project repo
+# AMP CSR Command Center
+
+A support portal for resolving customer membership, vehicle, subscription, and payment issues for AMP car wash memberships.
+
+## MVP Focus
+
+The primary workflow is a customer calling because they cannot get a wash. The CSR should be able to search for Jordan Ellis or plate `AMP1234`, open the customer profile, see the overdue subscription, find the failed membership payment, and take a support action.
+
+## Tech Stack
+
+- Next.js App Router
+- JavaScript
+- Tailwind CSS
+- Prisma
+- Postgres / Neon
+- Zod
+- Fuse.js
+- Framer Motion
+
+## Local Setup
+
+```bash
+npm install
+cp .env.example .env
+npm run db:generate
+npm run dev
+```
+
+The local app runs at `http://localhost:3000`.
+
+## Database
+
+Set `DATABASE_URL` to a Postgres connection string, then run:
+
+```bash
+npm run db:migrate
+npm run db:seed
+```
+
+To reset seeded data during development:
+
+```bash
+npm run db:reset
+```
+
+## Seeded Demo Customers
+
+- Jordan Ellis: failed membership payment and overdue subscription, plate `AMP1234`
+- Priya Shah: healthy family plan account
+- Marcus Reed: vehicle transfer workflow, plates `OLD889` and `NEW889`
+- Alicia Brown: purchase and refund history workflow
+- Ethan Brooks: cancellation workflow
+- Sophia Nguyen: multi-vehicle downgrade workflow
+
+## Planned Routes
+
+- `/`: project landing page
+- `/csr`: CSR dashboard
+- `/csr/search`: customer search
+- `/csr/customers/[id]`: customer profile
+- `/mobile`: mock mobile companion
+- `/presentation`: browser presentation
+
+## Scripts
+
+```bash
+npm run dev
+npm run build
+npm run lint
+npm test
+npm run db:generate
+npm run db:migrate
+npm run db:seed
+npm run db:reset
+```
+
+## MVP Tradeoffs
+
+- Mock CSR identity instead of real authentication
+- Smart Help Search over seeded FAQ articles instead of a production LLM
+- No real payment processing, proration, refunds, or tax calculations
+- Mock mobile companion is demo-only
+- AWS architecture will be documented in the presentation, while MVP deployment targets Vercel and Neon
