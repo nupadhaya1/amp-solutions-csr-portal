@@ -3,7 +3,9 @@ import test from "node:test";
 
 import {
   addVehicleSchema,
+  changeSubscriptionPlanSchema,
   updateCustomerSchema,
+  transferSubscriptionSchema,
 } from "./customer-actions.js";
 
 test("validates account update fields", () => {
@@ -28,4 +30,21 @@ test("normalizes vehicle license plates when adding a vehicle", () => {
 
   assert.equal(parsed.year, 2024);
   assert.equal(parsed.licensePlate, "MQL6187");
+});
+
+test("requires different vehicles for a subscription transfer", () => {
+  const result = transferSubscriptionSchema.safeParse({
+    fromVehicleId: "vehicle_1",
+    toVehicleId: "vehicle_1",
+  });
+
+  assert.equal(result.success, false);
+});
+
+test("requires a selected plan for plan changes", () => {
+  const result = changeSubscriptionPlanSchema.safeParse({
+    planId: "",
+  });
+
+  assert.equal(result.success, false);
 });

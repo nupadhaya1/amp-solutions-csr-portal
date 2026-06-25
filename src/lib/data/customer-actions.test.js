@@ -4,6 +4,8 @@ import test from "node:test";
 import {
   addCustomerVehicle,
   cancelCustomerSubscription,
+  changeSubscriptionPlan,
+  transferSubscriptionVehicle,
   updateCustomerAccount,
 } from "./customer-actions.js";
 
@@ -26,6 +28,20 @@ function createPrismaStub() {
       update: async (args) => {
         calls.push(["subscription.update", args]);
         return { id: args.where.id, customerId: args.data.customerId, ...args.data };
+      },
+      updateMany: async (args) => {
+        calls.push(["subscription.updateMany", args]);
+        return { count: 1 };
+      },
+    },
+    subscriptionVehicle: {
+      create: async (args) => {
+        calls.push(["subscriptionVehicle.create", args]);
+        return { id: "coverage_new", ...args.data };
+      },
+      updateMany: async (args) => {
+        calls.push(["subscriptionVehicle.updateMany", args]);
+        return { count: 1 };
       },
     },
     auditEvent: {
@@ -114,7 +130,7 @@ test("cancels a subscription and records the CSR reason", async () => {
   });
 
   assert.deepEqual(prisma.calls[0], [
-    "subscription.update",
+    "subscription.updateMany",
     {
       where: { id: "subscription_1", customerId: "customer_1" },
       data: { status: "CANCELLED" },
@@ -123,5 +139,65 @@ test("cancels a subscription and records the CSR reason", async () => {
   assert.equal(prisma.calls[1][1].data.type, "SUBSCRIPTION_CANCELLED");
   assert.deepEqual(prisma.calls[1][1].data.metadata, {
     reason: "Customer sold the vehicle.",
+  });
+});
+
+test("transfers active subscription coverage between vehicles", async () => {
+  const prisma = createPrismaStub();
+
+  await transferSubscriptionVehicle({
+    prismaClient: prisma.client,
+    customerId: "customer_1",
+    subscriptionId: "subscription_1",
+    actorName: "Bob Roberts",
+    input: {
+      fromVehicleId: "vehicle_old",
+      toVehicleId: "vehicle_new",
+    },
+  });
+
+  assert.equal(prisma.calls[0][0], "subscriptionVehicle.updateMany");
+  assert.deepEqual(prisma.calls[0][1].where, {
+    subscriptionId: "subscription_1",
+    vehicleId: "vehicle_old",
+    removedAt: null,
+  });
+  assert.equal(prisma.calls[1][0], "subscriptionVehicle.create");
+  assert.deepEqual(prisma.calls[1][1].data, {
+    subscriptionId: "subscription_1",
+    vehicleId: "vehicle_new",
+  });
+  assert.equal(prisma.calls[2][1].data.type, "SUBSCRIPTION_TRANSFERRED");
+  assert.deepEqual(prisma.calls[2][1].data.metadata, {
+    fromVehicleId: "vehicle_old",
+    toVehicleId: "vehicle_new",
+    subscriptionId: "subscription_1",
+  });
+});
+
+test("changes a subscription plan and records the selected plan", async () => {
+  const prisma = createPrismaStub();
+
+  await changeSubscriptionPlan({
+    prismaClient: prisma.client,
+    customerId: "customer_1",
+    subscriptionId: "subscription_1",
+    actorName: "Bob Roberts",
+    input: {
+      planId: "plan_signature",
+    },
+  });
+
+  assert.deepEqual(prisma.calls[0], [
+    "subscription.update",
+    {
+      where: { id: "subscription_1" },
+      data: { planId: "plan_signature" },
+    },
+  ]);
+  assert.equal(prisma.calls[1][1].data.type, "SUBSCRIPTION_PLAN_CHANGED");
+  assert.deepEqual(prisma.calls[1][1].data.metadata, {
+    planId: "plan_signature",
+    subscriptionId: "subscription_1",
   });
 });

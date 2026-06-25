@@ -47,6 +47,7 @@ export function createCustomerProfileViewModel(customer) {
     }),
     subscriptions: (customer.subscriptions || []).map((subscription) => ({
       id: subscription.id,
+      planId: subscription.planId,
       planName: subscription.plan.name,
       status: subscription.status,
       monthlyPrice: formatMoney(subscription.plan.monthlyPrice),
@@ -58,7 +59,10 @@ export function createCustomerProfileViewModel(customer) {
         : "Not scheduled",
       coveredVehicles: (subscription.vehicles || [])
         .filter((coverage) => coverage.removedAt === null)
-        .map((coverage) => `${coverage.vehicle.year} ${coverage.vehicle.make} ${coverage.vehicle.model} · ${coverage.vehicle.licensePlate}`),
+        .map((coverage) => ({
+          id: coverage.vehicle.id,
+          label: `${coverage.vehicle.year} ${coverage.vehicle.make} ${coverage.vehicle.model} · ${coverage.vehicle.licensePlate}`,
+        })),
     })),
     purchases: (customer.purchases || []).map((purchase) => ({
       id: purchase.id,

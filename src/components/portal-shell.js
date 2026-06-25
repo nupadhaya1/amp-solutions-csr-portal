@@ -3,11 +3,12 @@ import {
   AlertTriangle,
   CarFront,
   ClipboardList,
+  LifeBuoy,
   Search,
   UserRound,
 } from "lucide-react";
 
-export function PortalShell({ viewModel }) {
+export function PortalShell({ helpArticles = [], helpQuery = "", viewModel }) {
   const stats = viewModel?.stats || [];
   const recentCustomers = viewModel?.recentCustomers || [];
   const criticalQueue = viewModel?.criticalQueue;
@@ -79,21 +80,63 @@ export function PortalShell({ viewModel }) {
         </section>
 
         <section className="grid gap-5 lg:grid-cols-[360px_1fr]">
-          <div className="rounded-lg border border-border bg-card p-5 shadow-sm">
-            <div className="flex items-center gap-2">
-              <ClipboardList className="text-primary" size={20} />
-              <h2 className="font-semibold">Dashboard stats</h2>
+          <div className="grid gap-5">
+            <div className="rounded-lg border border-border bg-card p-5 shadow-sm">
+              <div className="flex items-center gap-2">
+                <ClipboardList className="text-primary" size={20} />
+                <h2 className="font-semibold">Dashboard stats</h2>
+              </div>
+              <div className="mt-4 grid gap-3">
+                {stats.map((stat) => (
+                  <div
+                    className="flex items-center justify-between rounded-md border border-border bg-background px-4 py-3"
+                    key={stat.label}
+                  >
+                    <span className="text-sm text-muted">{stat.label}</span>
+                    <span className="text-lg font-semibold">{stat.value}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-            <div className="mt-4 grid gap-3">
-              {stats.map((stat) => (
-                <div
-                  className="flex items-center justify-between rounded-md border border-border bg-background px-4 py-3"
-                  key={stat.label}
-                >
-                  <span className="text-sm text-muted">{stat.label}</span>
-                  <span className="text-lg font-semibold">{stat.value}</span>
+
+            <div className="rounded-lg border border-border bg-card p-5 shadow-sm">
+              <div className="flex items-center gap-2">
+                <LifeBuoy className="text-primary" size={20} />
+                <h2 className="font-semibold">Smart Help Search</h2>
+              </div>
+              <form action="/" className="mt-4 grid gap-3">
+                <div className="flex min-h-11 items-center gap-3 rounded-md border border-border bg-background px-3">
+                  <Search className="text-muted" size={17} aria-hidden="true" />
+                  <input
+                    className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted"
+                    defaultValue={helpQuery}
+                    name="help"
+                    placeholder="Search cancellation, transfer, failed payment..."
+                  />
                 </div>
-              ))}
+                <button
+                  className="inline-flex h-10 items-center justify-center rounded-md border border-border bg-card px-4 text-sm font-semibold transition hover:border-primary hover:text-primary"
+                  type="submit"
+                >
+                  Search help
+                </button>
+              </form>
+              <div className="mt-4 grid gap-3">
+                {helpArticles.map((article) => (
+                  <article
+                    className="rounded-md border border-border bg-background p-3"
+                    key={article.id}
+                  >
+                    <p className="text-xs font-semibold uppercase text-primary">
+                      {article.category}
+                    </p>
+                    <h3 className="mt-1 font-semibold">{article.title}</h3>
+                    <p className="mt-2 text-sm leading-6 text-muted">
+                      {article.answer}
+                    </p>
+                  </article>
+                ))}
+              </div>
             </div>
           </div>
 

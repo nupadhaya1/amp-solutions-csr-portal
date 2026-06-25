@@ -22,11 +22,11 @@ Use `feature/` branches for implementation work. Keep each branch scoped to one 
 - [x] Account edit form with audit trail.
 - [x] Add vehicle form with audit trail.
 - [x] Cancel subscription form with audit trail.
-- [ ] Transfer subscription coverage between vehicles.
-- [ ] Change subscription plan.
-- [ ] Smart Help Search UI over seeded FAQ articles.
-- [ ] Browser presentation route.
-- [ ] Mobile companion demo route.
+- [x] Transfer subscription coverage between vehicles.
+- [x] Change subscription plan.
+- [x] Smart Help Search UI over seeded FAQ articles.
+- [x] Browser presentation route.
+- [x] Mobile companion demo route.
 - [ ] README submission guide with live app URL and demo script.
 
 ## Parallel Work Suggestions

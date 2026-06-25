@@ -3,6 +3,8 @@
 import {
   addVehicleSchema,
   cancelSubscriptionSchema,
+  changeSubscriptionPlanSchema,
+  transferSubscriptionSchema,
   updateCustomerSchema,
 } from "../validation/customer-actions.js";
 
@@ -94,7 +96,7 @@ export async function cancelCustomerSubscription({
   const data = cancelSubscriptionSchema.parse(input);
 
   return prismaClient.$transaction(async (tx) => {
-    const subscription = await tx.subscription.update({
+    const result = await tx.subscription.updateMany({
       where: {
         id: subscriptionId,
         customerId,
@@ -104,6 +106,10 @@ export async function cancelCustomerSubscription({
       },
     });
 
+    if (result.count === 0) {
+      throw new Error("Subscription was not found for this customer.");
+    }
+
     await tx.auditEvent.create({
       data: {
         customerId,
@@ -111,6 +117,98 @@ export async function cancelCustomerSubscription({
         message: "Subscription cancelled by CSR.",
         metadata: {
           reason: data.reason || "",
+        },
+        actorName,
+        actorType: "CSR",
+      },
+    });
+
+    return result;
+  });
+}
+
+export async function transferSubscriptionVehicle({
+  prismaClient,
+  customerId,
+  subscriptionId,
+  actorName,
+  input,
+}) {
+  requireCustomerId(customerId);
+  if (!subscriptionId) {
+    throw new Error("Subscription id is required.");
+  }
+
+  const data = transferSubscriptionSchema.parse(input);
+
+  return prismaClient.$transaction(async (tx) => {
+    await tx.subscriptionVehicle.updateMany({
+      where: {
+        subscriptionId,
+        vehicleId: data.fromVehicleId,
+        removedAt: null,
+      },
+      data: {
+        removedAt: new Date(),
+      },
+    });
+
+    const coverage = await tx.subscriptionVehicle.create({
+      data: {
+        subscriptionId,
+        vehicleId: data.toVehicleId,
+      },
+    });
+
+    await tx.auditEvent.create({
+      data: {
+        customerId,
+        type: "SUBSCRIPTION_TRANSFERRED",
+        message: "Subscription coverage transferred between vehicles.",
+        metadata: {
+          fromVehicleId: data.fromVehicleId,
+          toVehicleId: data.toVehicleId,
+          subscriptionId,
+        },
+        actorName,
+        actorType: "CSR",
+      },
+    });
+
+    return coverage;
+  });
+}
+
+export async function changeSubscriptionPlan({
+  prismaClient,
+  customerId,
+  subscriptionId,
+  actorName,
+  input,
+}) {
+  requireCustomerId(customerId);
+  if (!subscriptionId) {
+    throw new Error("Subscription id is required.");
+  }
+
+  const data = changeSubscriptionPlanSchema.parse(input);
+
+  return prismaClient.$transaction(async (tx) => {
+    const subscription = await tx.subscription.update({
+      where: { id: subscriptionId },
+      data: {
+        planId: data.planId,
+      },
+    });
+
+    await tx.auditEvent.create({
+      data: {
+        customerId,
+        type: "SUBSCRIPTION_PLAN_CHANGED",
+        message: "Subscription plan changed by CSR.",
+        metadata: {
+          planId: data.planId,
+          subscriptionId,
         },
         actorName,
         actorType: "CSR",
