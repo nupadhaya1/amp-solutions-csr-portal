@@ -127,6 +127,83 @@ async function addVehicle(formData) {
   redirect(`/csr/customers/${customerId}?action=vehicle-added`);
 }
 
+async function updatePaymentMethod(formData) {
+  "use server";
+
+  const customerId = String(formData.get("customerId") || "");
+  const brand = String(formData.get("brand") || "").trim();
+  const last4 = String(formData.get("last4") || "").trim();
+  const expiry = String(formData.get("expiry") || "").trim();
+  const postalCode = String(formData.get("postalCode") || "").trim();
+
+  if (
+    !customerId ||
+    !/^[A-Za-z ]{2,20}$/.test(brand) ||
+    !/^\d{4}$/.test(last4) ||
+    !/^(0[1-9]|1[0-2])\/\d{2}$/.test(expiry) ||
+    !/^\d{5}$/.test(postalCode)
+  ) {
+    redirect(`/csr/customers/${customerId}?action=invalid-payment`);
+  }
+
+  try {
+    await prisma.$transaction(async (tx) => {
+      const resolvedPayments = await tx.purchase.updateMany({
+        where: {
+          customerId,
+          type: "MEMBERSHIP_PAYMENT",
+          status: "FAILED",
+        },
+        data: {
+          status: "PAID",
+          description: "Monthly membership payment resolved after payment method update.",
+        },
+      });
+
+      const restoredSubscriptions = await tx.subscription.updateMany({
+        where: {
+          customerId,
+          status: "OVERDUE",
+        },
+        data: {
+          status: "ACTIVE",
+        },
+      });
+
+      await tx.customer.update({
+        where: { id: customerId },
+        data: {
+          status: "ACTIVE",
+        },
+      });
+
+      await tx.auditEvent.create({
+        data: {
+          customerId,
+          type: "ACCOUNT_UPDATED",
+          message: "Payment method updated and failed membership payment retried.",
+          metadata: {
+            paymentMethod: {
+              brand,
+              last4,
+              expiry,
+            },
+            resolvedPayments: resolvedPayments.count,
+            restoredSubscriptions: restoredSubscriptions.count,
+          },
+          actorName: CSR_NAME,
+          actorType: "CSR",
+        },
+      });
+    });
+  } catch {
+    redirect(`/csr/customers/${customerId}?action=invalid-payment`);
+  }
+
+  revalidatePath(`/csr/customers/${customerId}`);
+  redirect(`/csr/customers/${customerId}?action=payment-updated`);
+}
+
 async function cancelSubscription(formData) {
   "use server";
 
@@ -303,6 +380,9 @@ export default async function CustomerProfilePage({ params, searchParams }) {
             {query.action === "plan-changed"
               ? "Subscription plan changed and audit timeline updated."
               : null}
+            {query.action === "payment-updated"
+              ? "Payment method marked valid, failed membership payment retried, and audit timeline updated."
+              : null}
             {query.action?.startsWith("invalid")
               ? "Action could not be completed. Check the form details and try again."
               : null}
@@ -361,6 +441,89 @@ export default async function CustomerProfilePage({ params, searchParams }) {
                   </button>
                 </div>
               </form>
+            </Section>
+
+            <Section icon={CreditCard} title="Payment method">
+              <div className="grid gap-4 xl:grid-cols-[1fr_1.2fr]">
+                <div className={innerCardClass}>
+                  <div className="flex items-start justify-between gap-3">
+                    <div>
+                      <p className="font-semibold">
+                        {profile.paymentSummary.cardBrand} ending {profile.paymentSummary.cardLast4}
+                      </p>
+                      <p className="mt-1 text-sm text-muted">
+                        Expires {profile.paymentSummary.cardExpiry}
+                      </p>
+                    </div>
+                    <span
+                      className={`${pillClass} ${
+                        profile.paymentSummary.hasFailedPayment
+                          ? "border-critical/30 bg-critical-background text-critical"
+                          : "border-success/30 bg-success-background text-success"
+                      }`}
+                    >
+                      {profile.paymentSummary.status}
+                    </span>
+                  </div>
+                  <p className="mt-4 text-sm text-muted">
+                    Latest failed membership payment: {profile.paymentSummary.latestFailedPayment}
+                  </p>
+                </div>
+
+                <form action={updatePaymentMethod} className="grid gap-3 rounded-2xl border border-border bg-surface p-4">
+                  <input type="hidden" name="customerId" value={profile.id} />
+                  <div>
+                    <p className="font-semibold">Update payment and retry</p>
+                    <p className="mt-1 text-sm text-muted">
+                      Demo-safe fields only. Do not enter a full card number.
+                    </p>
+                  </div>
+                  <div className="grid gap-3 sm:grid-cols-2">
+                    <label className="grid gap-2">
+                      <span className="text-sm font-semibold">Card brand</span>
+                      <input
+                        className={inputClass}
+                        defaultValue={profile.paymentSummary.cardBrand}
+                        name="brand"
+                        placeholder="Visa"
+                      />
+                    </label>
+                    <label className="grid gap-2">
+                      <span className="text-sm font-semibold">Last four</span>
+                      <input
+                        className={inputClass}
+                        defaultValue={profile.paymentSummary.cardLast4}
+                        inputMode="numeric"
+                        maxLength={4}
+                        name="last4"
+                        placeholder="4242"
+                      />
+                    </label>
+                    <label className="grid gap-2">
+                      <span className="text-sm font-semibold">Expiry</span>
+                      <input
+                        className={inputClass}
+                        defaultValue={profile.paymentSummary.cardExpiry}
+                        name="expiry"
+                        placeholder="12/29"
+                      />
+                    </label>
+                    <label className="grid gap-2">
+                      <span className="text-sm font-semibold">Billing ZIP</span>
+                      <input
+                        className={inputClass}
+                        inputMode="numeric"
+                        maxLength={5}
+                        name="postalCode"
+                        placeholder="90210"
+                      />
+                    </label>
+                  </div>
+                  <button className={`${primaryButtonClass} w-fit`} type="submit">
+                    Mark payment valid and retry
+                  </button>
+                </form>
+              </div>
             </Section>
 
             <Section icon={CarFront} title="Vehicles and subscriptions">

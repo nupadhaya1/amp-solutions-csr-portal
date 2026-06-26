@@ -99,24 +99,36 @@ function Pill({ children, tone = "neutral" }) {
   );
 }
 
-function MockPhone({ children, label = "Customer mobile view" }) {
+function MockPhone({ children, label = "Customer mobile view", size = "default" }) {
   return (
     <div>
       <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-muted">
         <Smartphone size={16} aria-hidden="true" />
         {label}
       </div>
-      <div className="mx-auto w-full max-w-[300px] rounded-[2.25rem] border border-slate-300 bg-slate-950 p-3 shadow-2xl shadow-slate-300/60">
+      <div
+        className={cn(
+          "w-full rounded-[2.25rem] border border-slate-300 bg-slate-950 p-3 shadow-2xl shadow-slate-300/60",
+          size === "compact" ? "max-w-[260px]" : "mx-auto max-w-[300px]",
+        )}
+      >
         <div className="rounded-[1.8rem] bg-surface p-4">
           <div className="mx-auto mb-4 h-1.5 w-16 rounded-full bg-slate-300" />
-          <div className="min-h-[430px] rounded-[1.35rem] bg-card p-4 shadow-inner">{children}</div>
+          <div
+            className={cn(
+              "rounded-[1.35rem] bg-card p-4 shadow-inner",
+              size === "compact" ? "min-h-[400px]" : "min-h-[430px]",
+            )}
+          >
+            {children}
+          </div>
         </div>
       </div>
     </div>
   );
 }
 
-function LivePortalFrame({ caption, path = "/" }) {
+function LivePortalFrame({ caption, large = false, path = "/" }) {
   return (
     <div>
       <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-muted">
@@ -134,7 +146,7 @@ function LivePortalFrame({ caption, path = "/" }) {
             {path}
           </span>
         </div>
-        <div className="relative h-[500px] bg-surface">
+        <div className={cn("relative bg-surface", large ? "h-[620px]" : "h-[500px]")}>
           <div className="absolute left-4 top-4 z-0 rounded-full bg-card px-3 py-1 text-xs font-semibold text-muted">
             Loading live route...
           </div>
@@ -188,17 +200,26 @@ function ProblemFlow() {
 
 function ScenarioSlide({ caption, children, framePath, note, phoneTitle, title, subtitle }) {
   return (
-    <SlideShell eyebrow="Scenario" title={title} subtitle={subtitle}>
-      <div className="grid items-start gap-7 lg:grid-cols-[360px_1fr]">
-        <MockPhone label={phoneTitle}>{children}</MockPhone>
+    <section className="grid min-h-[calc(100vh-132px)] content-center px-5 py-4 sm:px-8 lg:px-10">
+      <div className="mx-auto w-full max-w-[1600px]">
+        <div className="mb-3 flex min-w-0 flex-wrap items-baseline gap-x-4 gap-y-1">
+          <p className="text-sm font-semibold uppercase tracking-wide text-primary">Scenario</p>
+          <h1 className="min-w-0 text-3xl font-semibold tracking-tight text-foreground lg:whitespace-nowrap">
+            {title}
+          </h1>
+          {subtitle ? <p className="text-sm font-medium text-muted">{subtitle}</p> : null}
+        </div>
+        <div className="grid items-start gap-5 lg:grid-cols-[280px_minmax(0,1fr)]">
+          <MockPhone label={phoneTitle} size="compact">{children}</MockPhone>
         <div className="grid gap-4">
-          <LivePortalFrame caption={caption} path={framePath} />
-          <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4 text-sm font-medium leading-6 text-foreground">
+          <LivePortalFrame caption={caption} large path={framePath} />
+          <div className="rounded-2xl border border-primary/20 bg-primary/5 p-3 text-sm font-medium leading-6 text-foreground">
             {note}
           </div>
         </div>
       </div>
-    </SlideShell>
+      </div>
+    </section>
   );
 }
 
@@ -298,6 +319,10 @@ function BillingPhone() {
         <p className="mt-2 text-sm leading-6">
           Why was I charged, and why is my membership blocked?
         </p>
+      </div>
+      <div className="mt-4 rounded-2xl border border-success/30 bg-success-background p-4">
+        <p className="text-xs font-semibold uppercase tracking-wide text-success">Payment update</p>
+        <p className="mt-2 text-sm font-semibold text-success">New card ending 1111 validated</p>
       </div>
     </div>
   );
@@ -564,7 +589,7 @@ function createSlides() {
         <ScenarioSlide
           caption="CSR reviews purchase history, subscription status, support notes, and audit timeline."
           framePath="/?tab=customers&q=failed%20payment"
-          note="Billing questions are resolved from the customer profile instead of a separate unfinished sidebar module."
+          note="CSR can update demo-safe payment details, retry the failed membership payment, restore the subscription, and leave an audit entry."
           phoneTitle="Customer billing view"
           title="Purchase / billing question"
           subtitle="The caller needs help understanding a charge and a blocked membership."

@@ -22,7 +22,36 @@ function formatAuditEventDetail(event) {
     return event.metadata.notePreview;
   }
 
+  if (event.type === "ACCOUNT_UPDATED" && event.metadata?.paymentMethod) {
+    return `${event.metadata.paymentMethod.brand} ending ${event.metadata.paymentMethod.last4} · ${event.metadata.resolvedPayments || 0} payment issue(s) resolved`;
+  }
+
   return null;
+}
+
+function getPaymentSummary(customer) {
+  const failedMembershipPayments = (customer.purchases || []).filter(
+    (purchase) => purchase.type === "MEMBERSHIP_PAYMENT" && purchase.status === "FAILED",
+  );
+  const paymentUpdateEvent = (customer.auditEvents || []).find(
+    (event) => event.type === "ACCOUNT_UPDATED" && event.metadata?.paymentMethod,
+  );
+  const paymentMethod = paymentUpdateEvent?.metadata?.paymentMethod;
+
+  return {
+    status:
+      failedMembershipPayments.length > 0 || customer.status === "OVERDUE"
+        ? "Needs payment update"
+        : "Valid payment method",
+    hasFailedPayment: failedMembershipPayments.length > 0,
+    failedPayments: failedMembershipPayments.length,
+    latestFailedPayment: failedMembershipPayments[0]
+      ? `${formatMoney(failedMembershipPayments[0].amount)} · ${formatDate(failedMembershipPayments[0].purchasedAt)}`
+      : "No failed membership payments",
+    cardBrand: paymentMethod?.brand || "Visa",
+    cardLast4: paymentMethod?.last4 || "4242",
+    cardExpiry: paymentMethod?.expiry || "12/29",
+  };
 }
 
 /**
@@ -37,6 +66,7 @@ export function createCustomerProfileViewModel(customer) {
     status: customer.status,
     createdAt: formatDate(customer.createdAt),
     updatedAt: formatDate(customer.updatedAt),
+    paymentSummary: getPaymentSummary(customer),
     criticalIssue: getCustomerCriticalIssue(customer),
     vehicles: (customer.vehicles || []).map((vehicle) => {
       const activeCoverage = (vehicle.subscriptionVehicles || []).find(
