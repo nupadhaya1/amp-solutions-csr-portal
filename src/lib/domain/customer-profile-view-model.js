@@ -17,6 +17,14 @@ export function formatDate(date) {
   }).format(new Date(date));
 }
 
+function formatAuditEventDetail(event) {
+  if (event.type === "SUPPORT_NOTE_ADDED" && event.metadata?.notePreview) {
+    return event.metadata.notePreview;
+  }
+
+  return null;
+}
+
 /**
  * @param {object} customer
  */
@@ -85,6 +93,7 @@ export function createCustomerProfileViewModel(customer) {
       id: event.id,
       type: event.type,
       message: event.message,
+      detail: formatAuditEventDetail(event),
       actorName: event.actorName,
       actorType: event.actorType,
       createdAt: formatDate(event.createdAt),

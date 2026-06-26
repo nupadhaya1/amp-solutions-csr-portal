@@ -69,3 +69,38 @@ test("builds customer profile coverage and critical issue details", () => {
   assert.equal(profile.criticalIssue.title, "Unable to wash");
   assert.equal(profile.vehicles[0].coverageStatus, "Signature Wash · OVERDUE");
 });
+
+test("shows support note preview in audit timeline details", () => {
+  const profile = createCustomerProfileViewModel({
+    id: "customer_1",
+    firstName: "Alex",
+    lastName: "Morgan",
+    email: "alex@example.com",
+    phone: "404-555-0181",
+    status: "ACTIVE",
+    createdAt: "2026-01-01T00:00:00.000Z",
+    updatedAt: "2026-06-20T00:00:00.000Z",
+    vehicles: [],
+    subscriptions: [],
+    purchases: [],
+    supportNotes: [],
+    auditEvents: [
+      {
+        id: "audit_1",
+        type: "SUPPORT_NOTE_ADDED",
+        message: "Support note added by CSR.",
+        metadata: {
+          notePreview: "Customer said the gate denied access after payment failed.",
+        },
+        actorName: "Bob Roberts",
+        actorType: "CSR",
+        createdAt: "2026-06-26T00:00:00.000Z",
+      },
+    ],
+  });
+
+  assert.equal(
+    profile.auditEvents[0].detail,
+    "Customer said the gate denied access after payment failed.",
+  );
+});
