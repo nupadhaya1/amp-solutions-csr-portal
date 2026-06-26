@@ -24,16 +24,16 @@ test("builds dashboard cards and critical queue copy from customer data", () => 
       phone: "678-555-0124",
       status: "ACTIVE",
       vehicles: [],
-      subscriptions: [{ status: "ACTIVE", plan: { name: "Family Unlimited" } }],
+      subscriptions: [{ status: "ACTIVE", plan: { name: "Family Unlimited", monthlyPrice: "49.99" } }],
       purchases: [],
     },
   ]);
 
   assert.deepEqual(viewModel.stats, [
     { label: "Total customers", value: "2" },
+    { label: "Needs attention", value: "1" },
     { label: "Active subscriptions", value: "1" },
-    { label: "Open critical issues", value: "1" },
-    { label: "Failed payments", value: "1" },
+    { label: "Monthly revenue", value: "$49.99" },
   ]);
   assert.equal(viewModel.criticalQueue.count, 1);
   assert.equal(viewModel.recentCustomers[0].status, "Critical");

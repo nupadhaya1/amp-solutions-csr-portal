@@ -3,6 +3,13 @@
 import { createDashboardSummary } from "./dashboard-summary.js";
 import { flattenCustomerForSearch } from "./customer-search.js";
 
+function formatMoney(amount) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(Number(amount));
+}
+
 /**
  * @param {Array<object>} customers
  */
@@ -18,16 +25,16 @@ export function createPortalDashboardViewModel(customers) {
     stats: [
       { label: "Total customers", value: String(summary.totalCustomers) },
       {
+        label: "Needs attention",
+        value: String(summary.openCriticalIssues),
+      },
+      {
         label: "Active subscriptions",
         value: String(summary.activeSubscriptions),
       },
       {
-        label: "Open critical issues",
-        value: String(summary.openCriticalIssues),
-      },
-      {
-        label: "Failed payments",
-        value: String(summary.failedMembershipPayments),
+        label: "Monthly revenue",
+        value: formatMoney(summary.monthlyRecurringRevenue),
       },
     ],
     criticalQueue: {
@@ -37,6 +44,16 @@ export function createPortalDashboardViewModel(customers) {
           ? "No service-blocking customer issues are currently open."
           : `${criticalCustomers.length} account needs attention because subscription access is blocked by a payment issue.`,
     },
+    criticalCustomers: criticalCustomers.slice(0, 4).map((customer) => {
+      const flattened = flattenCustomerForSearch(customer);
+      return {
+        id: customer.id,
+        initials: `${customer.firstName?.[0] || ""}${customer.lastName?.[0] || ""}`,
+        name: flattened.fullName,
+        context: "Payment issue may be blocking wash access. Review failed charges and membership status.",
+        status: "Overdue",
+      };
+    }),
     recentCustomers: customers.slice(0, 5).map((customer) => {
       const flattened = flattenCustomerForSearch(customer);
       return {

@@ -20,6 +20,13 @@ export function createDashboardSummary(customers) {
       (purchase) =>
         purchase.type === "MEMBERSHIP_PAYMENT" && purchase.status === "FAILED",
     ).length,
+    monthlyRecurringRevenue: subscriptions
+      .filter((subscription) => subscription.status === "ACTIVE")
+      .reduce(
+        (total, subscription) =>
+          total + Number(subscription.plan?.monthlyPrice || 0),
+        0,
+      ),
     openCriticalIssues: customers.filter((customer) =>
       (customer.subscriptions || []).some(
         (subscription) => subscription.status === "OVERDUE",
