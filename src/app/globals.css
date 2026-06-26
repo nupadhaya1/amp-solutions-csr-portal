@@ -1,17 +1,24 @@
 @import "tailwindcss";
 
 :root {
-  --background: #f7f8fb;
-  --foreground: #121826;
+  --background: #f4f8fb;
+  --foreground: #111827;
   --card: #ffffff;
   --muted: #667085;
-  --border: #dde3ec;
-  --primary: #2454f4;
+  --border: #d9e2ec;
+  --primary: #1f5eff;
   --primary-foreground: #ffffff;
-  --accent: #13a9bd;
+  --accent: #0ea5b7;
   --critical: #b42318;
-  --critical-background: #fff1f0;
-  --sidebar: #eef2f7;
+  --critical-background: #fff3f1;
+  --success: #067647;
+  --success-background: #ecfdf3;
+  --warning: #b54708;
+  --warning-background: #fffaeb;
+  --surface: #f8fbff;
+  --surface-muted: #eef6fb;
+  --ring: #8bb7ff;
+  --sidebar: #edf6fb;
 }
 
 @theme inline {
@@ -25,30 +32,41 @@
   --color-accent: var(--accent);
   --color-critical: var(--critical);
   --color-critical-background: var(--critical-background);
+  --color-success: var(--success);
+  --color-success-background: var(--success-background);
+  --color-warning: var(--warning);
+  --color-warning-background: var(--warning-background);
+  --color-surface: var(--surface);
+  --color-surface-muted: var(--surface-muted);
+  --color-ring: var(--ring);
   --color-sidebar: var(--sidebar);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-:root.dark {
-  --background: #070707;
-  --foreground: #f4f5f7;
-  --card: #181818;
-  --muted: #9b9b9f;
-  --border: #303033;
-  --primary: #2454f4;
-  --primary-foreground: #ffffff;
-  --accent: #13a9bd;
-  --critical: #ff3b4f;
-  --critical-background: #fff0f1;
-  --sidebar: #171717;
-}
-
 body {
-  background: var(--background);
+  background:
+    radial-gradient(circle at top left, rgba(14, 165, 183, 0.16), transparent 32rem),
+    linear-gradient(135deg, #f8fbff 0%, var(--background) 42%, #eef7fb 100%);
   color: var(--foreground);
+  text-rendering: optimizeLegibility;
 }
 
 * {
   box-sizing: border-box;
+}
+
+::selection {
+  background: rgba(31, 94, 255, 0.16);
+  color: var(--foreground);
+}
+
+:where(a, button, input, textarea) {
+  outline-color: var(--ring);
+}
+
+:where(button, a, input, textarea) {
+  transition-property: color, background-color, border-color, box-shadow, transform, opacity;
+  transition-duration: 180ms;
+  transition-timing-function: ease;
 }

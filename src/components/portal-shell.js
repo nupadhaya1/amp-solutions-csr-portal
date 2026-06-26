@@ -12,7 +12,7 @@ import {
   WalletCards,
 } from "lucide-react";
 
-import { ThemeToggle } from "@/components/theme-toggle";
+import { MotionPanel } from "@/components/motion-panel";
 
 const tabs = [
   { id: "dashboard", label: "Dashboard", icon: Grid2X2 },
@@ -39,22 +39,24 @@ function tabHref(tab) {
 function StatCard({ stat }) {
   const Icon = statIconMap[stat.label] || Grid2X2;
   return (
-    <article className="rounded-2xl border border-border bg-card p-5 shadow-sm">
-      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-background text-primary">
+    <article className="group rounded-2xl border border-border bg-card p-5 shadow-sm shadow-slate-200/70 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md hover:shadow-slate-200/80">
+      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-surface-muted text-primary ring-1 ring-primary/10 group-hover:bg-primary group-hover:text-primary-foreground">
         <Icon size={23} aria-hidden="true" />
       </div>
-      <p className="mt-6 text-3xl font-semibold">{stat.value}</p>
-      <p className="mt-2 text-sm text-muted">{stat.label}</p>
+      <p className="mt-6 text-3xl font-semibold tracking-tight">{stat.value}</p>
+      <p className="mt-2 text-sm font-medium text-muted">{stat.label}</p>
     </article>
   );
 }
 
 function AttentionList({ customers }) {
   return (
-    <section className="rounded-2xl border border-border bg-card shadow-sm">
-      <div className="flex items-center justify-between gap-4 border-b border-border p-5">
+    <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm shadow-slate-200/70">
+      <div className="flex items-center justify-between gap-4 border-b border-border bg-surface p-5">
         <div className="flex items-center gap-3">
-          <AlertTriangle className="text-critical" size={20} />
+          <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-critical-background text-critical">
+            <AlertTriangle size={20} aria-hidden="true" />
+          </span>
           <h2 className="font-semibold">Accounts needing attention</h2>
         </div>
         <Link
@@ -71,12 +73,12 @@ function AttentionList({ customers }) {
         ) : (
           customers.map((customer) => (
             <Link
-              className="flex flex-col gap-4 p-5 transition hover:bg-background sm:flex-row sm:items-center sm:justify-between"
+              className="flex flex-col gap-4 p-5 hover:bg-surface sm:flex-row sm:items-center sm:justify-between"
               href={`/csr/customers/${customer.id}`}
               key={customer.id}
             >
               <div className="flex items-start gap-4">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-semibold text-primary-foreground">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-accent text-sm font-semibold text-primary-foreground shadow-sm">
                   {customer.initials}
                 </div>
                 <div>
@@ -98,11 +100,11 @@ function AttentionList({ customers }) {
 
 function DashboardTab({ viewModel }) {
   return (
-    <div>
-      <header>
-        <p className="text-sm font-semibold uppercase text-primary">Overview</p>
-        <h1 className="mt-2 text-3xl font-semibold">Welcome back, Bob</h1>
-        <p className="mt-2 text-muted">
+    <MotionPanel>
+      <header className="rounded-3xl border border-border bg-card px-6 py-7 shadow-sm shadow-slate-200/70">
+        <p className="text-sm font-semibold uppercase tracking-wide text-primary">Overview</p>
+        <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">Welcome back, Bob</h1>
+        <p className="mt-2 max-w-2xl text-muted">
           Here&apos;s what&apos;s happening across AMP memberships today.
         </p>
       </header>
@@ -114,25 +116,25 @@ function DashboardTab({ viewModel }) {
       <div className="mt-8">
         <AttentionList customers={viewModel.criticalCustomers || []} />
       </div>
-    </div>
+    </MotionPanel>
   );
 }
 
 function CustomerLookupTab({ customerQuery, customerResults }) {
   return (
-    <div>
-      <header>
-        <p className="text-sm font-semibold uppercase text-primary">Customer lookup</p>
-        <h1 className="mt-2 text-3xl font-semibold">Find a member account</h1>
-        <p className="mt-2 text-muted">
+    <MotionPanel>
+      <header className="rounded-3xl border border-border bg-card px-6 py-7 shadow-sm shadow-slate-200/70">
+        <p className="text-sm font-semibold uppercase tracking-wide text-primary">Customer lookup</p>
+        <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">Find a member account</h1>
+        <p className="mt-2 max-w-3xl text-muted">
           Search by name, phone, email, license plate, purchase context, or support history.
         </p>
       </header>
-      <form action="/" className="mt-6 rounded-2xl border border-border bg-card p-5 shadow-sm">
+      <form action="/" className="mt-6 rounded-2xl border border-border bg-card p-5 shadow-sm shadow-slate-200/70">
         <input type="hidden" name="tab" value="customers" />
         <label className="grid gap-2">
           <span className="text-sm font-semibold">Customer search</span>
-          <div className="flex min-h-12 items-center gap-3 rounded-xl border border-border bg-background px-4">
+          <div className="flex min-h-12 items-center gap-3 rounded-xl border border-border bg-surface px-4 focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10">
             <Search className="text-muted" size={18} aria-hidden="true" />
             <input
               className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted"
@@ -143,14 +145,14 @@ function CustomerLookupTab({ customerQuery, customerResults }) {
           </div>
         </label>
       </form>
-      <section className="mt-6 rounded-2xl border border-border bg-card shadow-sm">
-        <div className="border-b border-border p-5">
+      <section className="mt-6 overflow-hidden rounded-2xl border border-border bg-card shadow-sm shadow-slate-200/70">
+        <div className="border-b border-border bg-surface p-5">
           <h2 className="font-semibold">{customerResults.length} customer results</h2>
         </div>
         <div className="divide-y divide-border">
           {customerResults.map((customer) => (
             <Link
-              className="flex flex-col gap-4 p-5 transition hover:bg-background lg:flex-row lg:items-center lg:justify-between"
+              className="flex flex-col gap-4 p-5 hover:bg-surface lg:flex-row lg:items-center lg:justify-between"
               href={`/csr/customers/${customer.id}`}
               key={customer.id}
             >
@@ -168,32 +170,44 @@ function CustomerLookupTab({ customerQuery, customerResults }) {
                   {customer.primaryVehicle} · Plate {customer.licensePlate}
                 </p>
               </div>
-              <span className="text-sm font-semibold text-primary">Open profile</span>
+              <span className="inline-flex w-fit items-center gap-2 rounded-full bg-surface-muted px-3 py-1 text-sm font-semibold text-primary">
+                Open profile
+                <ArrowRight size={15} aria-hidden="true" />
+              </span>
             </Link>
           ))}
+          {customerResults.length === 0 ? (
+            <div className="p-8 text-center">
+              <Search className="mx-auto text-muted" size={34} aria-hidden="true" />
+              <h2 className="mt-3 font-semibold">No matching customers</h2>
+              <p className="mt-2 text-sm text-muted">
+                Try a phone number, plate, email, or support issue.
+              </p>
+            </div>
+          ) : null}
         </div>
       </section>
-    </div>
+    </MotionPanel>
   );
 }
 
 function SmartSearchTab({ semanticQuery, semanticResults }) {
   return (
-    <div>
-      <header>
-        <p className="text-sm font-semibold uppercase text-primary">Semantic KNN search</p>
-        <h1 className="mt-2 text-3xl font-semibold">Search support meaning, not just keywords</h1>
+    <MotionPanel>
+      <header className="rounded-3xl border border-border bg-card px-6 py-7 shadow-sm shadow-slate-200/70">
+        <p className="text-sm font-semibold uppercase tracking-wide text-primary">Semantic KNN search</p>
+        <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">Search support meaning, not just keywords</h1>
         <p className="mt-2 max-w-3xl text-muted">
           Current MVP uses local TF-IDF vectors with cosine similarity across customer
           cases and FAQ articles. It is private, free, deterministic, and easy to
           upgrade later to `pgvector` plus a small embedding model.
         </p>
       </header>
-      <form action="/" className="mt-6 rounded-2xl border border-border bg-card p-5 shadow-sm">
+      <form action="/" className="mt-6 rounded-2xl border border-border bg-card p-5 shadow-sm shadow-slate-200/70">
         <input type="hidden" name="tab" value="smart" />
         <label className="grid gap-2">
           <span className="text-sm font-semibold">Smart search prompt</span>
-          <div className="flex min-h-12 items-center gap-3 rounded-xl border border-border bg-background px-4">
+          <div className="flex min-h-12 items-center gap-3 rounded-xl border border-border bg-surface px-4 focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10">
             <Brain className="text-muted" size={18} aria-hidden="true" />
             <input
               className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted"
@@ -206,7 +220,7 @@ function SmartSearchTab({ semanticQuery, semanticResults }) {
       </form>
       <section className="mt-6 grid gap-4">
         {semanticResults.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-border bg-card p-8 text-center">
+          <div className="rounded-2xl border border-dashed border-border bg-card p-8 text-center shadow-sm shadow-slate-200/70">
             <Brain className="mx-auto text-muted" size={34} aria-hidden="true" />
             <h2 className="mt-3 font-semibold">Enter a support scenario</h2>
             <p className="mt-2 text-sm text-muted">
@@ -216,19 +230,19 @@ function SmartSearchTab({ semanticQuery, semanticResults }) {
         ) : (
           semanticResults.map((result) => (
             <Link
-              className="rounded-2xl border border-border bg-card p-5 shadow-sm transition hover:border-primary"
+              className="rounded-2xl border border-border bg-card p-5 shadow-sm shadow-slate-200/70 hover:-translate-y-0.5 hover:border-primary/50 hover:shadow-md"
               href={result.href}
               key={`${result.kind}-${result.id}`}
             >
               <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
                 <div>
-                  <span className="rounded-full bg-background px-3 py-1 text-xs font-semibold uppercase text-primary">
+                  <span className="rounded-full bg-surface-muted px-3 py-1 text-xs font-semibold uppercase tracking-wide text-primary">
                     {result.kind}
                   </span>
                   <h2 className="mt-3 text-lg font-semibold">{result.title}</h2>
                   <p className="mt-1 text-sm text-muted">{result.subtitle}</p>
                 </div>
-                <span className="text-sm font-semibold text-muted">
+                <span className="rounded-full border border-border bg-surface px-3 py-1 text-sm font-semibold text-muted">
                   {(result.score * 100).toFixed(0)}% match
                 </span>
               </div>
@@ -236,7 +250,7 @@ function SmartSearchTab({ semanticQuery, semanticResults }) {
           ))
         )}
       </section>
-    </div>
+    </MotionPanel>
   );
 }
 
@@ -251,17 +265,19 @@ export function PortalShell({
   const active = tabs.some((tab) => tab.id === activeTab) ? activeTab : "dashboard";
 
   return (
-    <main className="min-h-screen bg-background text-foreground">
+    <main className="min-h-screen text-foreground">
       <div className="grid min-h-screen lg:grid-cols-[280px_1fr]">
-        <aside className="border-b border-border bg-sidebar p-5 lg:border-b-0 lg:border-r">
+        <aside className="border-b border-border bg-sidebar/90 p-5 shadow-sm lg:border-b-0 lg:border-r">
           <div className="flex min-h-full flex-col gap-8">
-            <div className="flex items-center gap-3">
-              <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground">
-                <CarFront size={25} aria-hidden="true" />
-              </div>
-              <div>
-                <p className="font-semibold">AMP Care</p>
-                <p className="text-sm text-muted">CSR Portal</p>
+            <div className="rounded-3xl border border-white/80 bg-card/80 p-4 shadow-sm">
+              <div className="flex items-center gap-3">
+                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-sm">
+                  <CarFront size={25} aria-hidden="true" />
+                </div>
+                <div>
+                  <p className="font-semibold">AMP Care</p>
+                  <p className="text-sm text-muted">CSR Portal</p>
+                </div>
               </div>
             </div>
 
@@ -273,8 +289,8 @@ export function PortalShell({
                   <Link
                     className={`flex min-h-12 items-center gap-3 rounded-xl px-4 text-sm font-semibold transition ${
                       selected
-                        ? "bg-primary text-primary-foreground"
-                        : "text-muted hover:bg-card hover:text-foreground"
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "text-muted hover:bg-card hover:text-foreground hover:shadow-sm"
                     }`}
                     href={tabHref(tab.id)}
                     key={tab.id}
@@ -295,13 +311,13 @@ export function PortalShell({
                       <Icon size={20} aria-hidden="true" />
                       {item.label}
                     </span>
-                    <span className="rounded-full bg-card px-2 py-1 text-xs">Soon</span>
+                    <span className="rounded-full border border-border bg-card px-2 py-1 text-xs">Soon</span>
                   </div>
                 );
               })}
             </nav>
 
-            <div className="mt-auto flex items-center justify-between gap-3 rounded-2xl bg-card p-4">
+            <div className="mt-auto flex items-center gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm">
               <div className="flex items-center gap-3">
                 <div className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/20 text-sm font-semibold text-primary">
                   BR
@@ -311,7 +327,6 @@ export function PortalShell({
                   <p className="text-sm text-muted">Support agent</p>
                 </div>
               </div>
-              <ThemeToggle />
             </div>
           </div>
         </aside>
