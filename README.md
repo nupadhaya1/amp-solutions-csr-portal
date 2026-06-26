@@ -78,14 +78,19 @@ To reset seeded data during development:
 npm run db:reset
 ```
 
-## Seeded Demo Customers
+## Seeded Demo Data
 
-- Alex Morgan: failed membership payment and overdue subscription
-- Priya Shah: healthy family plan account
-- Marcus Reed: vehicle transfer workflow
-- Alicia Brown: purchase and refund history workflow
-- Ethan Brooks: cancellation workflow
-- Sophia Nguyen: multi-vehicle downgrade workflow
+The demo seed includes 16 customers, 25 vehicles, 16 subscriptions, 20 purchases, support notes, audit events, and 9 FAQ articles.
+
+Representative support scenarios:
+
+- Alex Morgan and Maya Patel: failed membership payments and overdue subscriptions
+- Priya Shah and Grace Lee: healthy family plan accounts
+- Marcus Reed and Ben Wilson: vehicle transfer workflows
+- Alicia Brown and Harper Davis: purchase and refund history workflows
+- Ethan Brooks and Olivia Martinez: cancellation workflows
+- Daniel Kim: paused subscription
+- Sophia Nguyen and Mia Thompson: multi-vehicle plan management
 
 ## Planned Routes
 

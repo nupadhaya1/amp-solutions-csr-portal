@@ -15,6 +15,7 @@ Use `feature/` branches for implementation work. Keep each branch scoped to one 
 - [x] Prisma schema for customers, vehicles, subscriptions, purchases, notes, audit events, and FAQs.
 - [x] Neon Postgres database connected through Prisma.
 - [x] Seeded support scenarios with realistic-looking license plates.
+- [x] Expanded demo dataset with 16 customers and 25 vehicles.
 - [x] CSR portal as the default landing page.
 - [x] Customer search by name, phone, email, plate, and support-language queries.
 - [x] Customer profile with account, vehicles, subscriptions, purchase history, notes, and audit timeline.
