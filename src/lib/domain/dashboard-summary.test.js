@@ -6,7 +6,10 @@ import { createDashboardSummary } from "./dashboard-summary.js";
 test("computes dashboard stats from customer records", () => {
   const summary = createDashboardSummary([
     {
-      subscriptions: [{ status: "ACTIVE" }, { status: "OVERDUE" }],
+      subscriptions: [
+        { status: "ACTIVE", plan: { monthlyPrice: "19.99" } },
+        { status: "OVERDUE", plan: { monthlyPrice: "29.99" } },
+      ],
       purchases: [
         { type: "MEMBERSHIP_PAYMENT", status: "FAILED" },
         { type: "SINGLE_WASH", status: "PAID" },
@@ -20,7 +23,7 @@ test("computes dashboard stats from customer records", () => {
       ],
     },
     {
-      subscriptions: [{ status: "ACTIVE" }],
+      subscriptions: [{ status: "ACTIVE", plan: { monthlyPrice: "49.99" } }],
       purchases: [],
       vehicles: [{ subscriptionVehicles: [] }],
     },
@@ -31,6 +34,7 @@ test("computes dashboard stats from customer records", () => {
     activeSubscriptions: 2,
     overdueSubscriptions: 1,
     failedMembershipPayments: 1,
+    monthlyRecurringRevenue: 69.98,
     openCriticalIssues: 1,
     vehiclesCoveredByActiveSubscriptions: 1,
   });

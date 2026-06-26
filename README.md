@@ -110,9 +110,26 @@ Representative support scenarios:
 - Account editing with audit events.
 - Vehicle creation with normalized license plates and audit events.
 - Subscription cancellation, plan changes, and vehicle coverage transfer.
-- Smart Help Search over seeded FAQ articles.
+- Smart Search over local semantic vectors for customer cases and FAQ articles.
 - Browser presentation route and mobile companion demo route.
 - Vercel Analytics and Speed Insights.
+
+## Smart Search Approach
+
+The Smart Search tab uses a local KNN-style search:
+
+- Build support documents from customer records, support notes, audit events, purchases, subscriptions, and FAQ articles.
+- Tokenize and normalize the text locally.
+- Expand common support synonyms such as vehicle/car/truck, membership/subscription, and failed/declined/overdue.
+- Build TF-IDF weighted vectors per request.
+- Rank nearest documents with cosine similarity.
+
+This keeps the MVP private, free, deterministic, and deployable on Vercel without model hosting. A production upgrade path would be:
+
+1. Add `pgvector` to Postgres.
+2. Generate embeddings during seed/import or write-time updates.
+3. Use a small embedding model such as MiniLM locally in a worker, or a managed embedding API if allowed.
+4. Query nearest neighbors with vector distance and blend the score with account priority signals.
 
 ## Scripts
 
@@ -142,7 +159,7 @@ The app uses Vercel and Neon free-tier resources. Environment variable values ar
 ## MVP Tradeoffs
 
 - Mock CSR identity instead of real authentication
-- Smart Help Search over seeded FAQ articles instead of a production LLM
+- Smart Search uses local TF-IDF vectors instead of a production LLM or hosted embedding service
 - No real payment processing, proration, refunds, or tax calculations
 - Mock mobile companion is demo-only
 - AWS architecture is summarized in the presentation route, while MVP deployment targets Vercel and Neon

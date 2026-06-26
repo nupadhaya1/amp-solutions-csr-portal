@@ -1,5 +1,5 @@
-import { PortalShell } from "@/components/portal-shell";
+import { redirect } from "next/navigation";
 
 export default function CsrDashboard() {
-  return <PortalShell />;
+  redirect("/");
 }
