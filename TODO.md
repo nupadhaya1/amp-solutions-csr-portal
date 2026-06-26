@@ -7,7 +7,7 @@ Use `feature/` branches for implementation work. Keep each branch scoped to one 
 - `feature/realistic-plates-csr-actions`: realistic seeded license plates, repo docs, account edit, add vehicle, cancel subscription.
 - `feature/subscription-transfer-plan-change`: transfer vehicle coverage and change subscription plans.
 - `feature/demo-presentation-mobile`: `/presentation` walkthrough and `/mobile` companion demo.
-- `feature/final-polish-readme`: submission README, screenshots, accessibility pass, deployment notes.
+- `feature/final-polish-readme`: submission README and deployment notes.
 
 ## MVP Checklist
 
@@ -27,7 +27,7 @@ Use `feature/` branches for implementation work. Keep each branch scoped to one 
 - [x] Smart Help Search UI over seeded FAQ articles.
 - [x] Browser presentation route.
 - [x] Mobile companion demo route.
-- [ ] README submission guide with live app URL and demo script.
+- [x] README submission guide with live app URL and demo script.
 
 ## Parallel Work Suggestions
 
@@ -46,9 +46,9 @@ Use `feature/` branches for implementation work. Keep each branch scoped to one 
 
 ## Submission Checks
 
-- [ ] `npm run lint`
-- [ ] `npm test`
-- [ ] `npm run build`
-- [ ] Seeded demo data verified against the connected database.
-- [ ] No secrets committed.
-- [ ] README includes GitHub repo link, Vercel deployment link, setup steps, and tradeoffs.
+- [x] `npm run lint`
+- [x] `npm test`
+- [x] `npm run build`
+- [x] Seeded demo data verified against the connected database.
+- [x] No secrets committed.
+- [x] README includes GitHub repo link, Vercel deployment link, setup steps, and tradeoffs.
