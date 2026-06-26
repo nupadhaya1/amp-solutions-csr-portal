@@ -7,9 +7,7 @@ import {
   CreditCard,
   Grid2X2,
   Search,
-  UserRound,
   UsersRound,
-  WalletCards,
 } from "lucide-react";
 
 import { MotionPanel } from "@/components/motion-panel";
@@ -18,11 +16,6 @@ const tabs = [
   { id: "dashboard", label: "Dashboard", icon: Grid2X2 },
   { id: "customers", label: "Customer lookup", icon: UsersRound },
   { id: "smart", label: "Smart search", icon: Brain },
-];
-
-const soonItems = [
-  { label: "Subscriptions", icon: CarFront },
-  { label: "Billing", icon: WalletCards },
 ];
 
 const statIconMap = {
@@ -298,21 +291,6 @@ export function PortalShell({
                     <Icon size={20} aria-hidden="true" />
                     {tab.label}
                   </Link>
-                );
-              })}
-              {soonItems.map((item) => {
-                const Icon = item.icon;
-                return (
-                  <div
-                    className="flex min-h-12 items-center justify-between gap-3 rounded-xl px-4 text-sm font-semibold text-muted"
-                    key={item.label}
-                  >
-                    <span className="inline-flex items-center gap-3">
-                      <Icon size={20} aria-hidden="true" />
-                      {item.label}
-                    </span>
-                    <span className="rounded-full border border-border bg-card px-2 py-1 text-xs">Soon</span>
-                  </div>
                 );
               })}
             </nav>
