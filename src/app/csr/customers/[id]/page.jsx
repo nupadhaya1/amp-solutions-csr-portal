@@ -21,12 +21,24 @@ import {
 } from "@/lib/data/customer-actions";
 import { PlanChangeControl } from "@/components/plan-change-control";
 import { VehicleTransferControl } from "@/components/vehicle-transfer-control";
+import { MotionPanel } from "@/components/motion-panel";
 import { customerInclude } from "@/lib/data/customers";
 import { createCustomerProfileViewModel } from "@/lib/domain/customer-profile-view-model";
 import { prisma } from "@/lib/prisma";
 import { supportNoteSchema } from "@/lib/validation/support-note";
 
 const CSR_NAME = "Bob Roberts";
+const cardClass = "rounded-2xl border border-border bg-card p-5 shadow-sm shadow-slate-200/70";
+const innerCardClass = "rounded-2xl border border-border bg-surface p-4";
+const inputClass =
+  "h-11 rounded-xl border border-border bg-card px-3 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10";
+const textareaClass =
+  "min-h-28 rounded-xl border border-border bg-card p-3 text-sm outline-none focus:border-primary focus:ring-4 focus:ring-primary/10";
+const primaryButtonClass =
+  "inline-flex h-11 items-center justify-center rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm transition hover:-translate-y-0.5 hover:brightness-95 focus:ring-4 focus:ring-primary/20";
+const dangerButtonClass =
+  "inline-flex h-11 items-center justify-center rounded-xl border border-critical px-4 text-sm font-semibold text-critical transition hover:bg-critical-background focus:ring-4 focus:ring-critical/10";
+const pillClass = "rounded-full border border-border bg-card px-3 py-1 text-xs font-semibold";
 
 async function addSupportNote(formData) {
   "use server";
@@ -190,9 +202,11 @@ async function changePlan(formData) {
 
 function Section({ children, icon: Icon, title }) {
   return (
-    <section className="rounded-lg border border-border bg-card p-5 shadow-sm">
-      <div className="mb-4 flex items-center gap-2">
-        <Icon className="text-primary" size={20} aria-hidden="true" />
+    <section className={cardClass}>
+      <div className="mb-5 flex items-center gap-3">
+        <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-surface-muted text-primary">
+          <Icon size={20} aria-hidden="true" />
+        </span>
         <h2 className="font-semibold">{title}</h2>
       </div>
       {children}
@@ -216,31 +230,37 @@ export default async function CustomerProfilePage({ params, searchParams }) {
   const profile = createCustomerProfileViewModel(customer);
 
   return (
-    <main className="min-h-screen bg-background text-foreground">
+    <main className="min-h-screen text-foreground">
       <div className="mx-auto w-full max-w-7xl px-5 py-5 sm:px-8 lg:px-10">
-        <header className="flex flex-col gap-4 border-b border-border pb-5 lg:flex-row lg:items-end lg:justify-between">
-          <div>
-            <Link
-              className="mb-3 inline-flex items-center gap-2 text-sm font-semibold text-muted transition hover:text-primary"
-              href="/csr/search"
-            >
-              <ArrowLeft size={16} aria-hidden="true" />
-              Search
-            </Link>
-            <h1 className="text-2xl font-semibold">{profile.fullName}</h1>
-            <p className="mt-1 text-sm text-muted">
-              {profile.email} · {profile.phone}
-            </p>
-          </div>
-          <span className="w-fit rounded-full border border-border bg-card px-3 py-1 text-xs font-semibold">
-            {profile.status}
-          </span>
-        </header>
+        <MotionPanel className="rounded-3xl border border-border bg-card p-6 shadow-sm shadow-slate-200/70">
+          <header className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+            <div>
+              <Link
+                className="mb-3 inline-flex items-center gap-2 text-sm font-semibold text-muted transition hover:text-primary"
+                href="/?tab=customers"
+              >
+                <ArrowLeft size={16} aria-hidden="true" />
+                Back to customer lookup
+              </Link>
+              <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
+                {profile.fullName}
+              </h1>
+              <p className="mt-2 text-sm text-muted">
+                {profile.email} · {profile.phone}
+              </p>
+            </div>
+            <span className={`${pillClass} w-fit bg-surface`}>
+              {profile.status}
+            </span>
+          </header>
+        </MotionPanel>
 
         {profile.criticalIssue ? (
-          <section className="mt-6 rounded-lg border border-critical bg-critical-background p-5">
+          <section className="mt-6 rounded-2xl border border-critical/30 bg-critical-background p-5 shadow-sm shadow-red-100/70">
             <div className="flex items-start gap-3">
-              <ShieldAlert className="mt-0.5 text-critical" size={24} />
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-card text-critical">
+                <ShieldAlert size={24} aria-hidden="true" />
+              </span>
               <div>
                 <p className="font-semibold text-critical">
                   {profile.criticalIssue.title}
@@ -257,13 +277,17 @@ export default async function CustomerProfilePage({ params, searchParams }) {
         ) : null}
 
         {query?.note === "added" ? (
-          <div className="mt-6 rounded-lg border border-border bg-card p-4 text-sm font-semibold text-primary">
+          <div className="mt-6 rounded-2xl border border-success/30 bg-success-background p-4 text-sm font-semibold text-success">
             Support note added and audit timeline updated.
           </div>
         ) : null}
 
         {query?.action ? (
-          <div className="mt-6 rounded-lg border border-border bg-card p-4 text-sm font-semibold text-primary">
+          <div className={`mt-6 rounded-2xl border p-4 text-sm font-semibold ${
+            query.action?.startsWith("invalid")
+              ? "border-critical/30 bg-critical-background text-critical"
+              : "border-success/30 bg-success-background text-success"
+          }`}>
             {query.action === "account-updated"
               ? "Customer account updated and audit timeline updated."
               : null}
@@ -294,7 +318,7 @@ export default async function CustomerProfilePage({ params, searchParams }) {
                   <label className="grid gap-2">
                     <span className="text-sm font-semibold">First name</span>
                     <input
-                      className="h-11 rounded-md border border-border bg-background px-3 text-sm outline-none focus:border-primary"
+                      className={inputClass}
                       defaultValue={customer.firstName}
                       name="firstName"
                     />
@@ -302,7 +326,7 @@ export default async function CustomerProfilePage({ params, searchParams }) {
                   <label className="grid gap-2">
                     <span className="text-sm font-semibold">Last name</span>
                     <input
-                      className="h-11 rounded-md border border-border bg-background px-3 text-sm outline-none focus:border-primary"
+                      className={inputClass}
                       defaultValue={customer.lastName}
                       name="lastName"
                     />
@@ -310,7 +334,7 @@ export default async function CustomerProfilePage({ params, searchParams }) {
                   <label className="grid gap-2">
                     <span className="text-sm font-semibold">Email</span>
                     <input
-                      className="h-11 rounded-md border border-border bg-background px-3 text-sm outline-none focus:border-primary"
+                      className={inputClass}
                       defaultValue={profile.email}
                       name="email"
                       type="email"
@@ -319,7 +343,7 @@ export default async function CustomerProfilePage({ params, searchParams }) {
                   <label className="grid gap-2">
                     <span className="text-sm font-semibold">Phone</span>
                     <input
-                      className="h-11 rounded-md border border-border bg-background px-3 text-sm outline-none focus:border-primary"
+                      className={inputClass}
                       defaultValue={profile.phone}
                       name="phone"
                     />
@@ -330,7 +354,7 @@ export default async function CustomerProfilePage({ params, searchParams }) {
                     Created {profile.createdAt} · Updated {profile.updatedAt}
                   </p>
                   <button
-                    className="inline-flex h-11 items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:brightness-95"
+                    className={primaryButtonClass}
                     type="submit"
                   >
                     Save account
@@ -343,7 +367,7 @@ export default async function CustomerProfilePage({ params, searchParams }) {
               <div className="grid gap-4 xl:grid-cols-2">
                 <div className="grid gap-3">
                   {profile.vehicles.map((vehicle) => (
-                    <div className="rounded-md border border-border bg-background p-4" key={vehicle.id}>
+                    <div className={innerCardClass} key={vehicle.id}>
                       <p className="font-semibold">{vehicle.label}</p>
                       <p className="mt-1 text-sm text-muted">
                         {vehicle.color} · Plate {vehicle.licensePlate}
@@ -354,7 +378,7 @@ export default async function CustomerProfilePage({ params, searchParams }) {
                 </div>
                 <div className="grid gap-3">
                   {profile.subscriptions.map((subscription) => (
-                    <div className="rounded-md border border-border bg-background p-4" key={subscription.id}>
+                    <div className={innerCardClass} key={subscription.id}>
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <p className="font-semibold">{subscription.planName}</p>
@@ -362,7 +386,7 @@ export default async function CustomerProfilePage({ params, searchParams }) {
                             {subscription.monthlyPrice} · {subscription.cleaningTier}
                           </p>
                         </div>
-                        <span className="rounded-full border border-border px-3 py-1 text-xs font-semibold">
+                        <span className={pillClass}>
                           {subscription.status}
                         </span>
                       </div>
@@ -405,7 +429,7 @@ export default async function CustomerProfilePage({ params, searchParams }) {
 
                           <form
                             action={cancelSubscription}
-                            className="grid gap-2 border-t border-border pt-4"
+                            className="grid gap-3 rounded-2xl border border-critical/20 bg-critical-background/50 p-4"
                           >
                             <p className="text-sm font-semibold text-critical">
                               Cancel subscription
@@ -413,12 +437,12 @@ export default async function CustomerProfilePage({ params, searchParams }) {
                             <input type="hidden" name="customerId" value={profile.id} />
                             <input type="hidden" name="subscriptionId" value={subscription.id} />
                             <input
-                              className="h-10 rounded-md border border-border bg-card px-3 text-sm outline-none focus:border-primary"
+                              className={inputClass}
                               name="reason"
                               placeholder="Cancellation reason"
                             />
                             <button
-                              className="inline-flex h-10 items-center justify-center rounded-md border border-critical px-4 text-sm font-semibold text-critical transition hover:bg-critical-background"
+                              className={dangerButtonClass}
                               type="submit"
                             >
                               Cancel subscription
@@ -430,38 +454,38 @@ export default async function CustomerProfilePage({ params, searchParams }) {
                   ))}
                 </div>
               </div>
-              <form action={addVehicle} className="mt-5 grid gap-3 rounded-md border border-border bg-background p-4">
+              <form action={addVehicle} className="mt-5 grid gap-3 rounded-2xl border border-border bg-surface p-4">
                 <input type="hidden" name="customerId" value={profile.id} />
                 <p className="font-semibold">Add vehicle</p>
                 <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
                   <input
-                    className="h-10 rounded-md border border-border bg-card px-3 text-sm outline-none focus:border-primary"
+                    className={inputClass}
                     name="year"
                     placeholder="Year"
                   />
                   <input
-                    className="h-10 rounded-md border border-border bg-card px-3 text-sm outline-none focus:border-primary"
+                    className={inputClass}
                     name="make"
                     placeholder="Make"
                   />
                   <input
-                    className="h-10 rounded-md border border-border bg-card px-3 text-sm outline-none focus:border-primary"
+                    className={inputClass}
                     name="model"
                     placeholder="Model"
                   />
                   <input
-                    className="h-10 rounded-md border border-border bg-card px-3 text-sm outline-none focus:border-primary"
+                    className={inputClass}
                     name="color"
                     placeholder="Color"
                   />
                   <input
-                    className="h-10 rounded-md border border-border bg-card px-3 text-sm uppercase outline-none focus:border-primary"
+                    className={`${inputClass} uppercase`}
                     name="licensePlate"
                     placeholder="CZR4821"
                   />
                 </div>
                 <button
-                  className="inline-flex h-10 w-fit items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:brightness-95"
+                  className={`${primaryButtonClass} w-fit`}
                   type="submit"
                 >
                   Add vehicle
@@ -472,7 +496,7 @@ export default async function CustomerProfilePage({ params, searchParams }) {
             <Section icon={CreditCard} title="Purchase history">
               <div className="grid gap-3">
                 {profile.purchases.map((purchase) => (
-                  <div className="rounded-md border border-border bg-background p-4" key={purchase.id}>
+                  <div className={innerCardClass} key={purchase.id}>
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                       <div>
                         <p className="font-semibold">{purchase.description}</p>
@@ -496,12 +520,12 @@ export default async function CustomerProfilePage({ params, searchParams }) {
               <form action={addSupportNote} className="grid gap-3">
                 <input type="hidden" name="customerId" value={profile.id} />
                 <textarea
-                  className="min-h-28 rounded-md border border-border bg-background p-3 text-sm outline-none focus:border-primary"
+                  className={textareaClass}
                   name="note"
                   placeholder="Add a note from this support interaction"
                 />
                 <button
-                  className="inline-flex h-11 items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:brightness-95"
+                  className={primaryButtonClass}
                   type="submit"
                 >
                   Add note
@@ -512,7 +536,7 @@ export default async function CustomerProfilePage({ params, searchParams }) {
                   <p className="text-sm text-muted">No support notes yet.</p>
                 ) : (
                   profile.supportNotes.map((note) => (
-                    <div className="rounded-md border border-border bg-background p-3" key={note.id}>
+                    <div className="rounded-2xl border border-border bg-surface p-3" key={note.id}>
                       <p className="text-sm">{note.note}</p>
                       <p className="mt-2 text-xs text-muted">
                         {note.csrName} · {note.createdAt}
@@ -526,11 +550,11 @@ export default async function CustomerProfilePage({ params, searchParams }) {
             <Section icon={FileClock} title="Audit timeline">
               <div className="grid gap-3">
                 {profile.auditEvents.map((event) => (
-                  <div className="rounded-md border border-border bg-background p-3" key={event.id}>
+                  <div className="rounded-2xl border border-border bg-surface p-3" key={event.id}>
                     <p className="text-sm font-semibold">{event.type}</p>
                     <p className="mt-1 text-sm">{event.message}</p>
                     {event.detail ? (
-                      <p className="mt-2 rounded-md border border-border bg-card p-2 text-sm">
+                      <p className="mt-2 rounded-xl border border-border bg-card p-3 text-sm">
                         {event.detail}
                       </p>
                     ) : null}

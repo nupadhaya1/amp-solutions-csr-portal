@@ -6,10 +6,10 @@ import { useState } from "react";
 function OptionButton({ children, onClick, selected }) {
   return (
     <button
-      className={`flex min-h-11 items-center justify-between gap-3 rounded-md border px-3 text-left text-sm transition ${
+      className={`flex min-h-11 items-center justify-between gap-3 rounded-xl border px-3 text-left text-sm ${
         selected
-          ? "border-primary bg-background font-semibold text-foreground"
-          : "border-border bg-card text-muted hover:border-primary hover:text-foreground"
+          ? "border-primary bg-primary/5 font-semibold text-foreground shadow-sm"
+          : "border-border bg-surface text-muted hover:border-primary/50 hover:bg-card hover:text-foreground"
       }`}
       onClick={onClick}
       type="button"
@@ -32,7 +32,7 @@ export function VehicleTransferControl({
   const canTransfer = fromVehicleId && toVehicleId && fromVehicleId !== toVehicleId;
 
   return (
-    <form action={action} className="grid gap-3">
+    <form action={action} className="grid gap-3 rounded-2xl border border-border bg-card p-4">
       <input type="hidden" name="customerId" value={customerId} />
       <input type="hidden" name="subscriptionId" value={subscriptionId} />
       <input type="hidden" name="fromVehicleId" value={fromVehicleId} />
@@ -66,7 +66,7 @@ export function VehicleTransferControl({
         </div>
       </div>
       <button
-        className="inline-flex h-10 items-center justify-center rounded-md border border-border bg-card px-4 text-sm font-semibold transition hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-50"
+        className="inline-flex h-11 items-center justify-center rounded-xl border border-border bg-card px-4 text-sm font-semibold hover:border-primary hover:text-primary focus:ring-4 focus:ring-primary/10 disabled:cursor-not-allowed disabled:bg-surface disabled:text-muted disabled:opacity-60"
         disabled={!canTransfer}
         type="submit"
       >
