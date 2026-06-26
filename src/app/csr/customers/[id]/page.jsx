@@ -19,6 +19,8 @@ import {
   transferSubscriptionVehicle,
   updateCustomerAccount,
 } from "@/lib/data/customer-actions";
+import { PlanChangeControl } from "@/components/plan-change-control";
+import { VehicleTransferControl } from "@/components/vehicle-transfer-control";
 import { customerInclude } from "@/lib/data/customers";
 import { createCustomerProfileViewModel } from "@/lib/domain/customer-profile-view-model";
 import { prisma } from "@/lib/prisma";
@@ -379,73 +381,35 @@ export default async function CustomerProfilePage({ params, searchParams }) {
                       ) : null}
                       {subscription.status !== "CANCELLED" ? (
                         <div className="mt-4 grid gap-4">
-                          <form action={changePlan} className="grid gap-2">
-                            <input type="hidden" name="customerId" value={profile.id} />
-                            <input type="hidden" name="subscriptionId" value={subscription.id} />
-                            <label className="grid gap-2">
-                              <span className="text-sm font-semibold">Change plan</span>
-                              <select
-                                className="h-10 rounded-md border border-border bg-card px-3 text-sm outline-none focus:border-primary"
-                                defaultValue={subscription.planId}
-                                name="planId"
-                              >
-                                {plans.map((plan) => (
-                                  <option key={plan.id} value={plan.id}>
-                                    {plan.name} · ${Number(plan.monthlyPrice).toFixed(2)}
-                                  </option>
-                                ))}
-                              </select>
-                            </label>
-                            <button
-                              className="inline-flex h-10 items-center justify-center rounded-md border border-border bg-card px-4 text-sm font-semibold transition hover:border-primary hover:text-primary"
-                              type="submit"
-                            >
-                              Save plan
-                            </button>
-                          </form>
+                          <PlanChangeControl
+                            action={changePlan}
+                            customerId={profile.id}
+                            plans={plans.map((plan) => ({
+                              id: plan.id,
+                              name: plan.name,
+                              monthlyPrice: plan.monthlyPrice.toString(),
+                            }))}
+                            subscriptionId={subscription.id}
+                            subscriptionPlanId={subscription.planId}
+                          />
 
                           {subscription.coveredVehicles.length > 0 && profile.vehicles.length > 1 ? (
-                            <form action={transferVehicleCoverage} className="grid gap-2">
-                              <input type="hidden" name="customerId" value={profile.id} />
-                              <input type="hidden" name="subscriptionId" value={subscription.id} />
-                              <div className="grid gap-2 sm:grid-cols-2">
-                                <label className="grid gap-2">
-                                  <span className="text-sm font-semibold">From vehicle</span>
-                                  <select
-                                    className="h-10 rounded-md border border-border bg-card px-3 text-sm outline-none focus:border-primary"
-                                    name="fromVehicleId"
-                                  >
-                                    {subscription.coveredVehicles.map((vehicle) => (
-                                      <option key={vehicle.id} value={vehicle.id}>
-                                        {vehicle.label}
-                                      </option>
-                                    ))}
-                                  </select>
-                                </label>
-                                <label className="grid gap-2">
-                                  <span className="text-sm font-semibold">To vehicle</span>
-                                  <select
-                                    className="h-10 rounded-md border border-border bg-card px-3 text-sm outline-none focus:border-primary"
-                                    name="toVehicleId"
-                                  >
-                                    {profile.vehicles.map((vehicle) => (
-                                      <option key={vehicle.id} value={vehicle.id}>
-                                        {vehicle.label} · {vehicle.licensePlate}
-                                      </option>
-                                    ))}
-                                  </select>
-                                </label>
-                              </div>
-                              <button
-                                className="inline-flex h-10 items-center justify-center rounded-md border border-border bg-card px-4 text-sm font-semibold transition hover:border-primary hover:text-primary"
-                                type="submit"
-                              >
-                                Transfer coverage
-                              </button>
-                            </form>
+                            <VehicleTransferControl
+                              action={transferVehicleCoverage}
+                              coveredVehicles={subscription.coveredVehicles}
+                              customerId={profile.id}
+                              subscriptionId={subscription.id}
+                              vehicles={profile.vehicles}
+                            />
                           ) : null}
 
-                          <form action={cancelSubscription} className="grid gap-2">
+                          <form
+                            action={cancelSubscription}
+                            className="grid gap-2 border-t border-border pt-4"
+                          >
+                            <p className="text-sm font-semibold text-critical">
+                              Cancel subscription
+                            </p>
                             <input type="hidden" name="customerId" value={profile.id} />
                             <input type="hidden" name="subscriptionId" value={subscription.id} />
                             <input
@@ -565,6 +529,11 @@ export default async function CustomerProfilePage({ params, searchParams }) {
                   <div className="rounded-md border border-border bg-background p-3" key={event.id}>
                     <p className="text-sm font-semibold">{event.type}</p>
                     <p className="mt-1 text-sm">{event.message}</p>
+                    {event.detail ? (
+                      <p className="mt-2 rounded-md border border-border bg-card p-2 text-sm">
+                        {event.detail}
+                      </p>
+                    ) : null}
                     <p className="mt-2 text-xs text-muted">
                       {event.actorName} · {event.actorType} · {event.createdAt}
                     </p>
