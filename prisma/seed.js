@@ -1,6 +1,7 @@
 // @ts-check
 
 import { PrismaClient } from "@prisma/client";
+import { pathToFileURL } from "node:url";
 
 const prisma = new PrismaClient();
 
@@ -160,8 +161,8 @@ async function createCustomer({ customer, vehicles, subscription, purchases, not
   }
 }
 
-async function seedCustomers(plans) {
-  const customers = [
+export function buildSeedCustomers() {
+  return [
     {
       customer: {
         firstName: "Alex",
@@ -440,8 +441,415 @@ async function seedCustomers(plans) {
       ],
       events: [],
     },
+    {
+      customer: {
+        firstName: "Noah",
+        lastName: "Carter",
+        email: "noah.carter@example.com",
+        phone: "470-555-0172",
+        status: "ACTIVE",
+      },
+      vehicles: [
+        { year: 2023, make: "Hyundai", model: "Tucson", color: "Gray", licensePlate: "BKR2175" },
+      ],
+      subscription: {
+        planName: "Essential Wash",
+        status: "ACTIVE",
+        startedAt: date("2026-01-12"),
+        nextBillingDate: date("2026-07-12"),
+        coveredPlates: ["BKR2175"],
+      },
+      purchases: [
+        {
+          type: "MEMBERSHIP_PAYMENT",
+          status: "PAID",
+          amount: "19.99",
+          description: "Essential Wash monthly payment.",
+          purchasedAt: date("2026-06-12"),
+          licensePlate: "BKR2175",
+          subscriptionLinked: true,
+        },
+      ],
+      notes: [],
+      events: [],
+    },
+    {
+      customer: {
+        firstName: "Maya",
+        lastName: "Patel",
+        email: "maya.patel@example.com",
+        phone: "678-555-0187",
+        status: "OVERDUE",
+      },
+      vehicles: [
+        { year: 2020, make: "Mazda", model: "CX-5", color: "Red", licensePlate: "JTF6093" },
+      ],
+      subscription: {
+        planName: "Signature Wash",
+        status: "OVERDUE",
+        startedAt: date("2026-03-09"),
+        nextBillingDate: date("2026-06-09"),
+        coveredPlates: ["JTF6093"],
+      },
+      purchases: [
+        {
+          type: "MEMBERSHIP_PAYMENT",
+          status: "FAILED",
+          amount: "29.99",
+          description: "Monthly membership payment failed after card decline.",
+          purchasedAt: date("2026-06-09"),
+          licensePlate: "JTF6093",
+          subscriptionLinked: true,
+        },
+      ],
+      notes: [
+        {
+          note: "Customer asked why mobile app still shows active plan.",
+          csrName: "Bob Roberts",
+          createdAt: date("2026-06-10"),
+        },
+      ],
+      events: [
+        {
+          type: "PAYMENT_FAILED",
+          message: "Membership payment failed for Signature Wash.",
+          system: true,
+          createdAt: date("2026-06-09"),
+          metadata: { amount: "29.99", rootCause: "CARD_DECLINED" },
+        },
+        {
+          type: "SUBSCRIPTION_OVERDUE",
+          message: "Subscription marked overdue after failed payment.",
+          system: true,
+          createdAt: date("2026-06-09"),
+          metadata: { licensePlate: "JTF6093" },
+        },
+      ],
+    },
+    {
+      customer: {
+        firstName: "Daniel",
+        lastName: "Kim",
+        email: "daniel.kim@example.com",
+        phone: "770-555-0164",
+        status: "ACTIVE",
+      },
+      vehicles: [
+        { year: 2022, make: "Kia", model: "Telluride", color: "Black", licensePlate: "NVM3408" },
+      ],
+      subscription: {
+        planName: "Essential Wash",
+        status: "PAUSED",
+        startedAt: date("2026-02-20"),
+        nextBillingDate: null,
+        coveredPlates: ["NVM3408"],
+      },
+      purchases: [
+        {
+          type: "MEMBERSHIP_PAYMENT",
+          status: "PAID",
+          amount: "19.99",
+          description: "Payment before temporary subscription pause.",
+          purchasedAt: date("2026-05-20"),
+          licensePlate: "NVM3408",
+          subscriptionLinked: true,
+        },
+      ],
+      notes: [
+        {
+          note: "Subscription paused while customer is out of state.",
+          csrName: "Bob Roberts",
+          createdAt: date("2026-06-04"),
+        },
+      ],
+      events: [],
+    },
+    {
+      customer: {
+        firstName: "Olivia",
+        lastName: "Martinez",
+        email: "olivia.martinez@example.com",
+        phone: "404-555-0192",
+        status: "CANCELLED",
+      },
+      vehicles: [
+        { year: 2017, make: "Chevrolet", model: "Malibu", color: "Silver", licensePlate: "LPA7752" },
+      ],
+      subscription: {
+        planName: "Essential Wash",
+        status: "CANCELLED",
+        startedAt: date("2025-12-01"),
+        nextBillingDate: null,
+        coveredPlates: [],
+      },
+      purchases: [
+        {
+          type: "MEMBERSHIP_PAYMENT",
+          status: "PAID",
+          amount: "19.99",
+          description: "Final membership payment before cancellation.",
+          purchasedAt: date("2026-05-01"),
+          licensePlate: "LPA7752",
+          subscriptionLinked: true,
+        },
+      ],
+      notes: [
+        {
+          note: "Customer cancelled after moving away from AMP locations.",
+          csrName: "Bob Roberts",
+          createdAt: date("2026-06-02"),
+        },
+      ],
+      events: [
+        {
+          type: "SUBSCRIPTION_CANCELLED",
+          message: "Subscription cancelled by CSR.",
+          createdAt: date("2026-06-02"),
+          metadata: { reason: "Moved away from service area." },
+        },
+      ],
+    },
+    {
+      customer: {
+        firstName: "Grace",
+        lastName: "Lee",
+        email: "grace.lee@example.com",
+        phone: "678-555-0146",
+        status: "ACTIVE",
+      },
+      vehicles: [
+        { year: 2021, make: "Tesla", model: "Model 3", color: "White", licensePlate: "RCN1584" },
+        { year: 2019, make: "Toyota", model: "Highlander", color: "Blue", licensePlate: "WQH9026" },
+        { year: 2024, make: "Honda", model: "Pilot", color: "Black", licensePlate: "DMS4419" },
+        { year: 2018, make: "Subaru", model: "Forester", color: "Green", licensePlate: "KZT6840" },
+      ],
+      subscription: {
+        planName: "Family Unlimited",
+        status: "ACTIVE",
+        startedAt: date("2026-01-25"),
+        nextBillingDate: date("2026-07-25"),
+        coveredPlates: ["RCN1584", "WQH9026", "DMS4419", "KZT6840"],
+      },
+      purchases: [
+        {
+          type: "MEMBERSHIP_PAYMENT",
+          status: "PAID",
+          amount: "49.99",
+          description: "Family Unlimited monthly payment.",
+          purchasedAt: date("2026-06-25"),
+          licensePlate: "RCN1584",
+          subscriptionLinked: true,
+        },
+      ],
+      notes: [],
+      events: [],
+    },
+    {
+      customer: {
+        firstName: "Ben",
+        lastName: "Wilson",
+        email: "ben.wilson@example.com",
+        phone: "470-555-0118",
+        status: "ACTIVE",
+      },
+      vehicles: [
+        { year: 2016, make: "Ram", model: "1500", color: "Black", licensePlate: "VPL2307" },
+        { year: 2024, make: "Ram", model: "1500", color: "White", licensePlate: "YNF5186" },
+      ],
+      subscription: {
+        planName: "Signature Wash",
+        status: "ACTIVE",
+        startedAt: date("2026-04-11"),
+        nextBillingDate: date("2026-07-11"),
+        coveredPlates: ["VPL2307"],
+      },
+      purchases: [
+        {
+          type: "MEMBERSHIP_PAYMENT",
+          status: "PAID",
+          amount: "29.99",
+          description: "Signature Wash monthly payment.",
+          purchasedAt: date("2026-06-11"),
+          licensePlate: "VPL2307",
+          subscriptionLinked: true,
+        },
+      ],
+      notes: [
+        {
+          note: "Customer asked whether new truck can replace old vehicle on plan.",
+          csrName: "Bob Roberts",
+          createdAt: date("2026-06-19"),
+        },
+      ],
+      events: [
+        {
+          type: "VEHICLE_ADDED",
+          message: "New 2024 Ram 1500 added to account.",
+          createdAt: date("2026-06-19"),
+          metadata: { licensePlate: "YNF5186" },
+        },
+      ],
+    },
+    {
+      customer: {
+        firstName: "Harper",
+        lastName: "Davis",
+        email: "harper.davis@example.com",
+        phone: "404-555-0133",
+        status: "ACTIVE",
+      },
+      vehicles: [
+        { year: 2020, make: "Volkswagen", model: "Atlas", color: "White", licensePlate: "GRC7921" },
+      ],
+      subscription: {
+        planName: "Essential Wash",
+        status: "ACTIVE",
+        startedAt: date("2026-05-05"),
+        nextBillingDate: date("2026-07-05"),
+        coveredPlates: ["GRC7921"],
+      },
+      purchases: [
+        {
+          type: "SINGLE_WASH",
+          status: "REFUNDED",
+          amount: "13.00",
+          description: "Refunded wash after kiosk duplicate charge.",
+          purchasedAt: date("2026-06-17"),
+          licensePlate: "GRC7921",
+          subscriptionLinked: false,
+        },
+      ],
+      notes: [
+        {
+          note: "Refund processed after duplicate kiosk charge.",
+          csrName: "Bob Roberts",
+          createdAt: date("2026-06-17"),
+        },
+      ],
+      events: [],
+    },
+    {
+      customer: {
+        firstName: "Liam",
+        lastName: "Johnson",
+        email: "liam.johnson@example.com",
+        phone: "770-555-0186",
+        status: "ACTIVE",
+      },
+      vehicles: [
+        { year: 2023, make: "BMW", model: "X3", color: "Blue", licensePlate: "XDE4159" },
+      ],
+      subscription: {
+        planName: "Signature Wash",
+        status: "ACTIVE",
+        startedAt: date("2026-02-08"),
+        nextBillingDate: date("2026-07-08"),
+        coveredPlates: ["XDE4159"],
+      },
+      purchases: [
+        {
+          type: "COUPON_REDEMPTION",
+          status: "PAID",
+          amount: "0.00",
+          description: "Loyalty coupon redemption for tire shine add-on.",
+          purchasedAt: date("2026-06-13"),
+          licensePlate: "XDE4159",
+          subscriptionLinked: false,
+        },
+      ],
+      notes: [],
+      events: [],
+    },
+    {
+      customer: {
+        firstName: "Mia",
+        lastName: "Thompson",
+        email: "mia.thompson@example.com",
+        phone: "678-555-0191",
+        status: "ACTIVE",
+      },
+      vehicles: [
+        { year: 2021, make: "Acura", model: "RDX", color: "Gray", licensePlate: "PLM6043" },
+        { year: 2024, make: "Lexus", model: "RX", color: "Silver", licensePlate: "FHT2876" },
+      ],
+      subscription: {
+        planName: "Family Unlimited Signature",
+        status: "ACTIVE",
+        startedAt: date("2026-03-28"),
+        nextBillingDate: date("2026-07-28"),
+        coveredPlates: ["PLM6043"],
+      },
+      purchases: [
+        {
+          type: "MEMBERSHIP_PAYMENT",
+          status: "PAID",
+          amount: "69.99",
+          description: "Family Unlimited Signature monthly payment.",
+          purchasedAt: date("2026-06-28"),
+          licensePlate: "PLM6043",
+          subscriptionLinked: true,
+        },
+      ],
+      notes: [
+        {
+          note: "Customer added second vehicle but has not assigned plan coverage yet.",
+          csrName: "Bob Roberts",
+          createdAt: date("2026-06-24"),
+        },
+      ],
+      events: [
+        {
+          type: "VEHICLE_ADDED",
+          message: "New 2024 Lexus RX added to account.",
+          createdAt: date("2026-06-24"),
+          metadata: { licensePlate: "FHT2876" },
+        },
+      ],
+    },
+    {
+      customer: {
+        firstName: "Chris",
+        lastName: "Walker",
+        email: "chris.walker@example.com",
+        phone: "470-555-0169",
+        status: "ACTIVE",
+      },
+      vehicles: [
+        { year: 2018, make: "Audi", model: "Q5", color: "Black", licensePlate: "SRD8310" },
+      ],
+      subscription: {
+        planName: "Essential Wash",
+        status: "ACTIVE",
+        startedAt: date("2026-06-01"),
+        nextBillingDate: date("2026-07-01"),
+        coveredPlates: ["SRD8310"],
+      },
+      purchases: [
+        {
+          type: "SINGLE_WASH",
+          status: "PAID",
+          amount: "10.00",
+          description: "Single wash before joining Essential Wash.",
+          purchasedAt: date("2026-05-29"),
+          licensePlate: "SRD8310",
+          subscriptionLinked: false,
+        },
+      ],
+      notes: [],
+      events: [
+        {
+          type: "SUBSCRIPTION_ADDED",
+          message: "Essential Wash subscription added to account.",
+          createdAt: date("2026-06-01"),
+          metadata: { licensePlate: "SRD8310" },
+        },
+      ],
+    },
   ];
+}
 
+async function seedCustomers(plans) {
+  const customers = buildSeedCustomers();
   for (const customer of customers) {
     await createCustomer(customer, plans);
   }
@@ -535,12 +943,14 @@ async function main() {
   await seedFaqArticles();
 }
 
-main()
-  .then(async () => {
-    await prisma.$disconnect();
-  })
-  .catch(async (error) => {
-    console.error(error);
-    await prisma.$disconnect();
-    process.exit(1);
-  });
+if (import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main()
+    .then(async () => {
+      await prisma.$disconnect();
+    })
+    .catch(async (error) => {
+      console.error(error);
+      await prisma.$disconnect();
+      process.exit(1);
+    });
+}
