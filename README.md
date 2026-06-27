@@ -48,6 +48,7 @@ vercel env pull .env.development.local
 npm run db:generate
 npm run db:push
 npm run db:seed
+npm run db:seed:dashboard
 npm run dev
 ```
 
@@ -77,6 +78,16 @@ To reset seeded data during development:
 ```bash
 npm run db:reset
 ```
+
+To add historical dashboard data, run the Prisma seed first so subscription
+plans exist, then run the dashboard time-series seed:
+
+```bash
+npm run db:seed
+npm run db:seed:dashboard
+```
+
+Then open `/csr/dashboard` to review the dashboard charts and attention queue.
 
 ## Seeded Demo Data
 
@@ -144,6 +155,7 @@ npm test
 npm run db:generate
 npm run db:push
 npm run db:seed
+npm run db:seed:dashboard
 npm run db:reset
 ```
 
