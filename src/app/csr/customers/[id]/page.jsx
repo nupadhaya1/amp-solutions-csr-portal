@@ -307,14 +307,13 @@ export default async function CustomerProfilePage({ params, searchParams }) {
   const profile = createCustomerProfileViewModel(customer);
 
   return (
-    <main className="min-h-screen text-foreground">
-      <div className="mx-auto w-full max-w-7xl px-5 py-5 sm:px-8 lg:px-10">
+    <div className="w-full">
         <MotionPanel className="rounded-3xl border border-border bg-card p-6 shadow-sm shadow-slate-200/70">
           <header className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
             <div>
               <Link
                 className="mb-3 inline-flex items-center gap-2 text-sm font-semibold text-muted transition hover:text-primary"
-                href="/?tab=customers"
+                href="/csr/customers"
               >
                 <ArrowLeft size={16} aria-hidden="true" />
                 Back to customer lookup
@@ -730,7 +729,6 @@ export default async function CustomerProfilePage({ params, searchParams }) {
             </Section>
           </aside>
         </div>
-      </div>
-    </main>
+    </div>
   );
 }

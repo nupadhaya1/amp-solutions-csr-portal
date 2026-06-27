@@ -108,7 +108,7 @@ export default function MobileCompanionPage() {
         <section>
           <Link
             className="mb-4 inline-flex items-center gap-2 text-sm font-semibold text-muted transition hover:text-primary"
-            href="/"
+            href="/csr/dashboard"
           >
             <ArrowLeft size={16} aria-hidden="true" />
             Portal

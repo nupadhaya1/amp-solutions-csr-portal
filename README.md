@@ -16,7 +16,7 @@ The primary workflow is a customer calling because they cannot get a wash. The C
 
 ## Reviewer Walkthrough
 
-1. Open the live app at `/`.
+1. Open the live app at `/csr/dashboard`.
 2. Search by caller details or license plate `CZR4821`.
 3. Open the customer profile for the overdue account.
 4. Review the critical unable-to-wash banner, affected subscription, failed membership payment, and purchase history.
@@ -94,9 +94,12 @@ Representative support scenarios:
 
 ## Planned Routes
 
-- `/`: CSR portal dashboard
-- `/csr`: CSR dashboard
-- `/csr/search`: customer search
+- `/`: redirects to `/csr/dashboard`
+- `/csr`: redirects to `/csr/dashboard`
+- `/csr/dashboard`: CSR dashboard
+- `/csr/customers`: customer lookup and search
+- `/csr/search`: redirects to `/csr/customers`
+- `/csr/smart-search`: semantic customer and FAQ search
 - `/csr/customers/[id]`: customer profile
 - `/mobile`: mock mobile companion
 - `/presentation`: browser presentation
@@ -166,7 +169,7 @@ The app uses Vercel and Neon free-tier resources. Environment variable values ar
 
 ## Demo Walkthrough
 
-1. Open `/` for the CSR portal dashboard.
+1. Open `/csr/dashboard` for the CSR portal dashboard.
 2. Search by caller details or license plate `CZR4821`.
 3. Open the customer profile and review the critical unable-to-wash banner.
 4. Confirm the overdue subscription and failed membership payment.
