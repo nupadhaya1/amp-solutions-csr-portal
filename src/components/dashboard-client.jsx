@@ -1,10 +1,13 @@
 "use client";
 
 import Link from "next/link";
+import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   AlertTriangle,
   ArrowRight,
+  ArrowDownRight,
+  ArrowUpRight,
   CarFront,
   CreditCard,
   Grid2X2,
@@ -47,6 +50,34 @@ const statIconMap = {
 
 const chartTextColor = "#64748b";
 const chartGridColor = "rgba(148, 163, 184, 0.22)";
+const timeframeOptions = [
+  { value: "7d", label: "Last 7 days", months: 1 },
+  { value: "30d", label: "Last 30 days", months: 1 },
+  { value: "6m", label: "Last 6 months", months: 6 },
+  { value: "custom", label: "Custom", months: 12 },
+];
+const statAccentMap = {
+  "Total customers": {
+    icon: "bg-blue-50 text-blue-700 ring-blue-100",
+    border: "border-blue-200/80",
+    delta: "text-blue-700",
+  },
+  "Needs attention": {
+    icon: "bg-red-50 text-red-700 ring-red-100",
+    border: "border-red-200/80",
+    delta: "text-red-700",
+  },
+  "Active subscriptions": {
+    icon: "bg-emerald-50 text-emerald-700 ring-emerald-100",
+    border: "border-emerald-200/80",
+    delta: "text-emerald-700",
+  },
+  "Monthly revenue": {
+    icon: "bg-sky-50 text-sky-700 ring-sky-100",
+    border: "border-sky-200/80",
+    delta: "text-sky-700",
+  },
+};
 
 async function fetchDashboardSummary() {
   const response = await fetch("/api/dashboard");
@@ -65,6 +96,50 @@ function money(value) {
     currency: "USD",
     maximumFractionDigits: 0,
   }).format(Number(value || 0));
+}
+
+function percentChange(current, previous) {
+  if (!previous) return current > 0 ? 100 : 0;
+  return ((current - previous) / previous) * 100;
+}
+
+function latestPair(values = []) {
+  const compact = values.filter((value) => value !== null && value !== undefined);
+  return {
+    current: Number(compact.at(-1) || 0),
+    previous: Number(compact.at(-2) || 0),
+  };
+}
+
+function buildStatDeltas(charts) {
+  const customerPair = latestPair(charts?.customerGrowth?.cumulativeCustomers);
+  const attentionPair = latestPair(charts?.needsAttention?.values);
+  const subscriptionPair = latestPair(charts?.subscriptionGrowth?.cumulativeSubscriptions);
+  const revenuePair = latestPair(charts?.monthlyRevenue?.values);
+
+  return {
+    "Total customers": percentChange(customerPair.current, customerPair.previous),
+    "Needs attention": percentChange(attentionPair.current, attentionPair.previous),
+    "Active subscriptions": percentChange(subscriptionPair.current, subscriptionPair.previous),
+    "Monthly revenue": percentChange(revenuePair.current, revenuePair.previous),
+  };
+}
+
+function sliceSeries(series, timeframe) {
+  const option = timeframeOptions.find((item) => item.value === timeframe) || timeframeOptions[2];
+  const count = option.months;
+
+  return {
+    ...series,
+    labels: (series.labels || []).slice(-count),
+    values: series.values ? series.values.slice(-count) : undefined,
+    newCustomers: series.newCustomers ? series.newCustomers.slice(-count) : undefined,
+    cumulativeCustomers: series.cumulativeCustomers ? series.cumulativeCustomers.slice(-count) : undefined,
+    newSubscriptions: series.newSubscriptions ? series.newSubscriptions.slice(-count) : undefined,
+    cumulativeSubscriptions: series.cumulativeSubscriptions ? series.cumulativeSubscriptions.slice(-count) : undefined,
+    fixes: series.fixes ? series.fixes.slice(-count) : undefined,
+    recoveredRevenue: series.recoveredRevenue ? series.recoveredRevenue.slice(-count) : undefined,
+  };
 }
 
 function baseChartOptions({ stacked = false, moneyAxis = false } = {}) {
@@ -119,46 +194,105 @@ function baseChartOptions({ stacked = false, moneyAxis = false } = {}) {
   };
 }
 
-function StatCard({ stat }) {
+function StatCard({ stat, delta = 0 }) {
   const Icon = statIconMap[stat.label] || Grid2X2;
+  const accent = statAccentMap[stat.label] || statAccentMap["Total customers"];
+  const isPositive = delta >= 0;
+  const DeltaIcon = isPositive ? ArrowUpRight : ArrowDownRight;
 
   return (
-    <article className="group rounded-2xl border border-border bg-card p-5 shadow-sm shadow-slate-200/70 hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md hover:shadow-slate-200/80">
-      <div className="flex items-center gap-4">
-        <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-surface-muted text-primary ring-1 ring-primary/10 group-hover:bg-primary group-hover:text-primary-foreground">
-          <Icon size={32} aria-hidden="true" />
+    <article className={`group rounded-2xl border bg-card p-4 shadow-sm shadow-slate-200/70 hover:-translate-y-0.5 hover:shadow-md hover:shadow-slate-200/80 ${accent.border}`}>
+      <div className="flex items-center gap-3">
+        <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ring-1 ${accent.icon}`}>
+          <Icon size={21} aria-hidden="true" />
         </div>
         <div className="min-w-0">
-          <p className="text-3xl font-semibold">{stat.value}</p>
-          <p className="text-sm font-medium text-muted">{stat.label}</p>
+          <p className="text-2xl font-semibold leading-none">{stat.value}</p>
+          <p className="mt-1 text-xs font-medium text-muted">{stat.label}</p>
+          <p className={`mt-2 inline-flex items-center gap-1 text-xs font-semibold ${accent.delta}`}>
+            <DeltaIcon size={13} aria-hidden="true" />
+            {Math.abs(delta).toFixed(1)}% vs last month
+          </p>
         </div>
       </div>
     </article>
   );
 }
 
-function ChartCard({ children, eyebrow, title }) {
+function TimeframeControl({ timeframe, onTimeframeChange }) {
   return (
-    <section className="min-h-[360px] rounded-2xl border border-border bg-card p-5 shadow-sm shadow-slate-200/70">
-      <div className="mb-5">
-        <p className="text-xs font-semibold uppercase tracking-wide text-primary">{eyebrow}</p>
-        <h2 className="mt-1 text-lg font-semibold">{title}</h2>
+    <div className="flex flex-wrap items-center justify-end gap-2">
+      <select
+        className="h-9 rounded-lg border border-border bg-surface px-2 text-xs font-semibold outline-none focus:border-primary"
+        onChange={(event) => onTimeframeChange(event.target.value)}
+        value={timeframe}
+      >
+        {timeframeOptions.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+      {timeframe === "custom" ? (
+        <div className="flex items-center gap-1">
+          <input
+            className="h-9 w-28 rounded-lg border border-border bg-surface px-2 text-xs outline-none focus:border-primary"
+            type="date"
+          />
+          <input
+            className="h-9 w-28 rounded-lg border border-border bg-surface px-2 text-xs outline-none focus:border-primary"
+            type="date"
+          />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+function ChartCard({ children, eyebrow, title, timeframe, onTimeframeChange, compact = false }) {
+  return (
+    <section className={`${compact ? "min-h-[292px]" : "min-h-[330px]"} rounded-2xl border border-border bg-card p-4 shadow-sm shadow-slate-200/70`}>
+      <div className="mb-2 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-wide text-primary">{eyebrow}</p>
+          <h2 className="mt-1 text-base font-semibold">{title}</h2>
+        </div>
+        <TimeframeControl timeframe={timeframe} onTimeframeChange={onTimeframeChange} />
       </div>
-      <div className="h-[270px]">{children}</div>
+      <div className={compact ? "h-[210px]" : "h-[238px]"}>{children}</div>
     </section>
   );
 }
 
 function DashboardCharts({ charts }) {
-  const revenue = charts?.monthlyRevenue || { labels: [], values: [] };
-  const customers = charts?.customerGrowth || { labels: [], cumulativeCustomers: [] };
-  const subscriptions = charts?.subscriptionGrowth || { cumulativeSubscriptions: [] };
-  const needsAttention = charts?.needsAttention || { labels: [], values: [] };
-  const fixImpact = charts?.csrFixImpact || { labels: [], fixes: [], recoveredRevenue: [] };
+  const [timeframes, setTimeframes] = useState({
+    revenue: "6m",
+    growth: "6m",
+    attention: "6m",
+    impact: "6m",
+  });
+  const rawRevenue = charts?.monthlyRevenue || { labels: [], values: [] };
+  const rawCustomers = charts?.customerGrowth || { labels: [], cumulativeCustomers: [] };
+  const rawSubscriptions = charts?.subscriptionGrowth || { cumulativeSubscriptions: [] };
+  const rawNeedsAttention = charts?.needsAttention || { labels: [], values: [] };
+  const rawFixImpact = charts?.csrFixImpact || { labels: [], fixes: [], recoveredRevenue: [] };
+  const revenue = sliceSeries(rawRevenue, timeframes.revenue);
+  const customers = sliceSeries(rawCustomers, timeframes.growth);
+  const subscriptions = sliceSeries(rawSubscriptions, timeframes.growth);
+  const needsAttention = sliceSeries(rawNeedsAttention, timeframes.attention);
+  const fixImpact = sliceSeries(rawFixImpact, timeframes.impact);
+  const updateTimeframe = (key) => (value) =>
+    setTimeframes((current) => ({ ...current, [key]: value }));
 
   return (
-    <section className="mt-6 grid gap-5 xl:grid-cols-2">
-      <ChartCard eyebrow="Revenue" title="Revenue over time">
+    <section className="mt-4 grid gap-4 xl:grid-cols-2">
+      <ChartCard
+        compact
+        eyebrow="Revenue"
+        onTimeframeChange={updateTimeframe("revenue")}
+        timeframe={timeframes.revenue}
+        title="Revenue over time"
+      >
         <Line
           data={{
             labels: revenue.labels,
@@ -179,7 +313,13 @@ function DashboardCharts({ charts }) {
         />
       </ChartCard>
 
-      <ChartCard eyebrow="Growth" title="Customers and subscriptions">
+      <ChartCard
+        compact
+        eyebrow="Growth"
+        onTimeframeChange={updateTimeframe("growth")}
+        timeframe={timeframes.growth}
+        title="Customers and subscriptions"
+      >
         <Line
           data={{
             labels: customers.labels,
@@ -210,7 +350,12 @@ function DashboardCharts({ charts }) {
         />
       </ChartCard>
 
-      <ChartCard eyebrow="Queue" title="Needs attention over time">
+      <ChartCard
+        eyebrow="Queue"
+        onTimeframeChange={updateTimeframe("attention")}
+        timeframe={timeframes.attention}
+        title="Needs attention over time"
+      >
         <Bar
           data={{
             labels: needsAttention.labels,
@@ -228,7 +373,12 @@ function DashboardCharts({ charts }) {
         />
       </ChartCard>
 
-      <ChartCard eyebrow="CSR impact" title="Bob Roberts fix impact">
+      <ChartCard
+        eyebrow="CSR impact"
+        onTimeframeChange={updateTimeframe("impact")}
+        timeframe={timeframes.impact}
+        title="Bob Roberts fix impact"
+      >
         <Bar
           data={{
             labels: fixImpact.labels,
@@ -274,7 +424,7 @@ function DashboardCharts({ charts }) {
 
 function AttentionTable({ customers }) {
   return (
-    <section className="mt-6 overflow-hidden rounded-2xl border border-border bg-card shadow-sm shadow-slate-200/70">
+    <section className="mt-4 overflow-hidden rounded-2xl border border-border bg-card shadow-sm shadow-slate-200/70">
       <div className="flex items-center justify-between gap-4 border-b border-border bg-surface p-5">
         <div className="flex items-center gap-3">
           <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-critical-background text-critical">
@@ -402,6 +552,7 @@ export function DashboardClient() {
     gcTime: 30 * 60 * 1000,
     refetchOnWindowFocus: false,
   });
+  const statDeltas = useMemo(() => buildStatDeltas(data?.charts), [data?.charts]);
 
   if (isLoading) return <DashboardSkeleton />;
 
@@ -416,9 +567,9 @@ export function DashboardClient() {
 
   return (
     <MotionPanel>
-      <section className="grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         {(data?.stats || []).map((stat) => (
-          <StatCard key={stat.label} stat={stat} />
+          <StatCard delta={statDeltas[stat.label]} key={stat.label} stat={stat} />
         ))}
       </section>
       <DashboardCharts charts={data?.charts} />
