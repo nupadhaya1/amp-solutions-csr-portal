@@ -2,19 +2,10 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import {
-  Brain,
-  CarFront,
-  CreditCard,
-  Grid2X2,
-  LineChart,
-  Search,
-  UsersRound,
-} from "lucide-react";
+import { Brain, CarFront, CreditCard, Grid2X2, LineChart, Search, UsersRound } from "lucide-react";
 
 const navItems = [
   { href: "/csr/dashboard", label: "Dashboard", icon: Grid2X2 },
-  { href: "/csr/insights", label: "Insights", icon: LineChart },
   { href: "/csr/customers", label: "Customers", icon: UsersRound },
   { href: "/csr/customers", label: "Subscriptions", icon: CarFront },
   { href: "/csr/customers", label: "Payments", icon: CreditCard },
@@ -48,14 +39,6 @@ export function PortalShell({ children }) {
                 </div>
               </div>
             </div>
-
-            <label className="flex h-11 min-w-0 items-center gap-2 rounded-xl border border-border bg-card px-3 shadow-sm">
-              <Search className="shrink-0 text-muted" size={17} aria-hidden="true" />
-              <input
-                className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted"
-                placeholder="Search customers"
-              />
-            </label>
 
             <nav className="grid gap-2">
               {navItems.map((item) => {

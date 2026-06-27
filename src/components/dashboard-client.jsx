@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useMemo, useState } from "react";
+import * as Tabs from "@radix-ui/react-tabs";
 import { useQuery } from "@tanstack/react-query";
 import {
   AlertTriangle,
@@ -13,6 +14,7 @@ import {
   Grid2X2,
   LoaderCircle,
   RotateCcw,
+  Search,
   UsersRound,
 } from "lucide-react";
 import {
@@ -201,9 +203,8 @@ function StatCard({ stat, delta = 0 }) {
   const DeltaIcon = isPositive ? ArrowUpRight : ArrowDownRight;
 
   return (
-    <article className={`group rounded-2xl border bg-card p-3 shadow-sm shadow-slate-200/70 hover:-translate-y-0.5 hover:shadow-md hover:shadow-slate-200/80 ${accent.border}`}>
-      <div className="grid grid-cols-[1fr_86px] items-center gap-2">
-        <div className="flex min-w-0 items-center gap-3">
+    <article className={`group rounded-2xl border bg-card p-4 shadow-sm shadow-slate-200/70 hover:-translate-y-0.5 hover:shadow-md hover:shadow-slate-200/80 ${accent.border}`}>
+      <div className="flex min-w-0 items-center gap-3">
         <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ring-1 ${accent.icon}`}>
           <Icon size={21} aria-hidden="true" />
         </div>
@@ -214,33 +215,6 @@ function StatCard({ stat, delta = 0 }) {
             <DeltaIcon size={13} aria-hidden="true" />
             {Math.abs(delta).toFixed(1)}% vs last month
           </p>
-        </div>
-        </div>
-        <div className="h-14">
-          <Line
-            data={{
-              labels: stat.trendLabels || [],
-              datasets: [
-                {
-                  data: stat.trendValues || [],
-                  borderColor: isPositive ? "#16a34a" : "#dc2626",
-                  backgroundColor: "transparent",
-                  borderWidth: 2,
-                  pointRadius: 0,
-                  tension: 0.35,
-                },
-              ],
-            }}
-            options={{
-              responsive: true,
-              maintainAspectRatio: false,
-              plugins: { legend: { display: false }, tooltip: { enabled: false } },
-              scales: {
-                x: { display: false },
-                y: { display: false },
-              },
-            }}
-          />
         </div>
       </div>
     </article>
@@ -276,6 +250,33 @@ function ChartCard({ children, title, timeframe, onTimeframeChange, compact = fa
       </div>
       <div className={compact ? "h-[190px]" : "h-[218px]"}>{children}</div>
     </section>
+  );
+}
+
+function DashboardSearch() {
+  return (
+    <form
+      action="/csr/customers"
+      className="rounded-2xl border border-border bg-card p-4 shadow-sm shadow-slate-200/70"
+    >
+      <label className="grid gap-2">
+        <span className="text-sm font-semibold">Search customers</span>
+        <div className="flex min-h-12 items-center gap-3 rounded-xl border border-border bg-surface px-4 focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10">
+          <Search className="text-muted" size={18} aria-hidden="true" />
+          <input
+            className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted"
+            name="q"
+            placeholder="Find by name, phone, plate, payment issue, or subscription status..."
+          />
+          <button
+            className="hidden h-9 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:brightness-95 sm:inline-flex sm:items-center"
+            type="submit"
+          >
+            Search
+          </button>
+        </div>
+      </label>
+    </form>
   );
 }
 
@@ -511,6 +512,33 @@ function AttentionTable({ customers }) {
   );
 }
 
+function DashboardTabs({ activeTab, charts, customers, onTabChange }) {
+  return (
+    <Tabs.Root className="mt-5" onValueChange={onTabChange} value={activeTab}>
+      <Tabs.List className="flex border-b border-border" aria-label="Dashboard sections">
+        <Tabs.Trigger
+          className="-mb-px inline-flex h-11 items-center justify-center whitespace-nowrap border-b-2 border-transparent px-4 text-sm font-semibold text-muted transition hover:text-primary data-[state=active]:border-primary data-[state=active]:text-foreground"
+          value="attention"
+        >
+          Customers needing attention
+        </Tabs.Trigger>
+        <Tabs.Trigger
+          className="-mb-px inline-flex h-11 items-center justify-center whitespace-nowrap border-b-2 border-transparent px-4 text-sm font-semibold text-muted transition hover:text-primary data-[state=active]:border-primary data-[state=active]:text-foreground"
+          value="insights"
+        >
+          Insights
+        </Tabs.Trigger>
+      </Tabs.List>
+      <Tabs.Content value="attention">
+        <AttentionTable customers={customers} />
+      </Tabs.Content>
+      <Tabs.Content value="insights">
+        <DashboardCharts charts={charts} />
+      </Tabs.Content>
+    </Tabs.Root>
+  );
+}
+
 function DashboardSkeleton() {
   return (
     <MotionPanel>
@@ -550,33 +578,8 @@ function DashboardError({ message, onRetry }) {
   );
 }
 
-function buildStatTrends(charts) {
-  const dailyCustomers = sliceSeries(charts?.customerGrowth || {}, "7d");
-  const dailyAttention = sliceSeries(charts?.needsAttention || {}, "7d");
-  const dailySubscriptions = sliceSeries(charts?.subscriptionGrowth || {}, "7d");
-  const dailyRevenue = sliceSeries(charts?.monthlyRevenue || {}, "7d");
-
-  return {
-    "Total customers": {
-      labels: dailyCustomers.labels,
-      values: dailyCustomers.cumulativeCustomers,
-    },
-    "Needs attention": {
-      labels: dailyAttention.labels,
-      values: dailyAttention.values,
-    },
-    "Active subscriptions": {
-      labels: dailySubscriptions.labels,
-      values: dailySubscriptions.cumulativeSubscriptions,
-    },
-    "Monthly revenue": {
-      labels: dailyRevenue.labels,
-      values: dailyRevenue.values,
-    },
-  };
-}
-
 export function DashboardClient({ view = "dashboard" }) {
+  const [activeTab, setActiveTab] = useState(view === "insights" ? "insights" : "attention");
   const { data, error, isLoading, refetch } = useQuery({
     queryKey: ["dashboard-summary"],
     queryFn: fetchDashboardSummary,
@@ -585,7 +588,6 @@ export function DashboardClient({ view = "dashboard" }) {
     refetchOnWindowFocus: false,
   });
   const statDeltas = useMemo(() => buildStatDeltas(data?.charts), [data?.charts]);
-  const statTrends = useMemo(() => buildStatTrends(data?.charts), [data?.charts]);
 
   if (isLoading) return <DashboardSkeleton />;
 
@@ -600,30 +602,22 @@ export function DashboardClient({ view = "dashboard" }) {
 
   return (
     <MotionPanel>
-      {view === "dashboard" ? (
-        <>
-          <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-            {(data?.stats || []).map((stat) => {
-              const trend = statTrends[stat.label] || {};
-
-              return (
-                <StatCard
-                  delta={statDeltas[stat.label]}
-                  key={stat.label}
-                  stat={{
-                    ...stat,
-                    trendLabels: trend.labels,
-                    trendValues: trend.values,
-                  }}
-                />
-              );
-            })}
-          </section>
-          <AttentionTable customers={data?.criticalCustomers || []} />
-        </>
-      ) : (
-        <DashboardCharts charts={data?.charts} />
-      )}
+      <DashboardSearch />
+      <section className="mt-4 grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+        {(data?.stats || []).map((stat) => (
+          <StatCard
+            delta={statDeltas[stat.label]}
+            key={stat.label}
+            stat={stat}
+          />
+        ))}
+      </section>
+      <DashboardTabs
+        activeTab={activeTab}
+        charts={data?.charts}
+        customers={data?.criticalCustomers || []}
+        onTabChange={setActiveTab}
+      />
     </MotionPanel>
   );
 }
