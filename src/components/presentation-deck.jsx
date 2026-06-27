@@ -535,7 +535,7 @@ function ClosingSlide() {
           <p className="text-sm font-semibold text-muted">AMP CSR Command Center</p>
           <Link
             className="inline-flex h-11 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground"
-            href="/"
+            href="/csr/dashboard"
           >
             Open portal
             <ArrowRight size={16} aria-hidden="true" />
@@ -556,7 +556,7 @@ function createSlides() {
       render: () => (
         <ScenarioSlide
           caption="Search for the overdue demo customer or license plate CZR4821, then open the profile."
-          framePath="/?tab=customers&q=CZR4821"
+          framePath="/csr/customers?q=CZR4821"
           note="CSR searches by license plate, opens the profile, sees the overdue subscription and failed payment, then records the support action."
           phoneTitle="Customer mobile view"
           title="Unable to get a wash"
@@ -572,7 +572,7 @@ function createSlides() {
       render: () => (
         <ScenarioSlide
           caption="CSR opens the member profile, confirms vehicles, and transfers subscription coverage."
-          framePath="/?tab=customers&q=new%20vehicle"
+          framePath="/csr/customers?q=new%20vehicle"
           note="Vehicle and subscription actions stay on the profile so coverage changes are made with full account context."
           phoneTitle="Customer mobile view"
           title="New vehicle transfer"
@@ -588,7 +588,7 @@ function createSlides() {
       render: () => (
         <ScenarioSlide
           caption="CSR reviews purchase history, subscription status, support notes, and audit timeline."
-          framePath="/?tab=customers&q=failed%20payment"
+          framePath="/csr/customers?q=failed%20payment"
           note="CSR can update demo-safe payment details, retry the failed membership payment, restore the subscription, and leave an audit entry."
           phoneTitle="Customer billing view"
           title="Purchase / billing question"
@@ -653,7 +653,7 @@ export function PresentationDeck() {
       <div className="fixed left-0 right-0 top-0 z-20 border-b border-border bg-card/90 px-5 py-3 backdrop-blur sm:px-8">
         <div className="mx-auto flex max-w-7xl items-center justify-between gap-4">
           <div className="min-w-0">
-            <Link className="text-sm font-semibold text-primary" href="/">
+            <Link className="text-sm font-semibold text-primary" href="/csr/dashboard">
               AMP CSR Command Center
             </Link>
             <p className="truncate text-xs font-medium text-muted">
