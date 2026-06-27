@@ -63,6 +63,15 @@ def random_date_in_month(start):
     return start + timedelta(days=random.randint(0, 25), hours=random.randint(0, 8))
 
 
+def day_start(days_ago):
+    today = datetime.utcnow().replace(hour=9, minute=0, second=0, microsecond=0)
+    return today - timedelta(days=days_ago)
+
+
+def random_date_in_day(start):
+    return start + timedelta(hours=random.randint(0, 10), minutes=random.randint(0, 55))
+
+
 def money(value):
     return Decimal(value).quantize(Decimal("0.01"))
 
@@ -284,6 +293,7 @@ def main():
         "purchases": 0,
         "failed_issue_events": 0,
         "csr_fix_events": 0,
+        "daily_demo_customers": 0,
     }
 
     with psycopg.connect(database_url) as conn:
@@ -539,6 +549,219 @@ def main():
                             "PAID",
                             money(monthly_price),
                             "Recovered membership payment after CSR payment update.",
+                            fixed_at,
+                        )
+                        inserted["purchases"] += 1
+
+                        insert_audit_event(
+                            cur,
+                            make_id("eventdash"),
+                            issue_customer_id,
+                            "ACCOUNT_UPDATED",
+                            "Payment method updated and failed membership payment retried.",
+                            {
+                                "paymentMethod": {
+                                    "brand": random.choice(["Visa", "Mastercard", "Amex"]),
+                                    "last4": str(random.randint(1000, 9999)),
+                                    "expiry": "12/29",
+                                },
+                                "resolvedPayments": 1,
+                                "recoveredRevenue": str(monthly_price),
+                            },
+                            CSR_ACTOR,
+                            "CSR",
+                            fixed_at,
+                        )
+                        inserted["csr_fix_events"] += 1
+
+            # Recent daily rows give Last 7 days and Last 30 days chart filters
+            # real day-level movement instead of only month-start buckets.
+            for days_ago in reversed(range(30)):
+                day = day_start(days_ago)
+                day_number = 30 - days_ago
+                daily_customer_count = 2 + (day_number // 10) + random.randint(0, 2)
+                daily_issue_count = max(1, 2 + random.randint(-1, 2))
+                daily_fix_count = max(1, min(daily_issue_count, random.randint(1, daily_issue_count)))
+
+                for _ in range(daily_customer_count):
+                    customer_index += 1
+
+                    created_at = random_date_in_day(day)
+                    customer_id = make_id("custdash")
+                    vehicle_id = make_id("vehicledash")
+                    subscription_id = make_id("subdash")
+                    coverage_id = make_id("coverdash")
+                    plan_id, plan_name, monthly_price, _max_vehicles, _tier = random.choice(plans)
+                    make, model = random.choice(vehicles)
+                    email = f"dashboard-demo-{customer_index:04d}@example.com"
+                    plate = f"DAY{customer_index:04d}"[-7:]
+
+                    insert_customer(
+                        cur,
+                        customer_id,
+                        random.choice(first_names),
+                        random.choice(last_names),
+                        email,
+                        f"678-555-{1000 + customer_index:04d}",
+                        "ACTIVE",
+                        created_at,
+                    )
+                    inserted["customers"] += 1
+                    inserted["daily_demo_customers"] += 1
+
+                    insert_vehicle(
+                        cur,
+                        vehicle_id,
+                        customer_id,
+                        random.randint(2019, 2026),
+                        make,
+                        model,
+                        random.choice(colors),
+                        plate,
+                        created_at,
+                    )
+
+                    insert_subscription(
+                        cur,
+                        subscription_id,
+                        customer_id,
+                        plan_id,
+                        "ACTIVE",
+                        created_at,
+                        created_at + timedelta(days=30),
+                    )
+                    inserted["subscriptions"] += 1
+
+                    insert_subscription_vehicle(
+                        cur,
+                        coverage_id,
+                        subscription_id,
+                        vehicle_id,
+                        created_at,
+                    )
+
+                    insert_purchase(
+                        cur,
+                        make_id("purchasedash"),
+                        customer_id,
+                        vehicle_id,
+                        subscription_id,
+                        "MEMBERSHIP_PAYMENT",
+                        "PAID",
+                        money(monthly_price),
+                        f"{plan_name} daily dashboard membership payment.",
+                        created_at + timedelta(hours=1),
+                    )
+                    inserted["purchases"] += 1
+
+                for issue_number in range(daily_issue_count):
+                    issue_customer_id = make_id("custdash")
+                    issue_vehicle_id = make_id("vehicledash")
+                    issue_subscription_id = make_id("subdash")
+                    issue_coverage_id = make_id("coverdash")
+                    plan_id, plan_name, monthly_price, _max_vehicles, _tier = random.choice(plans)
+                    issue_date = random_date_in_day(day)
+                    was_fixed = issue_number < daily_fix_count
+
+                    customer_index += 1
+                    email = f"dashboard-demo-{customer_index:04d}@example.com"
+                    plate = f"DFX{customer_index:04d}"[-7:]
+
+                    insert_customer(
+                        cur,
+                        issue_customer_id,
+                        random.choice(first_names),
+                        random.choice(last_names),
+                        email,
+                        f"770-555-{1000 + customer_index:04d}",
+                        "ACTIVE" if was_fixed else "OVERDUE",
+                        issue_date,
+                    )
+                    inserted["customers"] += 1
+                    inserted["daily_demo_customers"] += 1
+
+                    make, model = random.choice(vehicles)
+                    insert_vehicle(
+                        cur,
+                        issue_vehicle_id,
+                        issue_customer_id,
+                        random.randint(2019, 2026),
+                        make,
+                        model,
+                        random.choice(colors),
+                        plate,
+                        issue_date,
+                    )
+
+                    insert_subscription(
+                        cur,
+                        issue_subscription_id,
+                        issue_customer_id,
+                        plan_id,
+                        "ACTIVE" if was_fixed else "OVERDUE",
+                        issue_date,
+                        issue_date + timedelta(days=30),
+                    )
+                    inserted["subscriptions"] += 1
+
+                    insert_subscription_vehicle(
+                        cur,
+                        issue_coverage_id,
+                        issue_subscription_id,
+                        issue_vehicle_id,
+                        issue_date,
+                    )
+
+                    insert_purchase(
+                        cur,
+                        make_id("purchasedash"),
+                        issue_customer_id,
+                        issue_vehicle_id,
+                        issue_subscription_id,
+                        "MEMBERSHIP_PAYMENT",
+                        "FAILED",
+                        money(monthly_price),
+                        "Daily dashboard membership payment failed.",
+                        issue_date,
+                    )
+                    inserted["purchases"] += 1
+
+                    insert_audit_event(
+                        cur,
+                        make_id("eventdash"),
+                        issue_customer_id,
+                        "PAYMENT_FAILED",
+                        "Membership payment failed.",
+                        {"amount": str(monthly_price), "rootCause": "FAILED_MEMBERSHIP_PAYMENT"},
+                        SYSTEM_ACTOR,
+                        "SYSTEM",
+                        issue_date,
+                    )
+                    insert_audit_event(
+                        cur,
+                        make_id("eventdash"),
+                        issue_customer_id,
+                        "SUBSCRIPTION_OVERDUE",
+                        "Subscription marked overdue after failed membership payment.",
+                        {"licensePlate": plate},
+                        SYSTEM_ACTOR,
+                        "SYSTEM",
+                        issue_date + timedelta(hours=1),
+                    )
+                    inserted["failed_issue_events"] += 2
+
+                    if was_fixed:
+                        fixed_at = issue_date + timedelta(hours=random.randint(2, 8))
+                        insert_purchase(
+                            cur,
+                            make_id("purchasedash"),
+                            issue_customer_id,
+                            issue_vehicle_id,
+                            issue_subscription_id,
+                            "MEMBERSHIP_PAYMENT",
+                            "PAID",
+                            money(monthly_price),
+                            "Recovered daily dashboard payment after CSR update.",
                             fixed_at,
                         )
                         inserted["purchases"] += 1

@@ -5,6 +5,11 @@ function monthKey(date) {
   return `${value.getUTCFullYear()}-${String(value.getUTCMonth() + 1).padStart(2, "0")}`;
 }
 
+function dayKey(date) {
+  const value = new Date(date);
+  return `${value.getUTCFullYear()}-${String(value.getUTCMonth() + 1).padStart(2, "0")}-${String(value.getUTCDate()).padStart(2, "0")}`;
+}
+
 function monthLabel(key) {
   const [year, month] = key.split("-").map(Number);
   return new Intl.DateTimeFormat("en-US", {
@@ -14,9 +19,17 @@ function monthLabel(key) {
   }).format(new Date(Date.UTC(year, month - 1, 1)));
 }
 
-function monthRange(monthsBack = 12) {
-  const today = new Date();
-  const start = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1, 12));
+function dayLabel(key) {
+  const [year, month, day] = key.split("-").map(Number);
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(Date.UTC(year, month - 1, day)));
+}
+
+function monthRange(monthsBack = 12, now = new Date()) {
+  const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1, 12));
   const months = [];
 
   for (let index = monthsBack - 1; index >= 0; index -= 1) {
@@ -26,6 +39,19 @@ function monthRange(monthsBack = 12) {
   }
 
   return months;
+}
+
+function dayRange(daysBack = 30, now = new Date()) {
+  const start = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate(), 12));
+  const days = [];
+
+  for (let index = daysBack - 1; index >= 0; index -= 1) {
+    const value = new Date(start);
+    value.setUTCDate(start.getUTCDate() - index);
+    days.push(dayKey(value));
+  }
+
+  return days;
 }
 
 function increment(map, key, amount = 1) {
@@ -50,49 +76,68 @@ function flattenRows(customers, field) {
  * @param {{now?: Date, months?: number}=} options
  */
 export function createDashboardCharts(customers, options = {}) {
-  const months = monthRange(options.months || 12);
+  const now = options.now || new Date();
+  const months = monthRange(options.months || 12, now);
+  const days = dayRange(options.days || 30, now);
   const monthSet = new Set(months);
+  const daySet = new Set(days);
   const labels = months.map(monthLabel);
+  const dayLabels = days.map(dayLabel);
   const purchases = flattenRows(customers, "purchases");
   const subscriptions = flattenRows(customers, "subscriptions");
   const auditEvents = flattenRows(customers, "auditEvents");
 
   const monthlyRevenue = new Map();
+  const dailyRevenue = new Map();
   const customerGrowth = new Map();
+  const dailyCustomerGrowth = new Map();
   const subscriptionGrowth = new Map();
+  const dailySubscriptionGrowth = new Map();
   const needsAttention = new Map();
+  const dailyNeedsAttention = new Map();
   const fixCounts = new Map();
+  const dailyFixCounts = new Map();
   const recoveredRevenue = new Map();
+  const dailyRecoveredRevenue = new Map();
 
   customers.forEach((customer) => {
-    const key = monthKey(customer.createdAt);
-    if (monthSet.has(key)) increment(customerGrowth, key);
+    const month = monthKey(customer.createdAt);
+    const day = dayKey(customer.createdAt);
+    if (monthSet.has(month)) increment(customerGrowth, month);
+    if (daySet.has(day)) increment(dailyCustomerGrowth, day);
   });
 
   subscriptions.forEach((subscription) => {
-    const key = monthKey(subscription.startedAt || subscription.createdAt);
-    if (monthSet.has(key)) increment(subscriptionGrowth, key);
+    const startedAt = subscription.startedAt || subscription.createdAt;
+    const month = monthKey(startedAt);
+    const day = dayKey(startedAt);
+    if (monthSet.has(month)) increment(subscriptionGrowth, month);
+    if (daySet.has(day)) increment(dailySubscriptionGrowth, day);
   });
 
   purchases.forEach((purchase) => {
-    const key = monthKey(purchase.purchasedAt || purchase.createdAt);
-    if (!monthSet.has(key)) return;
+    const purchasedAt = purchase.purchasedAt || purchase.createdAt;
+    const month = monthKey(purchasedAt);
+    const day = dayKey(purchasedAt);
 
     if (purchase.type === "MEMBERSHIP_PAYMENT" && purchase.status === "PAID") {
-      increment(monthlyRevenue, key, purchase.amount);
+      if (monthSet.has(month)) increment(monthlyRevenue, month, purchase.amount);
+      if (daySet.has(day)) increment(dailyRevenue, day, purchase.amount);
     }
 
     if (purchase.type === "MEMBERSHIP_PAYMENT" && purchase.status === "FAILED") {
-      increment(needsAttention, key);
+      if (monthSet.has(month)) increment(needsAttention, month);
+      if (daySet.has(day)) increment(dailyNeedsAttention, day);
     }
   });
 
   auditEvents.forEach((event) => {
-    const key = monthKey(event.createdAt);
-    if (!monthSet.has(key)) return;
+    const month = monthKey(event.createdAt);
+    const day = dayKey(event.createdAt);
 
     if (event.type === "PAYMENT_FAILED" || event.type === "SUBSCRIPTION_OVERDUE") {
-      increment(needsAttention, key);
+      if (monthSet.has(month)) increment(needsAttention, month);
+      if (daySet.has(day)) increment(dailyNeedsAttention, day);
     }
 
     const metadata = event.metadata || {};
@@ -103,8 +148,14 @@ export function createDashboardCharts(customers, options = {}) {
       (metadata.paymentMethod || resolvedPayments > 0);
 
     if (isPaymentFix) {
-      increment(fixCounts, key, Math.max(1, resolvedPayments));
-      increment(recoveredRevenue, key, metadata.recoveredRevenue || 0);
+      if (monthSet.has(month)) {
+        increment(fixCounts, month, Math.max(1, resolvedPayments));
+        increment(recoveredRevenue, month, metadata.recoveredRevenue || 0);
+      }
+      if (daySet.has(day)) {
+        increment(dailyFixCounts, day, Math.max(1, resolvedPayments));
+        increment(dailyRecoveredRevenue, day, metadata.recoveredRevenue || 0);
+      }
     }
   });
 
@@ -114,30 +165,59 @@ export function createDashboardCharts(customers, options = {}) {
   const previousSubscriptions = subscriptions.filter(
     (subscription) => monthKey(subscription.startedAt || subscription.createdAt) < months[0],
   ).length;
+  const previousDailyCustomers = customers.filter(
+    (customer) => dayKey(customer.createdAt) < days[0],
+  ).length;
+  const previousDailySubscriptions = subscriptions.filter(
+    (subscription) => dayKey(subscription.startedAt || subscription.createdAt) < days[0],
+  ).length;
 
   return {
     monthlyRevenue: {
       labels,
       values: months.map((month) => Number((monthlyRevenue.get(month) || 0).toFixed(2))),
+      daily: {
+        labels: dayLabels,
+        values: days.map((day) => Number((dailyRevenue.get(day) || 0).toFixed(2))),
+      },
     },
     customerGrowth: {
       labels,
       newCustomers: months.map((month) => customerGrowth.get(month) || 0),
       cumulativeCustomers: cumulativeValues(months, customerGrowth, previousCustomers),
+      daily: {
+        labels: dayLabels,
+        newCustomers: days.map((day) => dailyCustomerGrowth.get(day) || 0),
+        cumulativeCustomers: cumulativeValues(days, dailyCustomerGrowth, previousDailyCustomers),
+      },
     },
     subscriptionGrowth: {
       labels,
       newSubscriptions: months.map((month) => subscriptionGrowth.get(month) || 0),
       cumulativeSubscriptions: cumulativeValues(months, subscriptionGrowth, previousSubscriptions),
+      daily: {
+        labels: dayLabels,
+        newSubscriptions: days.map((day) => dailySubscriptionGrowth.get(day) || 0),
+        cumulativeSubscriptions: cumulativeValues(days, dailySubscriptionGrowth, previousDailySubscriptions),
+      },
     },
     needsAttention: {
       labels,
       values: months.map((month) => needsAttention.get(month) || 0),
+      daily: {
+        labels: dayLabels,
+        values: days.map((day) => dailyNeedsAttention.get(day) || 0),
+      },
     },
     csrFixImpact: {
       labels,
       fixes: months.map((month) => fixCounts.get(month) || 0),
       recoveredRevenue: months.map((month) => Number((recoveredRevenue.get(month) || 0).toFixed(2))),
+      daily: {
+        labels: dayLabels,
+        fixes: days.map((day) => dailyFixCounts.get(day) || 0),
+        recoveredRevenue: days.map((day) => Number((dailyRecoveredRevenue.get(day) || 0).toFixed(2))),
+      },
     },
   };
 }

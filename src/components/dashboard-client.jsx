@@ -51,10 +51,9 @@ const statIconMap = {
 const chartTextColor = "#64748b";
 const chartGridColor = "rgba(148, 163, 184, 0.22)";
 const timeframeOptions = [
-  { value: "7d", label: "Last 7 days", months: 1 },
-  { value: "30d", label: "Last 30 days", months: 1 },
-  { value: "6m", label: "Last 6 months", months: 6 },
-  { value: "custom", label: "Custom", months: 12 },
+  { value: "7d", label: "Last 7 days" },
+  { value: "30d", label: "Last 30 days" },
+  { value: "6m", label: "Last 6 months" },
 ];
 const statAccentMap = {
   "Total customers": {
@@ -126,19 +125,19 @@ function buildStatDeltas(charts) {
 }
 
 function sliceSeries(series, timeframe) {
-  const option = timeframeOptions.find((item) => item.value === timeframe) || timeframeOptions[2];
-  const count = option.months;
+  const source = timeframe === "6m" ? series : series.daily || series;
+  const count = timeframe === "7d" ? 7 : timeframe === "30d" ? 30 : 6;
 
   return {
-    ...series,
-    labels: (series.labels || []).slice(-count),
-    values: series.values ? series.values.slice(-count) : undefined,
-    newCustomers: series.newCustomers ? series.newCustomers.slice(-count) : undefined,
-    cumulativeCustomers: series.cumulativeCustomers ? series.cumulativeCustomers.slice(-count) : undefined,
-    newSubscriptions: series.newSubscriptions ? series.newSubscriptions.slice(-count) : undefined,
-    cumulativeSubscriptions: series.cumulativeSubscriptions ? series.cumulativeSubscriptions.slice(-count) : undefined,
-    fixes: series.fixes ? series.fixes.slice(-count) : undefined,
-    recoveredRevenue: series.recoveredRevenue ? series.recoveredRevenue.slice(-count) : undefined,
+    ...source,
+    labels: (source.labels || []).slice(-count),
+    values: source.values ? source.values.slice(-count) : undefined,
+    newCustomers: source.newCustomers ? source.newCustomers.slice(-count) : undefined,
+    cumulativeCustomers: source.cumulativeCustomers ? source.cumulativeCustomers.slice(-count) : undefined,
+    newSubscriptions: source.newSubscriptions ? source.newSubscriptions.slice(-count) : undefined,
+    cumulativeSubscriptions: source.cumulativeSubscriptions ? source.cumulativeSubscriptions.slice(-count) : undefined,
+    fixes: source.fixes ? source.fixes.slice(-count) : undefined,
+    recoveredRevenue: source.recoveredRevenue ? source.recoveredRevenue.slice(-count) : undefined,
   };
 }
 
@@ -152,7 +151,8 @@ function baseChartOptions({ stacked = false, moneyAxis = false } = {}) {
     },
     plugins: {
       legend: {
-        align: "start",
+        align: "center",
+        position: "bottom",
         labels: {
           boxHeight: 8,
           boxWidth: 8,
@@ -201,8 +201,9 @@ function StatCard({ stat, delta = 0 }) {
   const DeltaIcon = isPositive ? ArrowUpRight : ArrowDownRight;
 
   return (
-    <article className={`group rounded-2xl border bg-card p-4 shadow-sm shadow-slate-200/70 hover:-translate-y-0.5 hover:shadow-md hover:shadow-slate-200/80 ${accent.border}`}>
-      <div className="flex items-center gap-3">
+    <article className={`group rounded-2xl border bg-card p-3 shadow-sm shadow-slate-200/70 hover:-translate-y-0.5 hover:shadow-md hover:shadow-slate-200/80 ${accent.border}`}>
+      <div className="grid grid-cols-[1fr_86px] items-center gap-2">
+        <div className="flex min-w-0 items-center gap-3">
         <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl ring-1 ${accent.icon}`}>
           <Icon size={21} aria-hidden="true" />
         </div>
@@ -213,6 +214,33 @@ function StatCard({ stat, delta = 0 }) {
             <DeltaIcon size={13} aria-hidden="true" />
             {Math.abs(delta).toFixed(1)}% vs last month
           </p>
+        </div>
+        </div>
+        <div className="h-14">
+          <Line
+            data={{
+              labels: stat.trendLabels || [],
+              datasets: [
+                {
+                  data: stat.trendValues || [],
+                  borderColor: isPositive ? "#16a34a" : "#dc2626",
+                  backgroundColor: "transparent",
+                  borderWidth: 2,
+                  pointRadius: 0,
+                  tension: 0.35,
+                },
+              ],
+            }}
+            options={{
+              responsive: true,
+              maintainAspectRatio: false,
+              plugins: { legend: { display: false }, tooltip: { enabled: false } },
+              scales: {
+                x: { display: false },
+                y: { display: false },
+              },
+            }}
+          />
         </div>
       </div>
     </article>
@@ -233,33 +261,20 @@ function TimeframeControl({ timeframe, onTimeframeChange }) {
           </option>
         ))}
       </select>
-      {timeframe === "custom" ? (
-        <div className="flex items-center gap-1">
-          <input
-            className="h-9 w-28 rounded-lg border border-border bg-surface px-2 text-xs outline-none focus:border-primary"
-            type="date"
-          />
-          <input
-            className="h-9 w-28 rounded-lg border border-border bg-surface px-2 text-xs outline-none focus:border-primary"
-            type="date"
-          />
-        </div>
-      ) : null}
     </div>
   );
 }
 
-function ChartCard({ children, eyebrow, title, timeframe, onTimeframeChange, compact = false }) {
+function ChartCard({ children, title, timeframe, onTimeframeChange, compact = false }) {
   return (
-    <section className={`${compact ? "min-h-[292px]" : "min-h-[330px]"} rounded-2xl border border-border bg-card p-4 shadow-sm shadow-slate-200/70`}>
-      <div className="mb-2 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+    <section className={`${compact ? "min-h-[260px]" : "min-h-[300px]"} rounded-2xl border border-border bg-card p-4 shadow-sm shadow-slate-200/70`}>
+      <div className="mb-1 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-wide text-primary">{eyebrow}</p>
-          <h2 className="mt-1 text-base font-semibold">{title}</h2>
+          <h2 className="text-base font-semibold">{title}</h2>
         </div>
         <TimeframeControl timeframe={timeframe} onTimeframeChange={onTimeframeChange} />
       </div>
-      <div className={compact ? "h-[210px]" : "h-[238px]"}>{children}</div>
+      <div className={compact ? "h-[190px]" : "h-[218px]"}>{children}</div>
     </section>
   );
 }
@@ -288,7 +303,6 @@ function DashboardCharts({ charts }) {
     <section className="mt-4 grid gap-4 xl:grid-cols-2">
       <ChartCard
         compact
-        eyebrow="Revenue"
         onTimeframeChange={updateTimeframe("revenue")}
         timeframe={timeframes.revenue}
         title="Revenue over time"
@@ -315,7 +329,6 @@ function DashboardCharts({ charts }) {
 
       <ChartCard
         compact
-        eyebrow="Growth"
         onTimeframeChange={updateTimeframe("growth")}
         timeframe={timeframes.growth}
         title="Customers and subscriptions"
@@ -351,7 +364,6 @@ function DashboardCharts({ charts }) {
       </ChartCard>
 
       <ChartCard
-        eyebrow="Queue"
         onTimeframeChange={updateTimeframe("attention")}
         timeframe={timeframes.attention}
         title="Needs attention over time"
@@ -374,7 +386,6 @@ function DashboardCharts({ charts }) {
       </ChartCard>
 
       <ChartCard
-        eyebrow="CSR impact"
         onTimeframeChange={updateTimeframe("impact")}
         timeframe={timeframes.impact}
         title="Bob Roberts fix impact"
@@ -503,19 +514,14 @@ function AttentionTable({ customers }) {
 function DashboardSkeleton() {
   return (
     <MotionPanel>
-      <header className="rounded-3xl border border-border bg-card px-6 py-7 shadow-sm shadow-slate-200/70">
-        <div className="h-4 w-20 rounded bg-surface-muted" />
-        <div className="mt-4 h-10 w-full max-w-sm rounded bg-surface-muted" />
-        <div className="mt-4 h-5 w-full max-w-xl rounded bg-surface-muted" />
-      </header>
-      <section className="mt-6 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
+      <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         {[0, 1, 2, 3].map((item) => (
           <div
-            className="h-36 rounded-2xl border border-border bg-card p-5 shadow-sm shadow-slate-200/70"
+            className="h-24 rounded-2xl border border-border bg-card p-4 shadow-sm shadow-slate-200/70"
             key={item}
           >
             <LoaderCircle className="animate-spin text-muted" size={24} aria-hidden="true" />
-            <div className="mt-8 h-8 w-24 rounded bg-surface-muted" />
+            <div className="mt-4 h-6 w-24 rounded bg-surface-muted" />
             <div className="mt-3 h-4 w-32 rounded bg-surface-muted" />
           </div>
         ))}
@@ -544,7 +550,33 @@ function DashboardError({ message, onRetry }) {
   );
 }
 
-export function DashboardClient() {
+function buildStatTrends(charts) {
+  const dailyCustomers = sliceSeries(charts?.customerGrowth || {}, "7d");
+  const dailyAttention = sliceSeries(charts?.needsAttention || {}, "7d");
+  const dailySubscriptions = sliceSeries(charts?.subscriptionGrowth || {}, "7d");
+  const dailyRevenue = sliceSeries(charts?.monthlyRevenue || {}, "7d");
+
+  return {
+    "Total customers": {
+      labels: dailyCustomers.labels,
+      values: dailyCustomers.cumulativeCustomers,
+    },
+    "Needs attention": {
+      labels: dailyAttention.labels,
+      values: dailyAttention.values,
+    },
+    "Active subscriptions": {
+      labels: dailySubscriptions.labels,
+      values: dailySubscriptions.cumulativeSubscriptions,
+    },
+    "Monthly revenue": {
+      labels: dailyRevenue.labels,
+      values: dailyRevenue.values,
+    },
+  };
+}
+
+export function DashboardClient({ view = "dashboard" }) {
   const { data, error, isLoading, refetch } = useQuery({
     queryKey: ["dashboard-summary"],
     queryFn: fetchDashboardSummary,
@@ -553,6 +585,7 @@ export function DashboardClient() {
     refetchOnWindowFocus: false,
   });
   const statDeltas = useMemo(() => buildStatDeltas(data?.charts), [data?.charts]);
+  const statTrends = useMemo(() => buildStatTrends(data?.charts), [data?.charts]);
 
   if (isLoading) return <DashboardSkeleton />;
 
@@ -567,13 +600,30 @@ export function DashboardClient() {
 
   return (
     <MotionPanel>
-      <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
-        {(data?.stats || []).map((stat) => (
-          <StatCard delta={statDeltas[stat.label]} key={stat.label} stat={stat} />
-        ))}
-      </section>
-      <DashboardCharts charts={data?.charts} />
-      <AttentionTable customers={data?.criticalCustomers || []} />
+      {view === "dashboard" ? (
+        <>
+          <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
+            {(data?.stats || []).map((stat) => {
+              const trend = statTrends[stat.label] || {};
+
+              return (
+                <StatCard
+                  delta={statDeltas[stat.label]}
+                  key={stat.label}
+                  stat={{
+                    ...stat,
+                    trendLabels: trend.labels,
+                    trendValues: trend.values,
+                  }}
+                />
+              );
+            })}
+          </section>
+          <AttentionTable customers={data?.criticalCustomers || []} />
+        </>
+      ) : (
+        <DashboardCharts charts={data?.charts} />
+      )}
     </MotionPanel>
   );
 }

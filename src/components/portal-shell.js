@@ -7,12 +7,14 @@ import {
   CarFront,
   CreditCard,
   Grid2X2,
+  LineChart,
   Search,
   UsersRound,
 } from "lucide-react";
 
 const navItems = [
   { href: "/csr/dashboard", label: "Dashboard", icon: Grid2X2 },
+  { href: "/csr/insights", label: "Insights", icon: LineChart },
   { href: "/csr/customers", label: "Customers", icon: UsersRound },
   { href: "/csr/customers", label: "Subscriptions", icon: CarFront },
   { href: "/csr/customers", label: "Payments", icon: CreditCard },

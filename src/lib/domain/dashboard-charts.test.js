@@ -47,7 +47,7 @@ test("aggregates dashboard chart data from existing customer rows", () => {
         ],
       },
     ],
-    { months: 2 },
+    { months: 2, days: 7, now: new Date("2026-06-27T12:00:00.000Z") },
   );
 
   assert.deepEqual(charts.monthlyRevenue.values, [29.99, 0]);
@@ -58,4 +58,6 @@ test("aggregates dashboard chart data from existing customer rows", () => {
   assert.deepEqual(charts.needsAttention.values, [0, 2]);
   assert.deepEqual(charts.csrFixImpact.fixes, [0, 1]);
   assert.deepEqual(charts.csrFixImpact.recoveredRevenue, [0, 29.99]);
+  assert.equal(charts.monthlyRevenue.daily.labels.length, 7);
+  assert.equal(charts.needsAttention.daily.values.at(-1), 0);
 });
