@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   flexRender,
   getCoreRowModel,
@@ -26,14 +26,20 @@ import {
   UsersRound,
 } from "lucide-react";
 
+import {
+  clearRememberedCustomerSearch,
+  getRememberedCustomerSearch,
+  setRememberedCustomerSearch,
+} from "@/lib/customer-search-session";
+
 const pillStyles = {
   critical: "bg-critical-background text-critical",
   success: "bg-success-background text-success",
 };
 
 const statAccentMap = {
-  total: "bg-blue-50 text-blue-700 ring-blue-100",
-  filtered: "bg-sky-50 text-sky-700 ring-sky-100",
+  total: "bg-accent/10 text-primary ring-accent/15",
+  filtered: "bg-primary/10 text-primary ring-primary/15",
   attention: "bg-red-50 text-red-700 ring-red-100",
   overdue: "bg-amber-50 text-amber-700 ring-amber-100",
   payment: "bg-rose-50 text-rose-700 ring-rose-100",
@@ -105,7 +111,30 @@ export function CustomerTable({ rows, summary, filters }) {
   const [sorting, setSorting] = useState([{ id: "priorityRank", desc: false }]);
   const [globalFilter, setGlobalFilter] = useState(filters.q || "");
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
-  const currentSearch = String(globalFilter || filters.q || "").trim();
+  const currentSearch = String(globalFilter || "").trim();
+
+  useEffect(() => {
+    const routeQuery = String(filters.q || "").trim();
+
+    if (routeQuery) {
+      setGlobalFilter(routeQuery);
+      return;
+    }
+
+    const rememberedQuery = getRememberedCustomerSearch();
+    if (rememberedQuery) {
+      setGlobalFilter(rememberedQuery);
+    }
+  }, [filters.q]);
+
+  useEffect(() => {
+    if (currentSearch) {
+      setRememberedCustomerSearch(currentSearch);
+      return;
+    }
+
+    clearRememberedCustomerSearch();
+  }, [currentSearch]);
 
   const columns = useMemo(
     () => [
@@ -170,7 +199,7 @@ export function CustomerTable({ rows, summary, filters }) {
         cell: ({ row }) => (
           <Link
             className="inline-flex items-center gap-2 whitespace-nowrap font-semibold text-primary hover:underline"
-            href={`/csr/customers/${row.original.id}${currentSearch ? `?returnQuery=${encodeURIComponent(currentSearch)}` : ""}`}
+            href={`/csr/customers/${row.original.id}`}
           >
             Open profile
             <ArrowRight size={14} aria-hidden="true" />
@@ -178,7 +207,7 @@ export function CustomerTable({ rows, summary, filters }) {
         ),
       },
     ],
-    [currentSearch],
+    [],
   );
 
   // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table keeps callback APIs on the table instance; this component owns that instance locally.
@@ -256,21 +285,27 @@ export function CustomerTable({ rows, summary, filters }) {
             <input
               className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted"
               onChange={(event) => {
-                setGlobalFilter(event.target.value);
+                const nextValue = event.target.value;
+                setGlobalFilter(nextValue);
                 table.setPageIndex(0);
               }}
               placeholder="Filter customer grid by name, phone, email, red Honda, plate, payment issue..."
               value={globalFilter ?? ""}
             />
           </label>
-          <Link
+          <button
             aria-label="Clear search"
             className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-semibold transition hover:border-primary hover:text-primary"
-            href="/csr/customers"
+            onClick={() => {
+              clearRememberedCustomerSearch();
+              setGlobalFilter("");
+              table.setPageIndex(0);
+            }}
+            type="button"
           >
             <FilterX size={16} aria-hidden="true" />
             Clear search
-          </Link>
+          </button>
         </div>
       </div>
 

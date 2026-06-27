@@ -91,7 +91,7 @@ Then open `/csr/dashboard` to review the dashboard charts and attention queue.
 
 ## Seeded Demo Data
 
-The demo seed includes 16 customers, 25 vehicles, 16 subscriptions, 20 purchases, support notes, audit events, and 9 FAQ articles.
+The current demo dataset includes 220 customers plus related vehicles, subscriptions, purchases, support notes, audit events, and 9 FAQ articles.
 
 Representative support scenarios:
 

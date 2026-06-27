@@ -60,6 +60,7 @@ function getPaymentSummary(customer) {
 export function createCustomerProfileViewModel(customer) {
   return {
     id: customer.id,
+    memberId: customer.memberId || customer.id,
     fullName: `${customer.firstName} ${customer.lastName}`,
     email: customer.email,
     phone: customer.phone,

@@ -66,12 +66,13 @@ test("dashboard customer search supports debounced fuzzy autocomplete", () => {
   assert.match(searchSource, /role="option"/);
   assert.match(searchSource, /ArrowDown/);
   assert.match(searchSource, /ArrowUp/);
-  assert.match(searchSource, /returnQuery/);
+  assert.match(searchSource, /setRememberedCustomerSearch/);
   assert.match(searchSource, /bg-primary\/15/);
   assert.match(searchSource, /hover:bg-primary\/10/);
   assert.match(searchSource, /Clear search/);
   assert.match(searchSource, /LoaderCircle/);
   assert.match(searchSource, /disabled=\{isSearching\}/);
+  assert.doesNotMatch(searchSource, /returnQuery/);
   assert.doesNotMatch(searchSource, />Searching</);
 });
 

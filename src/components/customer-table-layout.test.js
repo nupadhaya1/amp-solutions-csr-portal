@@ -24,6 +24,13 @@ test("customer page uses compact header, stat cards, and a single grid search", 
   assert.doesNotMatch(source, /name="licensePlate"/);
 });
 
+test("customer page restores and clears the shared remembered search query", () => {
+  assert.match(source, /getRememberedCustomerSearch/);
+  assert.match(source, /setRememberedCustomerSearch/);
+  assert.match(source, /clearRememberedCustomerSearch/);
+  assert.doesNotMatch(source, /returnQuery=/);
+});
+
 test("customer grid exposes the requested operational columns", () => {
   assert.match(source, /header: "Customer"/);
   assert.match(source, /header: "Contact"/);

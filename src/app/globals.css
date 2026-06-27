@@ -1,24 +1,24 @@
 @import "tailwindcss";
 
 :root {
-  --background: #d9d9d9;
-  --foreground: #000000;
+  --background: #f4f7fb;
+  --foreground: #061b33;
   --card: #ffffff;
-  --muted: #4e5962;
-  --border: #c7ced3;
-  --primary: #176378;
+  --muted: #526476;
+  --border: #d7e2ec;
+  --primary: #003264;
   --primary-foreground: #ffffff;
-  --accent: #5ba6a9;
+  --accent: #0b75e1;
   --critical: #b42318;
   --critical-background: #fff3f1;
   --success: #067647;
   --success-background: #ecfdf3;
   --warning: #b54708;
   --warning-background: #fffaeb;
-  --surface: #f2f4f5;
-  --surface-muted: #eceff1;
-  --ring: #5ba6a9;
-  --sidebar: #f6f7f7;
+  --surface: #eef5fc;
+  --surface-muted: #e6f0fa;
+  --ring: #0b75e1;
+  --sidebar: #f7f9fc;
 }
 
 @theme inline {
@@ -54,9 +54,9 @@ html {
 
 body {
   background:
-    radial-gradient(circle at top left, rgba(91, 166, 169, 0.12), transparent 24rem),
-    radial-gradient(circle at top right, rgba(23, 99, 120, 0.08), transparent 20rem),
-    linear-gradient(180deg, #f8f9f9 0%, #eeefef 18%, var(--background) 100%);
+    radial-gradient(circle at top left, rgba(11, 117, 225, 0.12), transparent 24rem),
+    radial-gradient(circle at top right, rgba(0, 50, 100, 0.10), transparent 22rem),
+    linear-gradient(180deg, #f8fbff 0%, #eef4fa 28%, var(--background) 100%);
   color: var(--foreground);
   text-rendering: optimizeLegibility;
 }
@@ -66,7 +66,7 @@ body {
 }
 
 ::selection {
-  background: rgba(91, 166, 169, 0.24);
+  background: rgba(11, 117, 225, 0.22);
   color: var(--foreground);
 }
 

@@ -33,6 +33,10 @@ import {
 import { Bar, Line } from "react-chartjs-2";
 
 import { MotionPanel } from "@/components/motion-panel";
+import {
+  clearRememberedCustomerSearch,
+  setRememberedCustomerSearch,
+} from "@/lib/customer-search-session";
 
 ChartJS.register(
   CategoryScale,
@@ -61,9 +65,9 @@ const timeframeOptions = [
 ];
 const statAccentMap = {
   "Total customers": {
-    icon: "bg-blue-50 text-blue-700 ring-blue-100",
-    border: "border-blue-200/80",
-    delta: "text-blue-700",
+    icon: "bg-accent/10 text-primary ring-accent/15",
+    border: "border-accent/25",
+    delta: "text-primary",
   },
   "Needs attention": {
     icon: "bg-red-50 text-red-700 ring-red-100",
@@ -76,9 +80,9 @@ const statAccentMap = {
     delta: "text-emerald-700",
   },
   "Monthly revenue": {
-    icon: "bg-sky-50 text-sky-700 ring-sky-100",
-    border: "border-sky-200/80",
-    delta: "text-sky-700",
+    icon: "bg-primary/10 text-primary ring-primary/15",
+    border: "border-primary/20",
+    delta: "text-primary",
   },
 };
 
@@ -305,6 +309,7 @@ function DashboardSearch() {
   function handleQueryChange(event) {
     const nextQuery = event.target.value;
     setQuery(nextQuery);
+    setRememberedCustomerSearch(nextQuery);
 
     if (nextQuery.trim().length < 2) {
       setResults([]);
@@ -318,16 +323,15 @@ function DashboardSearch() {
     setResults([]);
     setActiveIndex(-1);
     setIsSearching(false);
+    clearRememberedCustomerSearch();
   }
 
   function customerProfileHref(customer) {
-    const params = new URLSearchParams();
-    if (trimmedQuery) params.set("returnQuery", trimmedQuery);
-    const suffix = params.toString() ? `?${params}` : "";
-    return `/csr/customers/${customer.id}${suffix}`;
+    return `/csr/customers/${customer.id}`;
   }
 
   function openCustomer(customer) {
+    setRememberedCustomerSearch(trimmedQuery);
     router.push(customerProfileHref(customer));
   }
 
@@ -335,6 +339,7 @@ function DashboardSearch() {
     const params = new URLSearchParams();
     if (trimmedQuery) params.set("q", trimmedQuery);
     const suffix = params.toString() ? `?${params}` : "";
+    setRememberedCustomerSearch(trimmedQuery);
     router.push(`/csr/customers${suffix}`);
   }
 

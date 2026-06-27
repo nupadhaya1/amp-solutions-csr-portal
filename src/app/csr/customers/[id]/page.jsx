@@ -1,7 +1,6 @@
 import { revalidatePath } from "next/cache";
 import { notFound, redirect } from "next/navigation";
 
-import { CustomerWorkspaceTabs } from "@/components/customer-workspace-tabs";
 import { CustomerDashboardLayout } from "@/components/customer/customer-dashboard-layout.jsx";
 import {
   addCustomerVehicle,
@@ -330,36 +329,28 @@ export default async function CustomerProfilePage({ params, searchParams }) {
     orderBy: [{ monthlyPrice: "asc" }, { name: "asc" }],
   });
   const profile = createCustomerDashboardViewModel(customer, plans);
-  const returnQuery = String(query?.returnQuery || "").trim();
-  const backHref = returnQuery ? `/csr/customers?q=${encodeURIComponent(returnQuery)}` : "";
 
   return (
-    <div className="space-y-4">
-      <CustomerWorkspaceTabs
-        activeCustomerName={profile.fullName}
-        activeTab="profile"
-      />
-      <CustomerDashboardLayout
-        addSupportNoteAction={addSupportNote}
-        addVehicleAction={addVehicle}
-        backHref={backHref}
-        cancelSubscriptionAction={cancelSubscription}
-        changePlanAction={changePlan}
-        customer={profile}
-        messages={{
-          action: String(query?.action || ""),
-          note: String(query?.note || ""),
-        }}
-        plans={plans.map((plan) => ({
-          id: plan.id,
-          name: plan.name,
-          monthlyPrice: plan.monthlyPrice.toString(),
-        }))}
-        retryFailedChargeAction={retryFailedCharge}
-        transferVehicleAction={transferVehicleCoverage}
-        updateAccountAction={updateAccount}
-        updatePaymentAction={updatePaymentMethod}
-      />
-    </div>
+    <CustomerDashboardLayout
+      addSupportNoteAction={addSupportNote}
+      addVehicleAction={addVehicle}
+      backHref="/csr/customers"
+      cancelSubscriptionAction={cancelSubscription}
+      changePlanAction={changePlan}
+      customer={profile}
+      messages={{
+        action: String(query?.action || ""),
+        note: String(query?.note || ""),
+      }}
+      plans={plans.map((plan) => ({
+        id: plan.id,
+        name: plan.name,
+        monthlyPrice: plan.monthlyPrice.toString(),
+      }))}
+      retryFailedChargeAction={retryFailedCharge}
+      transferVehicleAction={transferVehicleCoverage}
+      updateAccountAction={updateAccount}
+      updatePaymentAction={updatePaymentMethod}
+    />
   );
 }

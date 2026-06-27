@@ -73,6 +73,12 @@ function humanizeEnum(value) {
     .join(" ");
 }
 
+function purchaseStatusTone(status) {
+  if (status === "FAILED") return "critical";
+  if (status === "REFUNDED") return "warning";
+  return "success";
+}
+
 function inferNoteTag(note) {
   const text = String(note || "").toLowerCase();
   if (text.includes("bill") || text.includes("card") || text.includes("payment")) return "Billing";
@@ -284,10 +290,17 @@ export function createCustomerDashboardViewModel(customer, plans = []) {
     purchases: (customer.purchases || []).map((purchase) => ({
       id: purchase.id,
       type: purchase.type,
+      typeLabel: humanizeEnum(purchase.type),
       status: purchase.status,
+      statusLabel: humanizeEnum(purchase.status),
+      statusTone: purchaseStatusTone(purchase.status),
       amount: formatMoney(purchase.amount),
       description: purchase.description,
       purchasedAt: formatDate(purchase.purchasedAt),
+      vehicleLabel: purchase.vehicle
+        ? `${purchase.vehicle.year} ${purchase.vehicle.make} ${purchase.vehicle.model} · ${purchase.vehicle.licensePlate}`
+        : "Account-level",
+      subscriptionPlanName: purchase.subscription?.plan?.name || "",
     })),
   };
 

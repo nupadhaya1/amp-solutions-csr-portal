@@ -29,6 +29,14 @@ export const customerInclude = {
     orderBy: { createdAt: "desc" },
   },
   purchases: {
+    include: {
+      vehicle: true,
+      subscription: {
+        include: {
+          plan: true,
+        },
+      },
+    },
     orderBy: { purchasedAt: "desc" },
   },
   supportNotes: {
