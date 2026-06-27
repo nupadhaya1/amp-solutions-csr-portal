@@ -1,4 +1,5 @@
 import { CustomerTable } from "@/components/customer-table";
+import { CustomerWorkspaceTabs } from "@/components/customer-workspace-tabs";
 import { MotionPanel } from "@/components/motion-panel";
 import { listCustomersForSupport } from "@/lib/data/customers";
 import { getCustomerLookupResults } from "@/lib/domain/customer-lookup-view-model";
@@ -21,7 +22,8 @@ export default async function CustomerLookupPage({ searchParams }) {
   });
 
   return (
-    <MotionPanel>
+    <MotionPanel className="grid gap-4">
+      <CustomerWorkspaceTabs activeTab="customers" />
       <CustomerTable
         filters={filters}
         rows={tableViewModel.rows}

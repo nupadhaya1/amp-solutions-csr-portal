@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import * as Tabs from "@radix-ui/react-tabs";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -16,6 +17,7 @@ import {
   RotateCcw,
   Search,
   UsersRound,
+  X,
 } from "lucide-react";
 import {
   BarElement,
@@ -239,37 +241,209 @@ function TimeframeControl({ timeframe, onTimeframeChange }) {
   );
 }
 
-function ChartCard({ children, title, timeframe, onTimeframeChange, compact = false }) {
+function ChartCard({ children, title }) {
   return (
-    <section className={`${compact ? "min-h-[260px]" : "min-h-[300px]"} rounded-2xl border border-border bg-card p-4 shadow-sm shadow-slate-200/70`}>
-      <div className="mb-1 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
-        <div>
-          <h2 className="text-base font-semibold">{title}</h2>
-        </div>
-        <TimeframeControl timeframe={timeframe} onTimeframeChange={onTimeframeChange} />
+    <section className="min-h-[380px] rounded-2xl border border-border bg-card p-5 shadow-sm shadow-slate-200/70">
+      <div className="mb-3">
+        <h2 className="text-base font-semibold">{title}</h2>
       </div>
-      <div className={compact ? "h-[190px]" : "h-[218px]"}>{children}</div>
+      <div className="h-[300px]">{children}</div>
     </section>
   );
 }
 
 function DashboardSearch() {
+  const router = useRouter();
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState([]);
+  const [activeIndex, setActiveIndex] = useState(-1);
+  const [isSearching, setIsSearching] = useState(false);
+  const trimmedQuery = query.trim();
+  const showResults = trimmedQuery.length >= 2 && results.length > 0;
+
+  useEffect(() => {
+    if (trimmedQuery.length < 2) {
+      return undefined;
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(async () => {
+      setIsSearching(true);
+
+      try {
+        const params = new URLSearchParams({ q: trimmedQuery, limit: "6" });
+        const response = await fetch(`/api/customers/search?${params}`, {
+          signal: controller.signal,
+        });
+        const payload = await response.json();
+
+        if (!response.ok || payload.error) {
+          throw new Error(payload.error || "Unable to search customers.");
+        }
+
+        const nextResults = payload.data?.results || [];
+        setResults(nextResults);
+        setActiveIndex(nextResults.length > 0 ? 0 : -1);
+      } catch (error) {
+        if (error.name !== "AbortError") {
+          setResults([]);
+          setActiveIndex(-1);
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setIsSearching(false);
+        }
+      }
+    }, 250);
+
+    return () => {
+      controller.abort();
+      clearTimeout(timeoutId);
+    };
+  }, [trimmedQuery]);
+
+  function handleQueryChange(event) {
+    const nextQuery = event.target.value;
+    setQuery(nextQuery);
+
+    if (nextQuery.trim().length < 2) {
+      setResults([]);
+      setActiveIndex(-1);
+      setIsSearching(false);
+    }
+  }
+
+  function clearSearch() {
+    setQuery("");
+    setResults([]);
+    setActiveIndex(-1);
+    setIsSearching(false);
+  }
+
+  function customerProfileHref(customer) {
+    const params = new URLSearchParams();
+    if (trimmedQuery) params.set("returnQuery", trimmedQuery);
+    const suffix = params.toString() ? `?${params}` : "";
+    return `/csr/customers/${customer.id}${suffix}`;
+  }
+
+  function openCustomer(customer) {
+    router.push(customerProfileHref(customer));
+  }
+
+  function openCustomerResults() {
+    const params = new URLSearchParams();
+    if (trimmedQuery) params.set("q", trimmedQuery);
+    const suffix = params.toString() ? `?${params}` : "";
+    router.push(`/csr/customers${suffix}`);
+  }
+
+  function handleSubmit(event) {
+    event.preventDefault();
+    const selectedCustomer = results[activeIndex];
+
+    if (selectedCustomer) {
+      openCustomer(selectedCustomer);
+      return;
+    }
+
+    openCustomerResults();
+  }
+
+  function handleKeyDown(event) {
+    if (!results.length) return;
+
+    if (event.key === "ArrowDown") {
+      event.preventDefault();
+      setActiveIndex((current) => (current + 1) % results.length);
+    }
+
+    if (event.key === "ArrowUp") {
+      event.preventDefault();
+      setActiveIndex((current) => (current <= 0 ? results.length - 1 : current - 1));
+    }
+
+    if (event.key === "Escape") {
+      setResults([]);
+      setActiveIndex(-1);
+    }
+  }
+
   return (
     <form
       action="/csr/customers"
       className="rounded-2xl border border-border bg-card p-4 shadow-sm shadow-slate-200/70"
+      onSubmit={handleSubmit}
     >
       <label className="grid gap-2">
         <span className="text-sm font-semibold">Search customers</span>
-        <div className="flex min-h-12 items-center gap-3 rounded-xl border border-border bg-surface px-4 focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10">
-          <Search className="text-muted" size={18} aria-hidden="true" />
-          <input
-            className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted"
-            name="q"
-            placeholder="Find by name, phone, plate, payment issue, or subscription status..."
-          />
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="relative min-w-0 flex-1">
+            <div className="flex min-h-12 items-center gap-3 rounded-xl border border-border bg-surface px-4 focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10">
+              <Search className="shrink-0 text-muted" size={18} aria-hidden="true" />
+              <input
+                aria-activedescendant={activeIndex >= 0 ? `dashboard-customer-result-${activeIndex}` : undefined}
+                aria-autocomplete="list"
+                aria-controls="dashboard-customer-results"
+                aria-expanded={showResults}
+                className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted"
+                name="q"
+                onChange={handleQueryChange}
+                onKeyDown={handleKeyDown}
+                placeholder="Find by name, phone, plate, payment issue, or subscription status..."
+                role="combobox"
+                value={query}
+              />
+              {isSearching ? (
+                <LoaderCircle className="shrink-0 animate-spin text-muted" size={16} aria-hidden="true" />
+              ) : null}
+              {query ? (
+                <button
+                  aria-label="Clear search"
+                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-muted transition hover:bg-card hover:text-foreground"
+                  onClick={clearSearch}
+                  type="button"
+                >
+                  <X size={16} aria-hidden="true" />
+                </button>
+              ) : null}
+            </div>
+            {showResults ? (
+              <div
+                className="absolute left-0 right-0 top-[calc(100%+0.5rem)] z-20 overflow-hidden rounded-2xl border border-border bg-card shadow-lg shadow-slate-200/80"
+                id="dashboard-customer-results"
+                role="listbox"
+              >
+                {results.map((customer, index) => (
+                  <button
+                    aria-selected={index === activeIndex}
+                    className={`grid w-full gap-1 px-4 py-3 text-left transition ${
+                      index === activeIndex
+                        ? "bg-primary/15 text-foreground ring-1 ring-inset ring-primary/25"
+                        : "hover:bg-primary/10 hover:text-foreground"
+                    }`}
+                    id={`dashboard-customer-result-${index}`}
+                    key={customer.id}
+                    onClick={() => openCustomer(customer)}
+                    onFocus={() => setActiveIndex(index)}
+                    role="option"
+                    type="button"
+                  >
+                    <span className="font-semibold">{customer.fullName}</span>
+                    <span className="text-xs text-muted">
+                      {customer.primaryVehicle} · {customer.licensePlate || "No plate"}
+                    </span>
+                    <span className="text-xs text-muted">
+                      {customer.phone} · {customer.subscriptionSummary}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
           <button
-            className="hidden h-9 rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:brightness-95 sm:inline-flex sm:items-center"
+            className="inline-flex min-h-12 shrink-0 items-center justify-center rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:brightness-100"
+            disabled={isSearching}
             type="submit"
           >
             Search
@@ -281,155 +455,139 @@ function DashboardSearch() {
 }
 
 function DashboardCharts({ charts }) {
-  const [timeframes, setTimeframes] = useState({
-    revenue: "6m",
-    growth: "6m",
-    attention: "6m",
-    impact: "6m",
-  });
+  const [timeframe, setTimeframe] = useState("6m");
   const rawRevenue = charts?.monthlyRevenue || { labels: [], values: [] };
   const rawCustomers = charts?.customerGrowth || { labels: [], cumulativeCustomers: [] };
   const rawSubscriptions = charts?.subscriptionGrowth || { cumulativeSubscriptions: [] };
   const rawNeedsAttention = charts?.needsAttention || { labels: [], values: [] };
   const rawFixImpact = charts?.csrFixImpact || { labels: [], fixes: [], recoveredRevenue: [] };
-  const revenue = sliceSeries(rawRevenue, timeframes.revenue);
-  const customers = sliceSeries(rawCustomers, timeframes.growth);
-  const subscriptions = sliceSeries(rawSubscriptions, timeframes.growth);
-  const needsAttention = sliceSeries(rawNeedsAttention, timeframes.attention);
-  const fixImpact = sliceSeries(rawFixImpact, timeframes.impact);
-  const updateTimeframe = (key) => (value) =>
-    setTimeframes((current) => ({ ...current, [key]: value }));
+  const revenue = sliceSeries(rawRevenue, timeframe);
+  const customers = sliceSeries(rawCustomers, timeframe);
+  const subscriptions = sliceSeries(rawSubscriptions, timeframe);
+  const needsAttention = sliceSeries(rawNeedsAttention, timeframe);
+  const fixImpact = sliceSeries(rawFixImpact, timeframe);
 
   return (
-    <section className="mt-4 grid gap-4 xl:grid-cols-2">
-      <ChartCard
-        compact
-        onTimeframeChange={updateTimeframe("revenue")}
-        timeframe={timeframes.revenue}
-        title="Revenue over time"
-      >
-        <Line
-          data={{
-            labels: revenue.labels,
-            datasets: [
-              {
-                label: "Membership revenue",
-                data: revenue.values,
-                borderColor: "#2563eb",
-                backgroundColor: "rgba(37, 99, 235, 0.14)",
-                borderWidth: 3,
-                fill: true,
-                pointRadius: 3,
-                tension: 0.35,
-              },
-            ],
-          }}
-          options={baseChartOptions({ moneyAxis: true })}
-        />
-      </ChartCard>
+    <section className="mt-4">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h2 className="text-lg font-semibold">Insights</h2>
+          <p className="mt-1 text-sm text-muted">One timeframe updates every dashboard chart.</p>
+        </div>
+        <TimeframeControl timeframe={timeframe} onTimeframeChange={setTimeframe} />
+      </div>
+      <div className="grid gap-5 xl:grid-cols-2">
+        <ChartCard title="Revenue over time">
+          <Line
+            data={{
+              labels: revenue.labels,
+              datasets: [
+                {
+                  label: "Membership revenue",
+                  data: revenue.values,
+                  borderColor: "#2563eb",
+                  backgroundColor: "rgba(37, 99, 235, 0.14)",
+                  borderWidth: 3,
+                  fill: true,
+                  pointRadius: 3,
+                  tension: 0.35,
+                },
+              ],
+            }}
+            options={baseChartOptions({ moneyAxis: true })}
+          />
+        </ChartCard>
 
-      <ChartCard
-        compact
-        onTimeframeChange={updateTimeframe("growth")}
-        timeframe={timeframes.growth}
-        title="Customers and subscriptions"
-      >
-        <Line
-          data={{
-            labels: customers.labels,
-            datasets: [
-              {
-                label: "Customers",
-                data: customers.cumulativeCustomers,
-                borderColor: "#0f766e",
-                backgroundColor: "rgba(15, 118, 110, 0.12)",
-                borderWidth: 3,
-                fill: true,
-                pointRadius: 3,
-                tension: 0.32,
-              },
-              {
-                label: "Subscriptions",
-                data: subscriptions.cumulativeSubscriptions,
-                borderColor: "#7c3aed",
-                backgroundColor: "rgba(124, 58, 237, 0.08)",
-                borderWidth: 3,
-                fill: true,
-                pointRadius: 3,
-                tension: 0.32,
-              },
-            ],
-          }}
-          options={baseChartOptions()}
-        />
-      </ChartCard>
+        <ChartCard title="Customers and subscriptions">
+          <Line
+            data={{
+              labels: customers.labels,
+              datasets: [
+                {
+                  label: "Customers",
+                  data: customers.cumulativeCustomers,
+                  borderColor: "#0f766e",
+                  backgroundColor: "rgba(15, 118, 110, 0.12)",
+                  borderWidth: 3,
+                  fill: true,
+                  pointRadius: 3,
+                  tension: 0.32,
+                },
+                {
+                  label: "Subscriptions",
+                  data: subscriptions.cumulativeSubscriptions,
+                  borderColor: "#7c3aed",
+                  backgroundColor: "rgba(124, 58, 237, 0.08)",
+                  borderWidth: 3,
+                  fill: true,
+                  pointRadius: 3,
+                  tension: 0.32,
+                },
+              ],
+            }}
+            options={baseChartOptions()}
+          />
+        </ChartCard>
 
-      <ChartCard
-        onTimeframeChange={updateTimeframe("attention")}
-        timeframe={timeframes.attention}
-        title="Needs attention over time"
-      >
-        <Bar
-          data={{
-            labels: needsAttention.labels,
-            datasets: [
-              {
-                label: "Payment and subscription issues",
-                data: needsAttention.values,
-                backgroundColor: "rgba(220, 38, 38, 0.72)",
-                borderRadius: 8,
-                maxBarThickness: 34,
-              },
-            ],
-          }}
-          options={baseChartOptions()}
-        />
-      </ChartCard>
+        <ChartCard title="Needs attention over time">
+          <Bar
+            data={{
+              labels: needsAttention.labels,
+              datasets: [
+                {
+                  label: "Payment and subscription issues",
+                  data: needsAttention.values,
+                  backgroundColor: "rgba(220, 38, 38, 0.72)",
+                  borderRadius: 8,
+                  maxBarThickness: 34,
+                },
+              ],
+            }}
+            options={baseChartOptions()}
+          />
+        </ChartCard>
 
-      <ChartCard
-        onTimeframeChange={updateTimeframe("impact")}
-        timeframe={timeframes.impact}
-        title="Bob Roberts fix impact"
-      >
-        <Bar
-          data={{
-            labels: fixImpact.labels,
-            datasets: [
-              {
-                label: "Resolved payments",
-                data: fixImpact.fixes,
-                backgroundColor: "rgba(34, 197, 94, 0.76)",
-                borderRadius: 8,
-                maxBarThickness: 34,
-                yAxisID: "y",
-              },
-              {
-                label: "Recovered revenue",
-                data: fixImpact.recoveredRevenue,
-                backgroundColor: "rgba(14, 165, 233, 0.6)",
-                borderRadius: 8,
-                maxBarThickness: 34,
-                yAxisID: "y1",
-              },
-            ],
-          }}
-          options={{
-            ...baseChartOptions(),
-            scales: {
-              ...baseChartOptions().scales,
-              y1: {
-                position: "right",
-                border: { display: false },
-                grid: { drawOnChartArea: false },
-                ticks: {
-                  color: chartTextColor,
-                  callback: (value) => money(value),
+        <ChartCard title="Bob Roberts fix impact">
+          <Bar
+            data={{
+              labels: fixImpact.labels,
+              datasets: [
+                {
+                  label: "Resolved payments",
+                  data: fixImpact.fixes,
+                  backgroundColor: "rgba(34, 197, 94, 0.76)",
+                  borderRadius: 8,
+                  maxBarThickness: 34,
+                  yAxisID: "y",
+                },
+                {
+                  label: "Recovered revenue",
+                  data: fixImpact.recoveredRevenue,
+                  backgroundColor: "rgba(14, 165, 233, 0.6)",
+                  borderRadius: 8,
+                  maxBarThickness: 34,
+                  yAxisID: "y1",
+                },
+              ],
+            }}
+            options={{
+              ...baseChartOptions(),
+              scales: {
+                ...baseChartOptions().scales,
+                y1: {
+                  position: "right",
+                  border: { display: false },
+                  grid: { drawOnChartArea: false },
+                  ticks: {
+                    color: chartTextColor,
+                    callback: (value) => money(value),
+                  },
                 },
               },
-            },
-          }}
-        />
-      </ChartCard>
+            }}
+          />
+        </ChartCard>
+      </div>
     </section>
   );
 }

@@ -10,6 +10,7 @@ test("formats money for purchase and plan values", () => {
 test("builds customer profile coverage and critical issue details", () => {
   const profile = createCustomerProfileViewModel({
     id: "customer_1",
+    memberId: "AMP-0001",
     firstName: "Alex",
     lastName: "Morgan",
     email: "alex@example.com",
@@ -66,6 +67,7 @@ test("builds customer profile coverage and critical issue details", () => {
   });
 
   assert.equal(profile.fullName, "Alex Morgan");
+  assert.equal(profile.memberId, "AMP-0001");
   assert.equal(profile.criticalIssue.title, "Unable to wash");
   assert.equal(profile.vehicles[0].coverageStatus, "Signature Wash · OVERDUE");
   assert.equal(profile.paymentSummary.status, "Needs payment update");
@@ -76,6 +78,7 @@ test("builds customer profile coverage and critical issue details", () => {
 test("shows support note preview in audit timeline details", () => {
   const profile = createCustomerProfileViewModel({
     id: "customer_1",
+    memberId: "AMP-0001",
     firstName: "Alex",
     lastName: "Morgan",
     email: "alex@example.com",
@@ -111,6 +114,7 @@ test("shows support note preview in audit timeline details", () => {
 test("shows payment update audit details without storing full card data", () => {
   const profile = createCustomerProfileViewModel({
     id: "customer_1",
+    memberId: "AMP-0001",
     firstName: "Alex",
     lastName: "Morgan",
     email: "alex@example.com",

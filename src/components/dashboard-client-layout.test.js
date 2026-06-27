@@ -38,3 +38,59 @@ test("KPI cards do not render cramped sparkline charts", () => {
   assert.doesNotMatch(statCardSource, /trendLabels|trendValues/);
   assert.doesNotMatch(statCardSource, /grid-cols-\[1fr_86px\]/);
 });
+
+test("dashboard customer search button is separate from the input shell", () => {
+  const searchSource = source.slice(
+    source.indexOf("function DashboardSearch"),
+    source.indexOf("function DashboardCharts"),
+  );
+  const inputShellIndex = searchSource.indexOf("focus-within:ring-primary/10");
+  const buttonIndex = searchSource.indexOf('type="submit"');
+
+  assert.ok(inputShellIndex !== -1, "search input shell should preserve focus styling");
+  assert.ok(buttonIndex !== -1, "search submit button should exist");
+  assert.ok(buttonIndex > inputShellIndex, "search button should render after the input shell");
+  assert.doesNotMatch(searchSource, /hidden h-9 rounded-lg bg-primary/);
+});
+
+test("dashboard customer search supports debounced fuzzy autocomplete", () => {
+  const searchSource = source.slice(
+    source.indexOf("function DashboardSearch"),
+    source.indexOf("function DashboardCharts"),
+  );
+
+  assert.match(source, /useRouter/);
+  assert.match(searchSource, /\/api\/customers\/search/);
+  assert.match(searchSource, /setTimeout/);
+  assert.match(searchSource, /role="listbox"/);
+  assert.match(searchSource, /role="option"/);
+  assert.match(searchSource, /ArrowDown/);
+  assert.match(searchSource, /ArrowUp/);
+  assert.match(searchSource, /returnQuery/);
+  assert.match(searchSource, /bg-primary\/15/);
+  assert.match(searchSource, /hover:bg-primary\/10/);
+  assert.match(searchSource, /Clear search/);
+  assert.match(searchSource, /LoaderCircle/);
+  assert.match(searchSource, /disabled=\{isSearching\}/);
+  assert.doesNotMatch(searchSource, />Searching</);
+});
+
+test("dashboard insights use one shared timeframe control and larger chart cards", () => {
+  const chartCardSource = source.slice(
+    source.indexOf("function ChartCard"),
+    source.indexOf("function DashboardSearch"),
+  );
+  const chartsSource = source.slice(
+    source.indexOf("function DashboardCharts"),
+    source.indexOf("function AttentionTable"),
+  );
+  const timeframeSelectCount = chartsSource.match(/<TimeframeControl/g)?.length || 0;
+
+  assert.match(chartCardSource, /min-h-\[380px\]/);
+  assert.match(chartCardSource, /h-\[300px\]/);
+  assert.equal(timeframeSelectCount, 1);
+  assert.match(chartsSource, /const \[timeframe, setTimeframe\]/);
+  assert.doesNotMatch(chartsSource, /const \[timeframes, setTimeframes\]/);
+  assert.doesNotMatch(chartsSource, /updateTimeframe/);
+  assert.doesNotMatch(chartsSource, /compact/);
+});

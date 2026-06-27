@@ -21,21 +21,60 @@ function countActiveFilters(filters = {}) {
     .length;
 }
 
+function hasOverdueIssue(row) {
+  return (
+    String(row.customerStatus || "").toUpperCase() === "OVERDUE" ||
+    String(row.subscriptionSummary || "").toUpperCase().includes("OVERDUE")
+  );
+}
+
+function hasPaymentFailure(row) {
+  return /FAILED|PAYMENT_FAILED|failed payment/i.test(
+    [row.paymentSummary, row.searchText, row.subscriptionSummary].filter(Boolean).join(" "),
+  );
+}
+
+function statusFor(row) {
+  if (hasOverdueIssue(row)) {
+    return {
+      label: "Overdue",
+      tone: "critical",
+      rank: 0,
+    };
+  }
+
+  if (Boolean(row.hasCriticalIssue)) {
+    return {
+      label: "Needs attention",
+      tone: "critical",
+      rank: 1,
+    };
+  }
+
+  return {
+    label: "Active",
+    tone: "success",
+    rank: 2,
+  };
+}
+
 /**
  * @param {Array<object>} rows
  * @param {{ totalCustomers?: number, activeFilters?: Record<string, string> }} options
  */
 export function createCustomerTableViewModel(rows, options = {}) {
   const tableRows = rows.map((row) => {
-    const hasCriticalIssue = Boolean(row.hasCriticalIssue);
+    const status = statusFor(row);
+    const paymentFailed = hasPaymentFailure(row);
 
     return {
       ...row,
       initials: initialsFor(String(row.fullName || "")),
-      statusLabel: hasCriticalIssue ? "Needs attention" : "Active",
-      statusTone: hasCriticalIssue ? "critical" : "success",
-      priorityLabel: hasCriticalIssue ? "High" : "Normal",
-      priorityRank: hasCriticalIssue ? 0 : 1,
+      statusLabel: status.label,
+      statusTone: status.tone,
+      priorityRank: status.rank,
+      paymentLabel: paymentFailed ? "Payment failure" : "Current",
+      paymentTone: paymentFailed ? "critical" : "success",
       contactSummary: [row.email, row.phone].filter(Boolean).join(" "),
       vehicleSummary: [row.primaryVehicle, row.licensePlate]
         .filter(Boolean)
@@ -49,6 +88,8 @@ export function createCustomerTableViewModel(rows, options = {}) {
       totalCustomers: options.totalCustomers ?? rows.length,
       resultCount: rows.length,
       attentionCount: tableRows.filter((row) => row.hasCriticalIssue).length,
+      overdueCount: tableRows.filter(hasOverdueIssue).length,
+      paymentFailureCount: tableRows.filter(hasPaymentFailure).length,
       activeFilterCount: countActiveFilters(options.activeFilters),
     },
   };

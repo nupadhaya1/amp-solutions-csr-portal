@@ -2,6 +2,18 @@
 
 import Fuse from "fuse.js";
 
+const fuseOptions = {
+  threshold: 0.33,
+  ignoreLocation: true,
+  keys: [
+    { name: "fullName", weight: 0.28 },
+    { name: "email", weight: 0.18 },
+    { name: "phone", weight: 0.14 },
+    { name: "licensePlate", weight: 0.2 },
+    { name: "searchText", weight: 0.2 },
+  ],
+};
+
 export const searchSynonyms = {
   "can't wash": [
     "unable to wash",
@@ -94,30 +106,36 @@ export function flattenCustomerForSearch(customer) {
 
 /**
  * @param {Array<object>} customers
+ */
+export function createCustomerSearchIndex(customers) {
+  const records = customers.map(flattenCustomerForSearch);
+  const fuse = new Fuse(records, fuseOptions);
+
+  return {
+    records,
+    /**
+     * @param {string} query
+     * @param {{ limit?: number }} [options]
+     */
+    search(query, options = {}) {
+      const trimmed = query.trim();
+
+      if (!trimmed) {
+        return records.slice(0, options.limit || records.length);
+      }
+
+      return fuse
+        .search(expandCustomerSearchQuery(trimmed), { limit: options.limit })
+        .map((result) => result.item);
+    },
+  };
+}
+
+/**
+ * @param {Array<object>} customers
  * @param {string} query
  * @param {{ limit?: number }} [options]
  */
 export function searchCustomers(customers, query, options = {}) {
-  const records = customers.map(flattenCustomerForSearch);
-  const trimmed = query.trim();
-
-  if (!trimmed) {
-    return records.slice(0, options.limit || records.length);
-  }
-
-  const fuse = new Fuse(records, {
-    threshold: 0.33,
-    ignoreLocation: true,
-    keys: [
-      { name: "fullName", weight: 0.28 },
-      { name: "email", weight: 0.18 },
-      { name: "phone", weight: 0.14 },
-      { name: "licensePlate", weight: 0.2 },
-      { name: "searchText", weight: 0.2 },
-    ],
-  });
-
-  return fuse
-    .search(expandCustomerSearchQuery(trimmed), { limit: options.limit })
-    .map((result) => result.item);
+  return createCustomerSearchIndex(customers).search(query, options);
 }

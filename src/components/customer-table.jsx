@@ -11,21 +11,32 @@ import {
   useReactTable,
 } from "@tanstack/react-table";
 import {
+  AlertTriangle,
   ArrowRight,
+  CarFront,
   ChevronDown,
   ChevronLeft,
   ChevronRight,
   ChevronsUpDown,
   ChevronUp,
+  CreditCard,
   FilterX,
   Search,
   UserRound,
   UsersRound,
 } from "lucide-react";
 
-const statusStyles = {
+const pillStyles = {
   critical: "bg-critical-background text-critical",
   success: "bg-success-background text-success",
+};
+
+const statAccentMap = {
+  total: "bg-blue-50 text-blue-700 ring-blue-100",
+  filtered: "bg-sky-50 text-sky-700 ring-sky-100",
+  attention: "bg-red-50 text-red-700 ring-red-100",
+  overdue: "bg-amber-50 text-amber-700 ring-amber-100",
+  payment: "bg-rose-50 text-rose-700 ring-rose-100",
 };
 
 function SortIcon({ state }) {
@@ -53,48 +64,48 @@ function HeaderButton({ header, children }) {
   );
 }
 
-function SummaryTile({ label, value }) {
+function StatCard({ icon: Icon, label, tone, value }) {
   return (
-    <div className="border-r border-border px-4 py-3 last:border-r-0">
-      <p className="text-xs font-semibold uppercase tracking-wide text-muted">{label}</p>
-      <p className="mt-1 text-lg font-semibold">{value}</p>
-    </div>
+    <article className="rounded-2xl border border-border bg-card p-3 shadow-sm shadow-slate-200/70">
+      <div className="flex min-w-0 items-center gap-3">
+        <span className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ring-1 ${statAccentMap[tone]}`}>
+          <Icon size={19} aria-hidden="true" />
+        </span>
+        <div className="min-w-0">
+          <p className="text-xl font-semibold leading-none">{value}</p>
+          <p className="mt-1 truncate text-xs font-semibold text-muted">{label}</p>
+        </div>
+      </div>
+    </article>
   );
 }
 
 function CustomerCell({ customer }) {
   return (
-    <div className="flex min-w-[190px] items-center gap-3">
+    <div className="flex min-w-[140px] items-center gap-3">
       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-primary/15 text-xs font-semibold text-primary">
         {customer.initials}
       </div>
       <div className="min-w-0">
         <p className="truncate font-semibold">{customer.fullName}</p>
-        <p className="mt-1 truncate text-xs text-muted">{customer.email}</p>
-        <p className="mt-0.5 truncate text-xs text-muted">{customer.phone}</p>
       </div>
     </div>
   );
 }
 
-function FilterInput({ label, name, defaultValue, placeholder, className = "" }) {
+function Pill({ children, tone = "success" }) {
   return (
-    <label className="grid gap-1">
-      <span className="text-xs font-semibold text-muted">{label}</span>
-      <input
-        className={`h-10 rounded-lg border border-border bg-card px-3 text-sm outline-none focus:border-primary ${className}`}
-        defaultValue={defaultValue}
-        name={name}
-        placeholder={placeholder}
-      />
-    </label>
+    <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${pillStyles[tone] || pillStyles.success}`}>
+      {children}
+    </span>
   );
 }
 
 export function CustomerTable({ rows, summary, filters }) {
   const [sorting, setSorting] = useState([{ id: "priorityRank", desc: false }]);
-  const [globalFilter, setGlobalFilter] = useState("");
-  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 8 });
+  const [globalFilter, setGlobalFilter] = useState(filters.q || "");
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
+  const currentSearch = String(globalFilter || filters.q || "").trim();
 
   const columns = useMemo(
     () => [
@@ -104,10 +115,20 @@ export function CustomerTable({ rows, summary, filters }) {
         cell: ({ row }) => <CustomerCell customer={row.original} />,
       },
       {
-        accessorKey: "vehicleSummary",
-        header: "Vehicle",
+        accessorKey: "contactSummary",
+        header: "Contact",
         cell: ({ row }) => (
-          <div className="min-w-[150px]">
+          <div className="min-w-[190px]">
+            <p className="truncate font-medium">{row.original.email}</p>
+            <p className="mt-1 truncate text-xs text-muted">{row.original.phone}</p>
+          </div>
+        ),
+      },
+      {
+        accessorKey: "vehicleSummary",
+        header: "Vehicle / plate",
+        cell: ({ row }) => (
+          <div className="min-w-[160px]">
             <p className="font-medium">{row.original.primaryVehicle}</p>
             <p className="mt-1 text-xs font-semibold uppercase text-muted">
               {row.original.licensePlate || "No plate"}
@@ -117,25 +138,10 @@ export function CustomerTable({ rows, summary, filters }) {
       },
       {
         accessorKey: "subscriptionSummary",
-        header: "Subscription",
+        header: "Plan",
         cell: ({ row }) => (
-          <span className="block max-w-[260px] text-muted">
+          <span className="block max-w-[220px] text-muted">
             {row.original.subscriptionSummary}
-          </span>
-        ),
-      },
-      {
-        accessorKey: "priorityRank",
-        header: "Priority",
-        cell: ({ row }) => (
-          <span
-            className={`rounded-full px-3 py-1 text-xs font-semibold ${
-              row.original.hasCriticalIssue
-                ? "bg-critical-background text-critical"
-                : "bg-surface-muted text-muted"
-            }`}
-          >
-            {row.original.priorityLabel}
           </span>
         ),
       },
@@ -143,13 +149,18 @@ export function CustomerTable({ rows, summary, filters }) {
         accessorKey: "statusLabel",
         header: "Status",
         cell: ({ row }) => (
-          <span
-            className={`rounded-full px-3 py-1 text-xs font-semibold ${
-              statusStyles[row.original.statusTone]
-            }`}
-          >
+          <Pill tone={row.original.statusTone}>
             {row.original.statusLabel}
-          </span>
+          </Pill>
+        ),
+      },
+      {
+        accessorKey: "paymentLabel",
+        header: "Payment",
+        cell: ({ row }) => (
+          <Pill tone={row.original.paymentTone}>
+            {row.original.paymentLabel}
+          </Pill>
         ),
       },
       {
@@ -159,15 +170,15 @@ export function CustomerTable({ rows, summary, filters }) {
         cell: ({ row }) => (
           <Link
             className="inline-flex items-center gap-2 whitespace-nowrap font-semibold text-primary hover:underline"
-            href={`/csr/customers/${row.original.id}`}
+            href={`/csr/customers/${row.original.id}${currentSearch ? `?returnQuery=${encodeURIComponent(currentSearch)}` : ""}`}
           >
-            Open
+            Open profile
             <ArrowRight size={14} aria-hidden="true" />
           </Link>
         ),
       },
     ],
-    [],
+    [currentSearch],
   );
 
   // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table keeps callback APIs on the table instance; this component owns that instance locally.
@@ -182,6 +193,32 @@ export function CustomerTable({ rows, summary, filters }) {
     onSortingChange: setSorting,
     onGlobalFilterChange: setGlobalFilter,
     onPaginationChange: setPagination,
+    globalFilterFn: (row, _columnId, value) => {
+      const terms = String(value || "")
+        .trim()
+        .toLowerCase()
+        .split(/\s+/)
+        .filter(Boolean);
+
+      if (terms.length === 0) return true;
+
+      const searchable = [
+        row.original.fullName,
+        row.original.email,
+        row.original.phone,
+        row.original.primaryVehicle,
+        row.original.licensePlate,
+        row.original.subscriptionSummary,
+        row.original.statusLabel,
+        row.original.paymentLabel,
+        row.original.searchText,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+
+      return terms.every((term) => searchable.includes(term));
+    },
     getCoreRowModel: getCoreRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
     getSortedRowModel: getSortedRowModel(),
@@ -189,166 +226,134 @@ export function CustomerTable({ rows, summary, filters }) {
   });
 
   const visibleRows = table.getRowModel().rows;
+  const filteredRows = table.getFilteredRowModel().rows;
 
   return (
-    <section className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm shadow-slate-200/70">
-      <div className="border-b border-border bg-surface p-4">
-        <div className="grid gap-4">
+    <section className="grid min-h-0 gap-4">
+      <div className="rounded-2xl border border-border bg-card p-4 shadow-sm shadow-slate-200/70">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div className="min-w-0">
-            <div className="flex items-center gap-3">
-              <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-                <UsersRound size={20} aria-hidden="true" />
-              </span>
-              <div>
-                <h1 className="text-xl font-semibold tracking-tight">Customers</h1>
-                <p className="mt-1 text-sm text-muted">
-                  Search caller details, sort by account risk, and open profiles.
-                </p>
-              </div>
-            </div>
-            <div className="mt-4 grid overflow-hidden rounded-lg border border-border bg-card sm:grid-cols-4">
-              <SummaryTile label="Results" value={summary.resultCount} />
-              <SummaryTile label="All customers" value={summary.totalCustomers} />
-              <SummaryTile label="Needs attention" value={summary.attentionCount} />
-              <SummaryTile label="Active filters" value={summary.activeFilterCount} />
-            </div>
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted">Current search</p>
+            <h1 className="mt-1 text-2xl font-semibold tracking-tight">Caller details</h1>
+            <p className="mt-1 text-sm text-muted">
+              {currentSearch ? `Showing customer matches for "${currentSearch}".` : "Search caller details, compare account status, and open profiles."}
+            </p>
           </div>
+        </div>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+          <StatCard icon={UsersRound} label="Total customers" tone="total" value={summary.totalCustomers} />
+          <StatCard icon={Search} label="Filtered results" tone="filtered" value={filteredRows.length} />
+          <StatCard icon={AlertTriangle} label="Needs attention" tone="attention" value={summary.attentionCount} />
+          <StatCard icon={CarFront} label="Overdue" tone="overdue" value={summary.overdueCount} />
+          <StatCard icon={CreditCard} label="Payment failures" tone="payment" value={summary.paymentFailureCount} />
+        </div>
+      </div>
 
-          <form
-            action="/csr/customers"
-            className="grid gap-3 lg:grid-cols-[1.3fr_repeat(4,minmax(0,1fr))_auto_auto]"
-          >
-            <label className="grid gap-1">
-              <span className="text-xs font-semibold text-muted">Search</span>
-              <div className="flex h-10 items-center gap-2 rounded-lg border border-border bg-card px-3 focus-within:border-primary">
-                <Search className="text-muted" size={16} aria-hidden="true" />
-                <input
-                  className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted"
-                  defaultValue={filters.q}
-                  name="q"
-                  placeholder="Name, plate, issue..."
-                />
-              </div>
-            </label>
-            <FilterInput defaultValue={filters.name} label="Name" name="name" />
-            <FilterInput defaultValue={filters.email} label="Email" name="email" />
-            <FilterInput defaultValue={filters.phone} label="Phone" name="phone" />
-            <FilterInput
-              className="uppercase"
-              defaultValue={filters.licensePlate}
-              label="Plate"
-              name="licensePlate"
+      <div className="rounded-2xl border border-border bg-card p-4 shadow-sm shadow-slate-200/70">
+        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+          <label className="flex min-h-12 min-w-0 flex-1 items-center gap-3 rounded-xl border border-border bg-surface px-4 focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10">
+            <Search className="shrink-0 text-muted" size={18} aria-hidden="true" />
+            <input
+              className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted"
+              onChange={(event) => {
+                setGlobalFilter(event.target.value);
+                table.setPageIndex(0);
+              }}
+              placeholder="Filter customer grid by name, phone, email, red Honda, plate, payment issue..."
+              value={globalFilter ?? ""}
             />
-            <button
-              className="h-10 self-end rounded-lg bg-primary px-4 text-sm font-semibold text-primary-foreground transition hover:brightness-95"
-              type="submit"
-            >
-              Search
-            </button>
-            <Link
-              className="inline-flex h-10 items-center justify-center gap-2 self-end rounded-lg border border-border bg-card px-4 text-sm font-semibold transition hover:border-primary hover:text-primary"
-              href="/csr/customers"
-            >
-              <FilterX size={16} aria-hidden="true" />
-              Clear
-            </Link>
-          </form>
+          </label>
+          <Link
+            aria-label="Clear search"
+            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-semibold transition hover:border-primary hover:text-primary"
+            href="/csr/customers"
+          >
+            <FilterX size={16} aria-hidden="true" />
+            Clear search
+          </Link>
         </div>
       </div>
 
-      <div className="flex flex-col gap-3 border-b border-border bg-card px-4 py-3 md:flex-row md:items-center md:justify-between">
-        <label className="flex h-10 min-w-0 items-center gap-2 rounded-lg border border-border bg-surface px-3 md:w-96">
-          <Search className="shrink-0 text-muted" size={16} aria-hidden="true" />
-          <input
-            className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted"
-            onChange={(event) => table.setGlobalFilter(event.target.value)}
-            placeholder="Filter visible results"
-            value={globalFilter ?? ""}
-          />
-        </label>
-        <p className="text-sm text-muted">
-          Showing {visibleRows.length} of {table.getFilteredRowModel().rows.length} matched rows
-        </p>
-      </div>
-
-      <div className="overflow-x-auto">
-        <table className="w-full min-w-[820px] text-left text-sm">
-          <thead className="border-b border-border bg-card text-xs uppercase tracking-wide text-muted">
-            {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id}>
-                {headerGroup.headers.map((header) => (
-                  <th className="px-4 py-3 font-semibold" key={header.id}>
-                    {header.isPlaceholder ? null : (
-                      <HeaderButton header={header}>
-                        {flexRender(header.column.columnDef.header, header.getContext())}
-                      </HeaderButton>
-                    )}
-                  </th>
-                ))}
-              </tr>
-            ))}
-          </thead>
-          <tbody className="divide-y divide-border">
-            {visibleRows.map((row) => (
-              <tr className="hover:bg-surface" key={row.id}>
-                {row.getVisibleCells().map((cell) => (
-                  <td className="px-4 py-4 align-middle" key={cell.id}>
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
+      <section className="min-h-0 overflow-hidden rounded-2xl border border-border bg-card shadow-sm shadow-slate-200/70">
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-[1100px] text-left text-sm">
+            <thead className="border-b border-border bg-surface text-xs uppercase tracking-wide text-muted">
+              {table.getHeaderGroups().map((headerGroup) => (
+                <tr key={headerGroup.id}>
+                  {headerGroup.headers.map((header) => (
+                    <th className="px-4 py-3 font-semibold" key={header.id}>
+                      {header.isPlaceholder ? null : (
+                        <HeaderButton header={header}>
+                          {flexRender(header.column.columnDef.header, header.getContext())}
+                        </HeaderButton>
+                      )}
+                    </th>
+                  ))}
+                </tr>
+              ))}
+            </thead>
+            <tbody className="divide-y divide-border">
+              {visibleRows.map((row) => (
+                <tr className="hover:bg-surface" key={row.id}>
+                  {row.getVisibleCells().map((cell) => (
+                    <td className="px-4 py-3 align-middle" key={cell.id}>
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+              {visibleRows.length === 0 ? (
+                <tr>
+                  <td className="px-5 py-10 text-center" colSpan={columns.length}>
+                    <UserRound className="mx-auto text-muted" size={34} aria-hidden="true" />
+                    <h2 className="mt-3 font-semibold">No matching customers</h2>
+                    <p className="mt-2 text-sm text-muted">
+                      Try a phone number, plate, email, support issue, or clear the search.
+                    </p>
                   </td>
-                ))}
-              </tr>
-            ))}
-            {visibleRows.length === 0 ? (
-              <tr>
-                <td className="px-5 py-10 text-center" colSpan={columns.length}>
-                  <UserRound className="mx-auto text-muted" size={34} aria-hidden="true" />
-                  <h2 className="mt-3 font-semibold">No matching customers</h2>
-                  <p className="mt-2 text-sm text-muted">
-                    Try a phone number, plate, email, support issue, or clear the table filter.
-                  </p>
-                </td>
-              </tr>
-            ) : null}
-          </tbody>
-        </table>
-      </div>
-
-      <div className="flex flex-col gap-3 border-t border-border bg-surface px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-        <p className="text-sm text-muted">
-          Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount() || 1}
-        </p>
-        <div className="flex items-center gap-2">
-          <select
-            className="h-9 rounded-lg border border-border bg-card px-2 text-sm outline-none focus:border-primary"
-            onChange={(event) => table.setPageSize(Number(event.target.value))}
-            value={table.getState().pagination.pageSize}
-          >
-            {[8, 12, 16].map((pageSize) => (
-              <option key={pageSize} value={pageSize}>
-                {pageSize} rows
-              </option>
-            ))}
-          </select>
-          <button
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card text-muted transition hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
-            disabled={!table.getCanPreviousPage()}
-            onClick={() => table.previousPage()}
-            type="button"
-          >
-            <ChevronLeft size={17} aria-hidden="true" />
-            <span className="sr-only">Previous page</span>
-          </button>
-          <button
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card text-muted transition hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
-            disabled={!table.getCanNextPage()}
-            onClick={() => table.nextPage()}
-            type="button"
-          >
-            <ChevronRight size={17} aria-hidden="true" />
-            <span className="sr-only">Next page</span>
-          </button>
+                </tr>
+              ) : null}
+            </tbody>
+          </table>
         </div>
-      </div>
+
+        <div className="flex flex-col gap-3 border-t border-border bg-surface px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-muted">
+            Showing {visibleRows.length} of {filteredRows.length} matched rows · Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount() || 1}
+          </p>
+          <div className="flex items-center gap-2">
+            <select
+              className="h-9 rounded-lg border border-border bg-card px-2 text-sm outline-none focus:border-primary"
+              onChange={(event) => table.setPageSize(Number(event.target.value))}
+              value={table.getState().pagination.pageSize}
+            >
+              {[10, 15, 20].map((pageSize) => (
+                <option key={pageSize} value={pageSize}>
+                  {pageSize} rows
+                </option>
+              ))}
+            </select>
+            <button
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card text-muted transition hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
+              disabled={!table.getCanPreviousPage()}
+              onClick={() => table.previousPage()}
+              type="button"
+            >
+              <ChevronLeft size={17} aria-hidden="true" />
+              <span className="sr-only">Previous page</span>
+            </button>
+            <button
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-border bg-card text-muted transition hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
+              disabled={!table.getCanNextPage()}
+              onClick={() => table.nextPage()}
+              type="button"
+            >
+              <ChevronRight size={17} aria-hidden="true" />
+              <span className="sr-only">Next page</span>
+            </button>
+          </div>
+        </div>
+      </section>
     </section>
   );
 }
