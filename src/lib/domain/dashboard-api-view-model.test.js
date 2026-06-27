@@ -34,9 +34,17 @@ test("returns the dashboard view model fields used by the API response", () => {
     "criticalQueue",
     "criticalCustomers",
     "recentCustomers",
+    "charts",
   ]);
   assert.equal(payload.stats[0].label, "Total customers");
   assert.equal(payload.criticalQueue.count, 1);
   assert.equal(payload.criticalCustomers[0].id, "customer_1");
   assert.equal(payload.recentCustomers.length, 2);
+  assert.deepEqual(Object.keys(payload.charts), [
+    "monthlyRevenue",
+    "customerGrowth",
+    "subscriptionGrowth",
+    "needsAttention",
+    "csrFixImpact",
+  ]);
 });

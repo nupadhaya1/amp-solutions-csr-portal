@@ -1,17 +1,14 @@
 "use client";
 
+import Image from "next/image";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import {
-  Brain,
-  CarFront,
-  Grid2X2,
-  UsersRound,
-} from "lucide-react";
+import { Brain, Grid2X2, UsersRound } from "lucide-react";
+import { useEffect, useState } from "react";
 
 const navItems = [
   { href: "/csr/dashboard", label: "Dashboard", icon: Grid2X2 },
-  { href: "/csr/customers", label: "Customer lookup", icon: UsersRound },
+  { href: "/csr/customers", label: "Customers", icon: UsersRound },
   { href: "/csr/smart-search", label: "Smart search", icon: Brain },
 ];
 
@@ -23,67 +20,91 @@ function isActivePath(pathname, href) {
   return pathname === href;
 }
 
+function useCurrentCustomer(pathname) {
+  const [currentCustomerName, setCurrentCustomerName] = useState("");
+  const match = pathname.match(/^\/csr\/customers\/([^/?#]+)/);
+  const customerRouteId = match?.[1] || "";
+
+  useEffect(() => {
+    if (!customerRouteId) {
+      return undefined;
+    }
+
+    const controller = new AbortController();
+
+    fetch(`/api/customers/${customerRouteId}`, { signal: controller.signal })
+      .then((response) => response.json())
+      .then((payload) => {
+        if (!payload?.data?.fullName) return;
+        setCurrentCustomerName(payload.data.fullName);
+      })
+      .catch(() => {
+        setCurrentCustomerName("");
+      });
+
+    return () => controller.abort();
+  }, [customerRouteId]);
+
+  return customerRouteId ? currentCustomerName : "";
+}
+
 export function PortalShell({ children }) {
   const pathname = usePathname();
   const router = useRouter();
+  const currentCustomerName = useCurrentCustomer(pathname);
 
   return (
-    <main className="min-h-screen text-foreground">
-      <div className="grid min-h-screen lg:grid-cols-[280px_1fr]">
-        <aside className="border-b border-border bg-sidebar/90 p-5 shadow-sm lg:border-b-0 lg:border-r">
-          <div className="flex min-h-full flex-col gap-8">
-            <div className="rounded-3xl border border-white/80 bg-card/80 p-4 shadow-sm">
-              <div className="flex items-center gap-3">
-                <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-sm">
-                  <CarFront size={25} aria-hidden="true" />
-                </div>
-                <div>
-                  <p className="font-semibold">AMP Care</p>
-                  <p className="text-sm text-muted">CSR Portal</p>
-                </div>
+    <main className="h-screen overflow-hidden text-foreground">
+      <div className="grid h-screen lg:grid-cols-[272px_1fr]">
+        <aside className="h-screen border-r border-border/80 bg-sidebar px-4 py-5 shadow-sm shadow-slate-950/5">
+          <div className="flex h-full flex-col gap-5">
+            <div className="rounded-3xl border border-border bg-card px-4 py-4 shadow-sm shadow-slate-950/5">
+              <div className="flex">
+                <Image
+                  alt="AMP logo"
+                  className="h-7 w-auto"
+                  height={72}
+                  src="/logo-amp.svg"
+                  width={240}
+                />
+                <h1 style={{ marginTop: "2px" }}> | CSR-Portal</h1>
               </div>
+              <p className="mt-2">Nikhil Upadhaya</p>
+              <p className="text-sm text-muted-foreground">Support agent</p>
             </div>
 
             <nav className="grid gap-2">
               {navItems.map((item) => {
                 const Icon = item.icon;
                 const selected = isActivePath(pathname, item.href);
+                const isCustomersItem = item.href === "/csr/customers";
 
                 return (
-                  <Link
-                    className={`flex min-h-12 items-center gap-3 rounded-xl px-4 text-sm font-semibold transition ${
-                      selected
-                        ? "bg-primary text-primary-foreground shadow-sm"
-                        : "text-muted hover:bg-card hover:text-foreground hover:shadow-sm"
-                    }`}
-                    href={item.href}
-                    key={item.href}
-                    onFocus={() => router.prefetch(item.href)}
-                    onMouseEnter={() => router.prefetch(item.href)}
-                    prefetch
-                  >
-                    <Icon size={20} aria-hidden="true" />
-                    {item.label}
-                  </Link>
+                  <div className="grid gap-2" key={item.href}>
+                    <Link
+                      className={`flex min-h-11 items-center gap-3 rounded-2xl px-4 text-sm font-semibold transition ${
+                        selected
+                          ? "bg-primary text-primary-foreground shadow-sm"
+                          : "text-foreground/80 hover:bg-card hover:text-foreground hover:shadow-sm"
+                      }`}
+                      href={item.href}
+                      onFocus={() => router.prefetch(item.href)}
+                      onMouseEnter={() => router.prefetch(item.href)}
+                      prefetch
+                    >
+                      <Icon aria-hidden="true" size={18} />
+                      {item.label}
+                    </Link>
+                  </div>
                 );
               })}
             </nav>
-
-            <div className="mt-auto flex items-center gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm">
-              <div className="flex items-center gap-3">
-                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-primary/20 text-sm font-semibold text-primary">
-                  BR
-                </div>
-                <div>
-                  <p className="font-semibold">Bob Roberts</p>
-                  <p className="text-sm text-muted">Support agent</p>
-                </div>
-              </div>
-            </div>
           </div>
         </aside>
 
-        <section className="px-5 py-6 sm:px-8 lg:px-10">{children}</section>
+        <section className="h-screen overflow-y-auto px-5 py-5 sm:px-8 lg:px-10">
+          {children}
+        </section>
       </div>
     </main>
   );

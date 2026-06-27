@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  createCustomerSearchIndex,
   expandCustomerSearchQuery,
   searchCustomers,
 } from "./customer-search.js";
@@ -9,6 +10,7 @@ import {
 const customers = [
   {
     id: "customer_alex",
+    memberId: "AMP-0001",
     firstName: "Alex",
     lastName: "Morgan",
     email: "alex.morgan@example.com",
@@ -46,6 +48,7 @@ const customers = [
   },
   {
     id: "customer_marcus",
+    memberId: "AMP-0396",
     firstName: "Marcus",
     lastName: "Reed",
     email: "marcus.reed@example.com",
@@ -81,10 +84,18 @@ test("finds customers by name and license plate", () => {
   assert.equal(searchCustomers(customers, "Alex")[0].id, "customer_alex");
   assert.equal(searchCustomers(customers, "CZR4821")[0].id, "customer_alex");
   assert.equal(searchCustomers(customers, "MQL6187")[0].id, "customer_marcus");
+  assert.equal(searchCustomers(customers, "AMP-0396")[0].id, "customer_marcus");
 });
 
 test("finds the hero customer with support-language queries", () => {
   assert.equal(searchCustomers(customers, "can't wash")[0].id, "customer_alex");
   assert.equal(searchCustomers(customers, "failed payment")[0].id, "customer_alex");
   assert.equal(searchCustomers(customers, "overdue")[0].id, "customer_alex");
+});
+
+test("reuses a prepared customer search index across queries", () => {
+  const index = createCustomerSearchIndex(customers);
+
+  assert.equal(index.search("Alex")[0].id, "customer_alex");
+  assert.equal(index.search("red ford")[0].id, "customer_marcus");
 });

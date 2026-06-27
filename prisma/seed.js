@@ -17,6 +17,14 @@ const SYSTEM_ACTOR = {
 
 const date = (value) => new Date(`${value}T12:00:00.000Z`);
 
+let seedMemberIdCounter = 1;
+
+const nextSeedMemberId = () => {
+  const id = `AMP-${String(seedMemberIdCounter).padStart(4, "0")}`;
+  seedMemberIdCounter += 1;
+  return id;
+};
+
 async function reset() {
   await prisma.auditEvent.deleteMany();
   await prisma.supportNote.deleteMany();
@@ -80,10 +88,14 @@ function planByName(name, plans) {
   return plan;
 }
 
-async function createCustomer({ customer, vehicles, subscription, purchases, notes, events }, plans) {
+async function createCustomer(
+  { customer, vehicles, subscription, purchases, notes, events },
+  plans,
+) {
   const created = await prisma.customer.create({
     data: {
       ...customer,
+      memberId: customer.memberId || nextSeedMemberId(),
       createdAt: date("2026-01-08"),
       updatedAt: date("2026-06-24"),
       vehicles: {
@@ -122,6 +134,7 @@ async function createCustomer({ customer, vehicles, subscription, purchases, not
     const vehicle = purchase.licensePlate
       ? created.vehicles.find((item) => item.licensePlate === purchase.licensePlate)
       : null;
+
     await prisma.purchase.create({
       data: {
         customerId: created.id,
@@ -165,9 +178,10 @@ export function buildSeedCustomers() {
   return [
     {
       customer: {
+        memberId: "AMP-0001",
         firstName: "Alex",
         lastName: "Morgan",
-        email: "alex.morgan@example.com",
+        email: "alex.morgan@cedarbrookmail.test",
         phone: "404-555-0181",
         status: "OVERDUE",
       },
@@ -227,9 +241,10 @@ export function buildSeedCustomers() {
     },
     {
       customer: {
+        memberId: "AMP-0002",
         firstName: "Priya",
         lastName: "Shah",
-        email: "priya.shah@example.com",
+        email: "priya.shah@cedarbrookmail.test",
         phone: "678-555-0124",
         status: "ACTIVE",
       },
@@ -269,9 +284,10 @@ export function buildSeedCustomers() {
     },
     {
       customer: {
+        memberId: "AMP-0003",
         firstName: "Marcus",
         lastName: "Reed",
-        email: "marcus.reed@example.com",
+        email: "marcus.reed@cedarbrookmail.test",
         phone: "770-555-0139",
         status: "ACTIVE",
       },
@@ -315,9 +331,10 @@ export function buildSeedCustomers() {
     },
     {
       customer: {
+        memberId: "AMP-0004",
         firstName: "Alicia",
         lastName: "Brown",
-        email: "alicia.brown@example.com",
+        email: "alicia.brown@cedarbrookmail.test",
         phone: "470-555-0198",
         status: "ACTIVE",
       },
@@ -365,14 +382,21 @@ export function buildSeedCustomers() {
     },
     {
       customer: {
+        memberId: "AMP-0005",
         firstName: "Ethan",
         lastName: "Brooks",
-        email: "ethan.brooks@example.com",
+        email: "ethan.brooks@cedarbrookmail.test",
         phone: "404-555-0155",
         status: "ACTIVE",
       },
       vehicles: [
-        { year: 2019, make: "Jeep", model: "Grand Cherokee", color: "Green", licensePlate: "HNV6631" },
+        {
+          year: 2019,
+          make: "Jeep",
+          model: "Grand Cherokee",
+          color: "Green",
+          licensePlate: "HNV6631",
+        },
       ],
       subscription: {
         planName: "Essential Wash",
@@ -403,9 +427,10 @@ export function buildSeedCustomers() {
     },
     {
       customer: {
+        memberId: "AMP-0006",
         firstName: "Sophia",
         lastName: "Nguyen",
-        email: "sophia.nguyen@example.com",
+        email: "sophia.nguyen@cedarbrookmail.test",
         phone: "678-555-0108",
         status: "ACTIVE",
       },
@@ -443,9 +468,10 @@ export function buildSeedCustomers() {
     },
     {
       customer: {
+        memberId: "AMP-0007",
         firstName: "Noah",
         lastName: "Carter",
-        email: "noah.carter@example.com",
+        email: "noah.carter@cedarbrookmail.test",
         phone: "470-555-0172",
         status: "ACTIVE",
       },
@@ -475,9 +501,10 @@ export function buildSeedCustomers() {
     },
     {
       customer: {
+        memberId: "AMP-0008",
         firstName: "Maya",
         lastName: "Patel",
-        email: "maya.patel@example.com",
+        email: "maya.patel@cedarbrookmail.test",
         phone: "678-555-0187",
         status: "OVERDUE",
       },
@@ -528,9 +555,10 @@ export function buildSeedCustomers() {
     },
     {
       customer: {
+        memberId: "AMP-0009",
         firstName: "Daniel",
         lastName: "Kim",
-        email: "daniel.kim@example.com",
+        email: "daniel.kim@cedarbrookmail.test",
         phone: "770-555-0164",
         status: "ACTIVE",
       },
@@ -566,14 +594,21 @@ export function buildSeedCustomers() {
     },
     {
       customer: {
+        memberId: "AMP-0010",
         firstName: "Olivia",
         lastName: "Martinez",
-        email: "olivia.martinez@example.com",
+        email: "olivia.martinez@cedarbrookmail.test",
         phone: "404-555-0192",
         status: "CANCELLED",
       },
       vehicles: [
-        { year: 2017, make: "Chevrolet", model: "Malibu", color: "Silver", licensePlate: "LPA7752" },
+        {
+          year: 2017,
+          make: "Chevrolet",
+          model: "Malibu",
+          color: "Silver",
+          licensePlate: "LPA7752",
+        },
       ],
       subscription: {
         planName: "Essential Wash",
@@ -611,9 +646,10 @@ export function buildSeedCustomers() {
     },
     {
       customer: {
+        memberId: "AMP-0011",
         firstName: "Grace",
         lastName: "Lee",
-        email: "grace.lee@example.com",
+        email: "grace.lee@cedarbrookmail.test",
         phone: "678-555-0146",
         status: "ACTIVE",
       },
@@ -646,9 +682,10 @@ export function buildSeedCustomers() {
     },
     {
       customer: {
+        memberId: "AMP-0012",
         firstName: "Ben",
         lastName: "Wilson",
-        email: "ben.wilson@example.com",
+        email: "ben.wilson@cedarbrookmail.test",
         phone: "470-555-0118",
         status: "ACTIVE",
       },
@@ -692,9 +729,10 @@ export function buildSeedCustomers() {
     },
     {
       customer: {
+        memberId: "AMP-0013",
         firstName: "Harper",
         lastName: "Davis",
-        email: "harper.davis@example.com",
+        email: "harper.davis@cedarbrookmail.test",
         phone: "404-555-0133",
         status: "ACTIVE",
       },
@@ -730,15 +768,14 @@ export function buildSeedCustomers() {
     },
     {
       customer: {
+        memberId: "AMP-0014",
         firstName: "Liam",
         lastName: "Johnson",
-        email: "liam.johnson@example.com",
+        email: "liam.johnson@cedarbrookmail.test",
         phone: "770-555-0186",
         status: "ACTIVE",
       },
-      vehicles: [
-        { year: 2023, make: "BMW", model: "X3", color: "Blue", licensePlate: "XDE4159" },
-      ],
+      vehicles: [{ year: 2023, make: "BMW", model: "X3", color: "Blue", licensePlate: "XDE4159" }],
       subscription: {
         planName: "Signature Wash",
         status: "ACTIVE",
@@ -762,9 +799,10 @@ export function buildSeedCustomers() {
     },
     {
       customer: {
+        memberId: "AMP-0015",
         firstName: "Mia",
         lastName: "Thompson",
-        email: "mia.thompson@example.com",
+        email: "mia.thompson@cedarbrookmail.test",
         phone: "678-555-0191",
         status: "ACTIVE",
       },
@@ -808,9 +846,10 @@ export function buildSeedCustomers() {
     },
     {
       customer: {
+        memberId: "AMP-0016",
         firstName: "Chris",
         lastName: "Walker",
-        email: "chris.walker@example.com",
+        email: "chris.walker@cedarbrookmail.test",
         phone: "470-555-0169",
         status: "ACTIVE",
       },
@@ -908,8 +947,7 @@ async function seedFaqArticles() {
     {
       title: "Multi-vehicle plans",
       question: "How many vehicles can a family plan cover?",
-      answer:
-        "Family Unlimited and Family Unlimited Signature can cover up to four vehicles.",
+      answer: "Family Unlimited and Family Unlimited Signature can cover up to four vehicles.",
       category: "Subscriptions",
       keywords: "family plan multi vehicle vehicles covered",
     },

@@ -53,6 +53,7 @@ enum ActorType {
 
 model Customer {
   id            String         @id @default(cuid())
+  memberId      String         @unique
   firstName     String
   lastName      String
   email         String         @unique

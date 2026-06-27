@@ -3,6 +3,7 @@
 import json
 import os
 import random
+import re
 import string
 from datetime import datetime, timedelta
 from decimal import Decimal
@@ -21,6 +22,8 @@ ENV_FILE = os.path.join(PROJECT_ROOT, ".env.development.local")
 CSR_ACTOR = "Bob Roberts"
 SYSTEM_ACTOR = "AMP System"
 
+DASHBOARD_MEMBER_ID_OFFSET = 2000
+
 random.seed(42)
 
 
@@ -35,6 +38,9 @@ def load_env_file(path):
             if not value or value.startswith("#") or "=" not in value:
                 continue
 
+            if value.startswith("export "):
+                value = value[len("export ") :].strip()
+
             key, raw = value.split("=", 1)
             key = key.strip()
             raw = raw.strip().strip('"').strip("'")
@@ -45,6 +51,21 @@ def load_env_file(path):
 def make_id(prefix):
     suffix = "".join(random.choices(string.ascii_lowercase + string.digits, k=18))
     return f"{prefix}_{suffix}"
+
+
+def member_id_for_index(index):
+    return f"AMP-{DASHBOARD_MEMBER_ID_OFFSET + index:04d}"
+
+
+def email_part(value):
+    cleaned = re.sub(r"[^a-z0-9]+", "", value.lower())
+    return cleaned or "customer"
+
+
+def demo_email(first_name, last_name, index):
+    first = email_part(first_name)
+    last = email_part(last_name)
+    return f"{first}.{last}{DASHBOARD_MEMBER_ID_OFFSET + index}@example.com"
 
 
 def month_start(months_ago):
@@ -89,21 +110,34 @@ def delete_existing_dashboard_demo(conn):
         cur.execute(
             """
             DELETE FROM "Customer"
+            WHERE id LIKE 'custdash_%'
+            """
+        )
+        deleted_by_id = cur.rowcount
+
+        # Cleanup old generated rows from the previous email-based seed, just in case
+        # any were created before the custdash_ id prefix was used consistently.
+        cur.execute(
+            """
+            DELETE FROM "Customer"
             WHERE email LIKE 'dashboard-demo-%@example.com'
             """
         )
-        return cur.rowcount
+        deleted_by_email = cur.rowcount
+
+        return deleted_by_id + deleted_by_email
 
 
-def insert_customer(cur, customer_id, first_name, last_name, email, phone, status, created_at):
+def insert_customer(cur, customer_id, member_id, first_name, last_name, email, phone, status, created_at):
     cur.execute(
         """
         INSERT INTO "Customer"
-        (id, "firstName", "lastName", email, phone, status, "createdAt", "updatedAt")
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+        (id, "memberId", "firstName", "lastName", email, phone, status, "createdAt", "updatedAt")
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
         """,
         (
             customer_id,
+            member_id,
             first_name,
             last_name,
             email,
@@ -234,7 +268,7 @@ def insert_audit_event(
 def main():
     load_env_file(ENV_FILE)
 
-    database_url = os.environ.get("DATABASE_URL")
+    database_url = os.environ.get("DATABASE_URL_UNPOOLED") or os.environ.get("DATABASE_URL")
     if not database_url:
         raise SystemExit("DATABASE_URL is missing. Pull Vercel env vars or create .env.development.local.")
 
@@ -309,6 +343,7 @@ def main():
                     last_name = random.choice(last_names)
                     created_at = random_date_in_month(month)
                     customer_id = make_id("custdash")
+                    member_id = member_id_for_index(customer_index)
                     vehicle_id = make_id("vehicledash")
                     subscription_id = make_id("subdash")
                     coverage_id = make_id("coverdash")
@@ -316,7 +351,7 @@ def main():
                     plan_id, plan_name, monthly_price, _max_vehicles, _tier = plan
                     make, model = random.choice(vehicles)
 
-                    email = f"dashboard-demo-{customer_index:04d}@example.com"
+                    email = demo_email(first_name, last_name, customer_index)
                     phone = f"404-555-{1000 + customer_index:04d}"
                     plate = f"DSH{customer_index:04d}"[-7:]
 
@@ -329,6 +364,7 @@ def main():
                     insert_customer(
                         cur,
                         customer_id,
+                        member_id,
                         first_name,
                         last_name,
                         email,
@@ -442,14 +478,18 @@ def main():
                     was_fixed = issue_number < fix_count
 
                     customer_index += 1
-                    email = f"dashboard-demo-{customer_index:04d}@example.com"
+                    issue_first_name = random.choice(first_names)
+                    issue_last_name = random.choice(last_names)
+                    member_id = member_id_for_index(customer_index)
+                    email = demo_email(issue_first_name, issue_last_name, customer_index)
                     plate = f"FIX{customer_index:04d}"[-7:]
 
                     insert_customer(
                         cur,
                         issue_customer_id,
-                        random.choice(first_names),
-                        random.choice(last_names),
+                        member_id,
+                        issue_first_name,
+                        issue_last_name,
                         email,
                         f"470-555-{1000 + customer_index:04d}",
                         "ACTIVE" if was_fixed else "OVERDUE",
