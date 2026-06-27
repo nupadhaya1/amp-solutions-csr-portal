@@ -1,6 +1,7 @@
 // @ts-check
 
 import { createPortalDashboardViewModel } from "./dashboard-view-model.js";
+import { createDashboardCharts } from "./dashboard-charts.js";
 
 /**
  * Keeps the dashboard API payload aligned with the dashboard page view model.
@@ -16,5 +17,6 @@ export function createDashboardApiViewModel(customers) {
     criticalQueue,
     criticalCustomers,
     recentCustomers,
+    charts: createDashboardCharts(customers),
   };
 }
