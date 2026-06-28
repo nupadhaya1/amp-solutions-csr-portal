@@ -43,8 +43,7 @@ The portal is built around the real CSR call flow: search fast, diagnose clearly
 
 ## Demo links
 
-- Live app: `https://amp-csr-portal.nupadhaya.com`
-- Presentation: `https://amp-csr-portal.nupadhaya.com/presentation`
-- CSR Docs: `https://amp-csr-portal.nupadhaya.com/csr/docs`
-- Lane Context: `https://amp-csr-portal.nupadhaya.com/csr/lane-context`
+- Deployed URL: `https://amp-csr-portal.nupadhaya.com`
+- Presentation: `https://amp-csr-portal.nupadhaya.com/demo/presentation`
+- System Design: `https://amp-csr-portal.nupadhaya.com/demo/systemDesign`
 - GitHub: `https://github.com/nupadhaya1/amp-solutions-csr-portal`

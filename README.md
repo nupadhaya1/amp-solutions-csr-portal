@@ -1,9 +1,8 @@
 # AMP CSR Command Center
 
-> **Live demo:** https://amp-csr-portal.nupadhaya.com  
-> **Presentation:** https://amp-csr-portal.nupadhaya.com/presentation  
-> **CSR Docs:** https://amp-csr-portal.nupadhaya.com/csr/docs  
-> **Lane Context:** https://amp-csr-portal.nupadhaya.com/csr/lane-context  
+> **Deployed URL:** https://amp-csr-portal.nupadhaya.com  
+> **Presentation:** https://amp-csr-portal.nupadhaya.com/demo/presentation  
+> **System Design:** https://amp-csr-portal.nupadhaya.com/demo/systemDesign  
 > **GitHub:** https://github.com/nupadhaya1/amp-solutions-csr-portal
 
 A full-stack customer service representative portal for AMP car wash memberships. The app helps a CSR quickly find a customer, understand their account/payment/vehicle/lane context, resolve common membership issues, and leave an audit trail.
@@ -27,8 +26,8 @@ Use this path first during review:
 5. Use a CSR action such as update payment, retry failed charge, add vehicle, transfer coverage, change plan, cancel membership, or add a support note.
 6. Confirm the activity/audit timeline records the action.
 7. Open https://amp-csr-portal.nupadhaya.com/csr/lane-context to see live lane/session context.
-8. Open https://amp-csr-portal.nupadhaya.com/csr/docs to search support playbooks.
-9. Open https://amp-csr-portal.nupadhaya.com/presentation for the in-app walkthrough.
+8. Open https://amp-csr-portal.nupadhaya.com/demo/systemDesign for the system design overview.
+9. Open https://amp-csr-portal.nupadhaya.com/demo/presentation for the in-app walkthrough.
 
 ## Take-home requirement coverage
 
@@ -56,7 +55,8 @@ Use this path first during review:
 | `/csr/docs` | Searchable CSR support playbooks |
 | `/csr/docs/[slug]` | Individual support playbook article |
 | `/mobile` | Demo companion customer-side mobile state |
-| `/presentation` | Browser-based take-home presentation |
+| `/demo/presentation` | Browser-based take-home presentation |
+| `/demo/systemDesign` | System design overview for reviewers |
 | `/demo` | Manual demo launcher |
 
 ## Tech stack
@@ -82,17 +82,17 @@ Use this path first during review:
 
 ```mermaid
 flowchart LR
-  A[CSR browser] --> B[Next.js App Router]
-  B --> C[Server Components]
-  B --> D[Client Workspaces]
-  C --> E[Server Actions / API Routes]
+  A["CSR browser"] --> B["Next.js App Router"]
+  B --> C["Server Components"]
+  B --> D["Client Workspaces"]
+  C --> E["Server Actions / API Routes"]
   D --> E
-  E --> F[Zod Validation]
-  F --> G[Domain Logic / View Models]
-  G --> H[Prisma ORM]
-  H --> I[(Postgres / Neon)]
-  G --> J[Smart Search / Docs Search]
-  J --> K[(Support Docs + pgvector)]
+  E --> F["Zod Validation"]
+  F --> G["Domain Logic / View Models"]
+  G --> H["Prisma ORM"]
+  H --> I[("Postgres / Neon")]
+  G --> J["Smart Search / Docs Search"]
+  J --> K[("Support Docs + pgvector")]
 ```
 
 ## Data model summary
@@ -141,14 +141,14 @@ Search flow:
 
 ```mermaid
 flowchart LR
-  A[Markdown playbook] --> B[Parse frontmatter]
-  B --> C[Chunk article]
-  C --> D[MiniLM embedding]
-  D --> E[SupportDocChunk.embedding vector(384)]
-  F[CSR search query] --> G[MiniLM query embedding]
-  G --> H[pgvector cosine search]
-  H --> I[Keyword boost + dedupe]
-  I --> J[Ranked docs results]
+  A["Markdown playbook"] --> B["Parse frontmatter"]
+  B --> C["Chunk article"]
+  C --> D["MiniLM embedding"]
+  D --> E["SupportDocChunk embedding vector 384"]
+  F["CSR search query"] --> G["MiniLM query embedding"]
+  G --> H["pgvector cosine search"]
+  H --> I["Keyword boost + dedupe"]
+  I --> J["Ranked docs results"]
 ```
 
 The app uses local/free embeddings from `Xenova/all-MiniLM-L6-v2` through `@huggingface/transformers`. The seed creates a 384-dimensional `embedding` column on `SupportDocChunk` and indexes it with pgvector. If vector search fails, the app falls back to database keyword search and then static Markdown search.
@@ -227,15 +227,15 @@ A production AMP deployment could use:
 
 ```mermaid
 flowchart LR
-  A[Route 53] --> B[CloudFront]
-  B --> C[AWS WAF]
-  C --> D[ALB]
-  D --> E[ECS Fargate Next.js service]
-  E --> F[(RDS Postgres Multi-AZ)]
-  E --> G[ElastiCache Redis]
-  E --> H[Secrets Manager]
-  E --> I[CloudWatch Logs / Metrics]
-  J[GitHub Actions] --> K[ECR]
+  A["Route 53"] --> B["CloudFront"]
+  B --> C["AWS WAF"]
+  C --> D["ALB"]
+  D --> E["ECS Fargate Next.js service"]
+  E --> F[("RDS Postgres Multi-AZ")]
+  E --> G["ElastiCache Redis"]
+  E --> H["Secrets Manager"]
+  E --> I["CloudWatch Logs / Metrics"]
+  J["GitHub Actions"] --> K["ECR"]
   K --> E
 ```
 

@@ -5,16 +5,12 @@ import {
   ArrowLeft,
   ArrowRight,
   BadgeCheck,
-  Brain,
   CarFront,
   CheckCircle2,
   ChevronLeft,
   ChevronRight,
-  ClipboardList,
-  Database,
+  FileSearch,
   FileClock,
-  KeyRound,
-  Monitor,
   Phone,
   Search,
   ShieldCheck,
@@ -40,15 +36,6 @@ const requirements = [
   "Helpful extras: lane context, docs search, recommended next steps",
 ];
 
-const scaleItems = [
-  "Auth + RBAC for CSR permissions",
-  "Real payment webhooks",
-  "Lane/kiosk event ingestion",
-  "CloudWatch logs and alarms",
-  "RDS backups and connection pooling",
-  "Queue workers for retries and notifications",
-];
-
 const tradeoffs = [
   "Mock CSR identity instead of real auth",
   "No real payment processor",
@@ -63,17 +50,17 @@ function cn(...classes) {
 
 function SlideShell({ children, eyebrow, title, subtitle }) {
   return (
-    <section className="grid min-h-[calc(100vh-132px)] content-center px-5 py-7 sm:px-8 lg:px-12">
+    <section className="grid h-[calc(100vh-76px)] content-center overflow-hidden px-5 py-5 sm:px-8 lg:px-12">
       <div className="mx-auto w-full max-w-7xl">
-        <div className="mb-7">
+        <div className="mb-5">
           {eyebrow ? (
-            <p className="text-sm font-semibold uppercase tracking-wide text-primary">{eyebrow}</p>
+            <p className="text-xs font-semibold uppercase tracking-wide text-primary">{eyebrow}</p>
           ) : null}
-          <h1 className="mt-2 max-w-5xl text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
+          <h1 className="mt-2 max-w-5xl text-3xl font-semibold tracking-tight text-foreground sm:text-4xl">
             {title}
           </h1>
           {subtitle ? (
-            <p className="mt-4 max-w-4xl text-lg leading-8 text-muted">{subtitle}</p>
+            <p className="mt-3 max-w-4xl text-base leading-7 text-muted">{subtitle}</p>
           ) : null}
         </div>
         {children}
@@ -97,7 +84,7 @@ function Pill({ children, tone = "neutral" }) {
   );
 }
 
-function MockPhone({ children, label = "Customer mobile view", size = "default" }) {
+function MockPhone({ children, label = "Customer mobile view" }) {
   return (
     <div>
       <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-muted">
@@ -105,19 +92,11 @@ function MockPhone({ children, label = "Customer mobile view", size = "default" 
         {label}
       </div>
       <div
-        className={cn(
-          "w-full rounded-[2.25rem] border border-slate-300 bg-slate-950 p-3 shadow-2xl shadow-slate-300/60",
-          size === "compact" ? "max-w-[260px]" : "mx-auto max-w-[300px]",
-        )}
+        className="mx-auto w-full max-w-[340px] rounded-[2.25rem] border border-slate-300 bg-slate-950 p-3 shadow-2xl shadow-slate-300/60"
       >
         <div className="rounded-[1.8rem] bg-surface p-4">
           <div className="mx-auto mb-4 h-1.5 w-16 rounded-full bg-slate-300" />
-          <div
-            className={cn(
-              "rounded-[1.35rem] bg-card p-4 shadow-inner",
-              size === "compact" ? "min-h-[400px]" : "min-h-[430px]",
-            )}
-          >
+          <div className="min-h-[440px] rounded-[1.35rem] bg-card p-4 shadow-inner">
             {children}
           </div>
         </div>
@@ -126,56 +105,13 @@ function MockPhone({ children, label = "Customer mobile view", size = "default" 
   );
 }
 
-function LivePortalFrame({ caption, large = false, path = "/" }) {
-  return (
-    <div>
-      <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-muted">
-        <Monitor size={16} aria-hidden="true" />
-        Live CSR portal
-      </div>
-      <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-xl shadow-slate-300/50">
-        <div className="flex items-center justify-between border-b border-border bg-surface px-4 py-3">
-          <div className="flex items-center gap-2">
-            <span className="h-3 w-3 rounded-full bg-critical/70" />
-            <span className="h-3 w-3 rounded-full bg-warning/70" />
-            <span className="h-3 w-3 rounded-full bg-success/70" />
-          </div>
-          <span className="rounded-full border border-border bg-card px-3 py-1 text-xs font-semibold text-muted">
-            {path}
-          </span>
-        </div>
-        <div className={cn("relative bg-surface", large ? "h-[620px]" : "h-[500px]")}>
-          <div className="absolute left-4 top-4 z-0 rounded-full bg-card px-3 py-1 text-xs font-semibold text-muted">
-            Loading live route...
-          </div>
-          <iframe
-            className="relative z-10 h-full w-full bg-background"
-            src={path}
-            title={`Live CSR portal frame ${path}`}
-          />
-        </div>
-      </div>
-      {caption ? <p className="mt-3 text-sm leading-6 text-muted">{caption}</p> : null}
-    </div>
-  );
-}
-
-function DiagramCard({ alt, caption, src }) {
-  return (
-    <div className="rounded-3xl border border-border bg-card p-4 shadow-sm shadow-slate-200/70">
-      <img alt={alt} className="w-full rounded-2xl border border-border bg-surface" src={src} />
-      {caption ? <p className="mt-3 text-sm leading-6 text-muted">{caption}</p> : null}
-    </div>
-  );
-}
-
 function FlowStep({ icon: Icon, label }) {
   return (
-    <div className="flex min-w-[150px] flex-1 items-center gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm shadow-slate-200/70">
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-surface-muted text-primary">
-        <Icon size={19} aria-hidden="true" />
+    <div className="flex min-h-24 flex-1 items-center gap-4 rounded-2xl border border-border bg-card p-5 shadow-sm shadow-slate-200/70">
+      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-surface-muted text-primary">
+        <Icon size={22} aria-hidden="true" />
       </span>
-      <span className="text-sm font-semibold">{label}</span>
+      <span className="text-lg font-semibold leading-6">{label}</span>
     </div>
   );
 }
@@ -190,13 +126,13 @@ function ProblemFlow() {
   ];
 
   return (
-    <div className="rounded-3xl border border-border bg-card p-5 shadow-sm shadow-slate-200/70">
-      <div className="flex flex-wrap items-center gap-3">
+    <div className="rounded-3xl border border-border bg-card p-6 shadow-sm shadow-slate-200/70">
+      <div className="grid items-center gap-4 xl:grid-cols-[1fr_auto_1fr_auto_1fr_auto_1fr_auto_1fr]">
         {steps.map((step, index) => (
           <div className="contents" key={step.label}>
             <FlowStep {...step} />
             {index < steps.length - 1 ? (
-              <ArrowRight className="hidden text-muted xl:block" size={20} aria-hidden="true" />
+              <ArrowRight className="mx-auto hidden text-primary xl:block" size={30} aria-hidden="true" />
             ) : null}
           </div>
         ))}
@@ -205,26 +141,38 @@ function ProblemFlow() {
   );
 }
 
-function ScenarioSlide({ caption, children, framePath, note, phoneTitle, title, subtitle }) {
+function ScenarioFlowPanel({ headline, steps }) {
   return (
-    <section className="grid min-h-[calc(100vh-132px)] content-center px-5 py-4 sm:px-8 lg:px-10">
-      <div className="mx-auto w-full max-w-[1600px]">
-        <div className="mb-3 flex min-w-0 flex-wrap items-baseline gap-x-4 gap-y-1">
-          <p className="text-sm font-semibold uppercase tracking-wide text-primary">Scenario</p>
-          <h1 className="min-w-0 text-3xl font-semibold tracking-tight text-foreground lg:whitespace-nowrap">
-            {title}
-          </h1>
-          {subtitle ? <p className="text-sm font-medium text-muted">{subtitle}</p> : null}
-        </div>
-        <div className="grid items-start gap-5 lg:grid-cols-[280px_minmax(0,1fr)]">
-          <MockPhone label={phoneTitle} size="compact">{children}</MockPhone>
-        <div className="grid gap-4">
-          <LivePortalFrame caption={caption} large path={framePath} />
-          <div className="rounded-2xl border border-primary/20 bg-primary/5 p-3 text-sm font-medium leading-6 text-foreground">
-            {note}
+    <div className="rounded-3xl border border-border bg-card p-6 shadow-sm shadow-slate-200/70">
+      <h2 className="text-2xl font-semibold tracking-tight">{headline}</h2>
+      <div className="mt-6 grid gap-3">
+        {steps.map((step, index) => (
+          <div className="grid grid-cols-[42px_minmax(0,1fr)] gap-3" key={step}>
+            <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary text-sm font-semibold text-primary-foreground">
+              {index + 1}
+            </span>
+            <div className="rounded-2xl border border-border bg-surface p-4 text-lg font-semibold leading-7">
+              {step}
+            </div>
           </div>
-        </div>
+        ))}
       </div>
+    </div>
+  );
+}
+
+function ScenarioSlide({ children, flowHeadline, flowSteps, phoneTitle, title, subtitle }) {
+  return (
+    <section className="grid h-[calc(100vh-76px)] content-center overflow-hidden px-5 py-5 sm:px-8 lg:px-10">
+      <div className="mx-auto w-full max-w-[1600px]">
+        <div className="mb-5">
+          <h1 className="text-3xl font-semibold tracking-tight text-foreground lg:text-4xl">{title}</h1>
+          {subtitle ? <p className="mt-2 text-base leading-7 text-muted">{subtitle}</p> : null}
+        </div>
+        <div className="grid items-start gap-8 lg:grid-cols-[390px_minmax(0,1fr)]">
+          <MockPhone label={phoneTitle}>{children}</MockPhone>
+          <ScenarioFlowPanel headline={flowHeadline} steps={flowSteps} />
+        </div>
       </div>
     </section>
   );
@@ -358,68 +306,16 @@ function LaneContextPhone() {
   );
 }
 
-function ArchitectureDiagram() {
-  const nodes = [
-    { icon: Monitor, label: "Browser" },
-    { icon: Workflow, label: "Next.js App Router / Server Components" },
-    { icon: KeyRound, label: "Server Actions + Domain Logic" },
-    { icon: Database, label: "Prisma ORM" },
-    { icon: Database, label: "Neon Postgres" },
-  ];
-
-  return (
-    <div className="grid gap-5 lg:grid-cols-[1fr_360px]">
-      <div className="rounded-3xl border border-border bg-card p-6 shadow-sm shadow-slate-200/70">
-        <div className="grid gap-3">
-          {nodes.map((node, index) => {
-            const Icon = node.icon;
-            return (
-              <div key={node.label}>
-                <div className="flex items-center gap-4 rounded-2xl border border-border bg-surface p-4">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-card text-primary">
-                    <Icon size={21} aria-hidden="true" />
-                  </span>
-                  <p className="font-semibold">{node.label}</p>
-                </div>
-                {index < nodes.length - 1 ? (
-                  <div className="ml-9 h-7 border-l-2 border-dashed border-primary/30" />
-                ) : null}
-              </div>
-            );
-          })}
-        </div>
-      </div>
-      <div className="grid gap-3">
-        {[
-          ["Fuse.js search", Search],
-          ["Local semantic search / TF-IDF smart search", Brain],
-          ["Audit events", FileClock],
-          ["Seeded demo data", ClipboardList],
-        ].map(([label, Icon]) => (
-          <div className="rounded-2xl border border-border bg-card p-4 shadow-sm shadow-slate-200/70" key={label}>
-            <div className="flex items-center gap-3">
-              <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-surface-muted text-primary">
-                <Icon size={19} aria-hidden="true" />
-              </span>
-              <p className="font-semibold">{label}</p>
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 function ChecklistGrid({ items }) {
   return (
-    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+    <div className="grid auto-rows-fr gap-3 md:grid-cols-2 xl:grid-cols-3">
       {items.map((item) => (
         <div
-          className="flex items-start gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm shadow-slate-200/70"
+          className="flex min-h-24 items-center gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm shadow-slate-200/70"
           key={item}
         >
-          <CheckCircle2 className="mt-0.5 shrink-0 text-success" size={20} aria-hidden="true" />
-          <p className="text-sm font-semibold leading-6">{item}</p>
+          <CheckCircle2 className="shrink-0 text-success" size={22} aria-hidden="true" />
+          <p className="text-base font-semibold leading-6">{item}</p>
         </div>
       ))}
     </div>
@@ -462,8 +358,8 @@ function IntroSlide() {
           <div className="mt-8 flex flex-wrap gap-3">
             {[
               ["Open portal", "/csr/dashboard"],
-              ["Open docs", "/csr/docs"],
-              ["Lane context", "/csr/lane-context"],
+              ["System design", "/demo/systemDesign"],
+              ["Presentation", "/demo/presentation"],
             ].map(([label, href]) => (
               <Link
                 className="rounded-xl bg-primary-foreground px-4 py-3 text-sm font-semibold text-primary"
@@ -484,27 +380,23 @@ function ProblemSlide() {
   return (
     <SlideShell
       eyebrow="Problem statement"
-      title="Customers call when a membership issue blocks a normal wash experience."
-      subtitle="The CSR needs account context, vehicle context, payment context, subscription actions, and notes without jumping between tools."
+      title="A normal wash should not turn into a support scavenger hunt."
+      subtitle="When a member is blocked, the CSR needs the account, car, payment, lane, and subscription story in one place."
     >
-      <div className="grid gap-6 lg:grid-cols-[420px_1fr]">
-        <div className="grid gap-3">
+      <div className="grid gap-5 lg:grid-cols-[340px_1fr]">
+        <div className="grid gap-2">
           {[
-            "Cannot get a wash because payment failed / account is overdue",
-            "Bought a new vehicle and need coverage transferred",
-            "Have a question about a purchase or membership charge",
-            "Want to cancel or change their plan",
+            "Payment failed",
+            "New car needs coverage",
+            "Charge or refund question",
+            "Cancel or change plan",
           ].map((item) => (
-            <div className="rounded-2xl border border-border bg-card p-4 shadow-sm shadow-slate-200/70" key={item}>
-              <p className="text-sm font-semibold leading-6">{item}</p>
+            <div className="rounded-2xl border border-border bg-card px-4 py-3 shadow-sm shadow-slate-200/70" key={item}>
+              <p className="text-xl font-semibold leading-7">{item}</p>
             </div>
           ))}
         </div>
-        <DiagramCard
-          alt="Support flow"
-          caption="The app keeps the call flow visible: search, diagnose, act, audit, and confirm."
-          src="/docs/diagrams/support-flow.svg"
-        />
+        <ProblemFlow />
       </div>
     </SlideShell>
   );
@@ -526,25 +418,37 @@ function DocsSearchSlide() {
   return (
     <SlideShell
       eyebrow="Docs"
-      title="Searchable support playbooks turn tribal knowledge into source-of-truth guidance."
-      subtitle="CSRs can search natural support scenarios and open remediation steps without leaving the portal."
+      title="Support docs are built into the workflow."
+      subtitle="A CSR can search plain-language issues and open the exact playbook instead of guessing from memory."
     >
-      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_440px]">
-        <LivePortalFrame
-          large
-          path="/csr/docs?q=customer%20says%20gate%20denied%20but%20app%20is%20active"
-        />
-        <div className="grid gap-4">
-          <DiagramCard
-            alt="Semantic search"
-            caption="This is deterministic source-of-truth retrieval with vector ranking, keyword fallback, and static Markdown fallback."
-            src="/docs/diagrams/semantic-search.svg"
-          />
-          <div className="flex flex-wrap gap-2">
-            {["Markdown source of truth", "MiniLM local embeddings", "pgvector + keyword fallback"].map((item) => (
-              <Pill key={item} tone="primary">{item}</Pill>
+      <div className="grid gap-5 lg:grid-cols-[1fr_380px]">
+        <div className="rounded-3xl border border-border bg-card p-6 shadow-sm shadow-slate-200/70">
+          <div className="rounded-2xl border border-border bg-surface p-5">
+            <p className="text-sm font-semibold text-muted">Search example</p>
+            <p className="mt-2 text-2xl font-semibold">gate denied but app says active</p>
+          </div>
+          <div className="mt-5 grid gap-3">
+            {[
+              "Find matching playbook",
+              "Show the remediation steps",
+              "Link back to the customer action",
+            ].map((step, index) => (
+              <div className="flex items-center gap-3 rounded-2xl border border-border bg-card p-4" key={step}>
+                <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary text-sm font-semibold text-primary-foreground">
+                  {index + 1}
+                </span>
+                <p className="text-lg font-semibold">{step}</p>
+              </div>
             ))}
           </div>
+        </div>
+        <div className="grid gap-3">
+          {["Markdown playbooks", "Local embeddings", "pgvector ranking", "Keyword fallback"].map((item) => (
+            <div className="rounded-2xl border border-border bg-card p-5 shadow-sm shadow-slate-200/70" key={item}>
+              <FileSearch className="text-primary" size={24} aria-hidden="true" />
+              <p className="mt-3 text-xl font-semibold">{item}</p>
+            </div>
+          ))}
         </div>
       </div>
     </SlideShell>
@@ -559,7 +463,18 @@ function CurrentArchitectureSlide() {
       subtitle="The implementation keeps UI, server actions, domain logic, and Prisma data access easy to inspect."
     >
       <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
-        <DiagramCard alt="Current architecture" src="/docs/diagrams/current-architecture.svg" />
+        <div className="rounded-3xl border border-border bg-card p-6 shadow-sm shadow-slate-200/70">
+          <div className="grid items-center gap-3 xl:grid-cols-[1fr_auto_1fr_auto_1fr_auto_1fr]">
+            {["CSR browser", "Next.js app", "Server actions", "Postgres"].map((item, index) => (
+              <div className="contents" key={item}>
+                <div className="rounded-2xl border border-border bg-surface p-5 text-center text-xl font-semibold">
+                  {item}
+                </div>
+                {index < 3 ? <ArrowRight className="mx-auto hidden text-primary xl:block" size={28} aria-hidden="true" /> : null}
+              </div>
+            ))}
+          </div>
+        </div>
         <div className="grid gap-3">
           {[
             "Server actions own mutations",
@@ -584,15 +499,40 @@ function DataModelSlide() {
       title="The customer record connects account, vehicle, payment, lane, and support context."
       subtitle="The schema is centered on the entities a CSR actually needs during a call."
     >
-      <div className="grid gap-5">
-        <DiagramCard alt="Data model" src="/docs/diagrams/data-model.svg" />
-        <div className="flex flex-wrap gap-2">
-          {["Customer", "Vehicle", "Subscription", "Purchase", "SupportNote", "AuditEvent", "LaneSession", "SupportDoc"].map((item) => (
-            <Pill key={item}>{item}</Pill>
-          ))}
-        </div>
+      <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
+        {[
+          ["Customer", "Profile, status, contact info"],
+          ["Vehicle", "Plate, make, model, coverage"],
+          ["Subscription", "Plan, status, billing cycle"],
+          ["Purchase", "Payments, washes, coupons, refunds"],
+          ["LaneSession", "Gate, queue, blocked, plate mismatch"],
+          ["SupportNote", "CSR notes and follow-up context"],
+          ["AuditEvent", "Every support action is traceable"],
+          ["SupportDoc", "Searchable playbooks for CSRs"],
+        ].map(([name, detail]) => (
+          <div className="rounded-2xl border border-border bg-card p-5 shadow-sm shadow-slate-200/70" key={name}>
+            <p className="text-2xl font-semibold">{name}</p>
+            <p className="mt-2 text-base font-medium leading-6 text-muted">{detail}</p>
+          </div>
+        ))}
       </div>
     </SlideShell>
+  );
+}
+
+function AwsServiceCard({ name, detail }) {
+  return (
+    <div className="rounded-2xl border border-border bg-card p-4 shadow-sm shadow-slate-200/70">
+      <div className="flex items-center gap-3">
+        <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#ff9900] text-sm font-black text-slate-950">
+          AWS
+        </span>
+        <div>
+          <p className="text-lg font-semibold">{name}</p>
+          <p className="text-sm font-medium text-muted">{detail}</p>
+        </div>
+      </div>
+    </div>
   );
 }
 
@@ -603,14 +543,30 @@ function ScaleSlide() {
       title="The MVP can move cleanly from Vercel/Neon to an AWS production architecture."
       subtitle="The same boundaries map to CDN, WAF, containers, RDS, secrets, logs, and CI/CD."
     >
-      <div className="grid gap-5 lg:grid-cols-[1fr_420px]">
-        <DiagramCard alt="AWS production deployment" src="/docs/diagrams/aws-production.svg" />
-        <div className="grid gap-3">
-          {scaleItems.map((item) => (
-            <div className="rounded-2xl border border-border bg-card p-4 shadow-sm shadow-slate-200/70" key={item}>
-              <p className="text-sm font-semibold leading-6">{item}</p>
-            </div>
-          ))}
+      <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
+        <div className="rounded-3xl border border-border bg-card p-6 shadow-sm shadow-slate-200/70">
+          <div className="grid gap-3">
+            {[
+              ["Route 53", "DNS"],
+              ["CloudFront + WAF", "edge + protection"],
+              ["ALB + ECS Fargate", "Next.js service"],
+              ["RDS Postgres", "customer/support data"],
+            ].map(([name, detail]) => (
+              <AwsServiceCard detail={detail} key={name} name={name} />
+            ))}
+          </div>
+        </div>
+        <div className="rounded-3xl border border-border bg-card p-6 shadow-sm shadow-slate-200/70">
+          <div className="grid gap-3">
+            {[
+              ["Secrets Manager", "database and provider keys"],
+              ["CloudWatch", "logs, metrics, alarms"],
+              ["ECR", "container registry"],
+              ["GitHub Actions", "test, build, deploy"],
+            ].map(([name, detail]) => (
+              <AwsServiceCard detail={detail} key={name} name={name} />
+            ))}
+          </div>
         </div>
       </div>
     </SlideShell>
@@ -662,42 +618,6 @@ function TradeoffsSlide() {
   );
 }
 
-function ClosingSlide() {
-  return (
-    <SlideShell
-      eyebrow="Closing"
-      title="Built for the CSR call flow"
-      subtitle="Search fast, diagnose clearly, act safely, and leave an audit trail."
-    >
-      <div className="rounded-3xl border border-border bg-card p-8 shadow-sm shadow-slate-200/70">
-        <div className="grid gap-4 md:grid-cols-4">
-          {[
-            ["Search fast", Search],
-            ["Diagnose clearly", Brain],
-            ["Act safely", ShieldCheck],
-            ["Audit trail", FileClock],
-          ].map(([label, Icon]) => (
-            <div className="rounded-2xl border border-border bg-surface p-5 text-center" key={label}>
-              <Icon className="mx-auto text-primary" size={28} aria-hidden="true" />
-              <p className="mt-4 font-semibold">{label}</p>
-            </div>
-          ))}
-        </div>
-        <div className="mt-8 flex flex-wrap items-center justify-between gap-4">
-          <p className="text-sm font-semibold text-muted">AMP CSR Command Center</p>
-          <Link
-            className="inline-flex h-11 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground"
-            href="/csr/dashboard"
-          >
-            Open portal
-            <ArrowRight size={16} aria-hidden="true" />
-          </Link>
-        </div>
-      </div>
-    </SlideShell>
-  );
-}
-
 function createSlides() {
   return [
     { id: "intro", label: "Intro", render: () => <IntroSlide /> },
@@ -708,9 +628,13 @@ function createSlides() {
       label: "Blocked wash",
       render: () => (
         <ScenarioSlide
-          caption="Search for the overdue demo customer or license plate CZR4821, then open the profile."
-          framePath="/csr/customers?q=CZR4821"
-          note="CSR searches by license plate, opens the profile, sees the overdue subscription, failed payment, lane context, and purchase history, then updates payment or retries the charge."
+          flowHeadline="What the CSR does"
+          flowSteps={[
+            "Search by plate CZR4821",
+            "See the failed payment and blocked lane status",
+            "Update the card or retry the charge",
+            "Confirm the customer can wash again",
+          ]}
           phoneTitle="Customer mobile view"
           title="Unable to get a wash"
           subtitle="The customer is blocked at the gate because the membership payment failed."
@@ -724,12 +648,16 @@ function createSlides() {
       label: "Lane context",
       render: () => (
         <ScenarioSlide
-          caption="CSR sees vehicles at gate, blocked, in queue, cleared, or needing plate/coverage attention."
-          framePath="/csr/lane-context"
-          note="Lane sessions link directly back to the customer profile and recommended remediation flow."
+          flowHeadline="How lane context helps"
+          flowSteps={[
+            "Spot blocked cars before the call gets messy",
+            "Open the linked customer profile",
+            "Use the recommended fix path",
+            "Move the car back into the queue",
+          ]}
           phoneTitle="Operational lane view"
-          title="The portal now includes operational context from the wash lane."
-          subtitle="This mirrors the real-world attendant workflow: vehicles can be at gate, blocked, in queue, or cleared."
+          title="Lane context shows what is happening at the wash."
+          subtitle="The CSR can see whether the car is at the gate, blocked, in queue, or cleared."
         >
           <LaneContextPhone />
         </ScenarioSlide>
@@ -740,9 +668,13 @@ function createSlides() {
       label: "Vehicle transfer",
       render: () => (
         <ScenarioSlide
-          caption="CSR opens the member profile, confirms vehicles, and transfers subscription coverage."
-          framePath="/csr/customers?q=new%20vehicle"
-          note="Vehicle and subscription actions stay on the profile so coverage changes are made with full account context."
+          flowHeadline="Coverage transfer flow"
+          flowSteps={[
+            "Find the member by name, plate, or issue",
+            "Confirm old and new vehicles",
+            "Transfer coverage to the new car",
+            "Leave an audit trail on the account",
+          ]}
           phoneTitle="Customer mobile view"
           title="New vehicle transfer"
           subtitle="A member bought a new vehicle and wants the existing membership moved."
@@ -756,11 +688,15 @@ function createSlides() {
       label: "Billing",
       render: () => (
         <ScenarioSlide
-          caption="CSR reviews purchase history, subscription status, support notes, and audit timeline."
-          framePath="/csr/customers?q=refund"
-          note="The purchase history card closes the take-home requirement around recent purchase questions."
+          flowHeadline="Billing question flow"
+          flowSteps={[
+            "Open purchase history from the profile",
+            "Check payments, failed charges, coupons, and refunds",
+            "Explain what happened in plain language",
+            "Add a note if follow-up is needed",
+          ]}
           phoneTitle="Customer billing view"
-          title="Purchase history is visible inside the customer profile."
+          title="Purchase history is right where the CSR needs it."
           subtitle="The CSR can explain membership payments, failed charges, single washes, coupon redemptions, and refunds."
         >
           <BillingPhone />

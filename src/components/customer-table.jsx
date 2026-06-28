@@ -161,7 +161,7 @@ function Pill({ children, tone = "success" }) {
 }
 
 export function CustomerTable({ rows, summary, filters }) {
-  const [sorting, setSorting] = useState([{ id: "priorityRank", desc: false }]);
+  const [sorting, setSorting] = useState([{ id: "statusLabel", desc: false }]);
   const [advancedFiltersOpen, setAdvancedFiltersOpen] = useState(false);
   const [columnFilters, setColumnFilters] = useState([]);
   const [globalFilter, setGlobalFilter] = useState(filters.q || "");
@@ -233,6 +233,7 @@ export function CustomerTable({ rows, summary, filters }) {
       {
         accessorKey: "statusLabel",
         header: "Status",
+        sortingFn: (left, right) => left.original.priorityRank - right.original.priorityRank,
         cell: ({ row }) => (
           <Pill tone={row.original.statusTone}>
             {row.original.statusLabel}

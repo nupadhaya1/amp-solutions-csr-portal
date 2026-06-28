@@ -61,4 +61,4 @@ This guide gives a reviewer a fast path through the deployed app and highlights 
 
 ## Demo path 6: presentation
 
-Open `/presentation` and use arrow keys to walk through the app narrative.
+Open `/demo/presentation` and use arrow keys to walk through the app narrative.

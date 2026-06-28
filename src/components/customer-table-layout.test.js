@@ -59,3 +59,9 @@ test("customer grid exposes the requested operational columns", () => {
   assert.doesNotMatch(source, /\{customer\.id\}/);
   assert.doesNotMatch(source, /row\.original\.priorityLabel/);
 });
+
+test("customer grid default priority sorting is backed by an existing column", () => {
+  assert.match(source, /useState\(\[\{ id: "statusLabel", desc: false \}\]\)/);
+  assert.match(source, /sortingFn: \(left, right\) => left\.original\.priorityRank - right\.original\.priorityRank/);
+  assert.doesNotMatch(source, /useState\(\[\{ id: "priorityRank"/);
+});

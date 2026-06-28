@@ -10,7 +10,12 @@ const destinations = [
   {
     title: "View Presentation",
     description: "Keyboard-driven take-home walkthrough.",
-    href: "/presentation",
+    href: "/demo/presentation",
+  },
+  {
+    title: "System Design",
+    description: "Architecture, data model, docs search, and production path.",
+    href: "/demo/systemDesign",
   },
   {
     title: "Mobile Companion",
@@ -31,9 +36,9 @@ export default function DemoHub() {
           AMP CSR Command Center demo
         </h1>
         <p className="mt-5 max-w-2xl text-lg leading-8 text-muted">
-          Choose the live portal, presentation walkthrough, or mobile companion.
+          Choose the live portal, presentation walkthrough, system design overview, or mobile companion.
         </p>
-        <div className="mt-8 grid gap-4 md:grid-cols-3">
+        <div className="mt-8 grid gap-4 md:grid-cols-4">
           {destinations.map((destination) => (
             <Link
               className="group rounded-lg border border-border bg-card p-5 shadow-sm transition hover:border-primary"
