@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import { buildSeedCustomers } from "./seed.js";
+import { buildSeedCustomers, buildSeedLaneSessions } from "./seed.js";
 
 test("seed data includes a realistic support queue", () => {
   const customers = buildSeedCustomers();
@@ -30,4 +30,38 @@ test("seed data keeps customer emails and license plates unique", () => {
 
   assert.equal(new Set(emails).size, emails.length);
   assert.equal(new Set(plates).size, plates.length);
+});
+
+test("seed data defines exactly three active lane context scenarios", () => {
+  const laneSessions = buildSeedLaneSessions();
+
+  assert.equal(laneSessions.length, 3);
+  assert.deepEqual(
+    laneSessions.map((session) => ({
+      email: session.customerEmail,
+      status: session.status,
+      issueCode: session.issueCode,
+      issueSeverity: session.issueSeverity,
+    })),
+    [
+      {
+        email: "alex.morgan@cedarbrookmail.test",
+        status: "BLOCKED",
+        issueCode: "FAILED_PAYMENT",
+        issueSeverity: "BLOCKING",
+      },
+      {
+        email: "priya.shah@cedarbrookmail.test",
+        status: "IN_QUEUE",
+        issueCode: "NONE",
+        issueSeverity: "NONE",
+      },
+      {
+        email: "marcus.reed@cedarbrookmail.test",
+        status: "AT_GATE",
+        issueCode: "PLATE_MISMATCH",
+        issueSeverity: "WARNING",
+      },
+    ],
+  );
 });

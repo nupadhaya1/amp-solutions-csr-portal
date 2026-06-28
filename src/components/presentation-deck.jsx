@@ -54,7 +54,7 @@ const scaleItems = [
 const tradeoffs = [
   "Mock CSR identity instead of real auth",
   "No real payment processor",
-  "Smart search is local/deterministic for MVP",
+  "Customer search is local/deterministic for MVP",
   "Mobile app is a demo companion",
   "Production would add authorization, payment webhooks, operational dashboards, and stronger audit controls",
 ];

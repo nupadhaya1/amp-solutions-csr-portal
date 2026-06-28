@@ -3,8 +3,8 @@ import test from "node:test";
 
 import { createCustomerDashboardViewModel } from "./customer-dashboard-view-model.js";
 
-test("builds a dashboard-focused customer view model with action availability and previews", () => {
-  const profile = createCustomerDashboardViewModel(
+test("builds a dashboard-focused customer view model with action availability and previews", async () => {
+  const profile = await createCustomerDashboardViewModel(
     {
       id: "customer_1",
       firstName: "Drew",
@@ -128,6 +128,7 @@ test("builds a dashboard-focused customer view model with action availability an
       ],
     },
     [],
+    { searchDocs: async () => [] },
   );
 
   assert.equal(profile.fullName, "Drew Irwin");
@@ -152,21 +153,25 @@ test("builds a dashboard-focused customer view model with action availability an
   assert.match(profile.recommendedNextStep.title, /update payment method/i);
 });
 
-test("marks disabled actions when the account lacks a valid membership context", () => {
-  const profile = createCustomerDashboardViewModel({
-    id: "customer_2",
-    firstName: "Casey",
-    lastName: "Lane",
-    email: "casey@example.com",
-    phone: "404-555-0199",
-    status: "CANCELLED",
-    createdAt: "2026-02-01T00:00:00.000Z",
-    vehicles: [],
-    subscriptions: [],
-    purchases: [],
-    supportNotes: [],
-    auditEvents: [],
-  });
+test("marks disabled actions when the account lacks a valid membership context", async () => {
+  const profile = await createCustomerDashboardViewModel(
+    {
+      id: "customer_2",
+      firstName: "Casey",
+      lastName: "Lane",
+      email: "casey@example.com",
+      phone: "404-555-0199",
+      status: "CANCELLED",
+      createdAt: "2026-02-01T00:00:00.000Z",
+      vehicles: [],
+      subscriptions: [],
+      purchases: [],
+      supportNotes: [],
+      auditEvents: [],
+    },
+    [],
+    { searchDocs: async () => [] },
+  );
 
   assert.equal(profile.actionAvailability.canEditAccount, true);
   assert.equal(profile.actionAvailability.canAddVehicle, false);

@@ -147,7 +147,6 @@ Representative support scenarios:
 - `/csr/dashboard`: CSR dashboard
 - `/csr/customers`: customer lookup and search
 - `/csr/search`: redirects to `/csr/customers`
-- `/csr/smart-search`: semantic customer and FAQ search
 - `/csr/docs`: source-of-truth CSR docs search
 - `/csr/docs/[slug]`: CSR docs article detail
 - `/csr/customers/[id]`: customer profile

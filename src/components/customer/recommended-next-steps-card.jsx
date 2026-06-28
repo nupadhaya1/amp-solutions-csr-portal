@@ -10,7 +10,7 @@ const priorityTone = {
 const actionLabels = {
   "update-payment": "Update payment",
   "add-note": "Add support note",
-  "open-billing-docs": "Open billing docs",
+  "open-billing-docs": "Open CSR docs",
   "transfer-vehicle": "Transfer vehicle",
   "add-vehicle": "Add vehicle",
   "change-plan": "Change plan",
@@ -45,13 +45,24 @@ export function RecommendedNextStepsCard({ nextStep, onAction }) {
 
         <div className="flex flex-wrap gap-3">
           {nextStep.actions.map((action) => {
-            const disabled = action === "open-billing-docs";
+            const docsAction = action === "open-billing-docs";
+            if (docsAction && nextStep.docsHref) {
+              return (
+                <Button asChild key={action} tone="secondary">
+                  <a href={nextStep.docsHref} rel="noopener noreferrer" target="_blank">
+                    {actionLabels[action]}
+                  </a>
+                </Button>
+              );
+            }
+
+            const disabled = docsAction;
             return (
               <Button
                 disabled={disabled}
                 key={action}
                 onClick={() => onAction(action)}
-                title={disabled ? "Billing docs are not wired yet." : actionLabels[action]}
+                title={disabled ? "No matching CSR doc was found." : actionLabels[action]}
                 tone={action === "update-payment" ? "primary" : "secondary"}
                 type="button"
               >

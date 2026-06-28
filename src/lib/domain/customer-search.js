@@ -51,6 +51,7 @@ export function flattenCustomerForSearch(customer) {
   const purchases = customer.purchases || [];
   const supportNotes = customer.supportNotes || [];
   const auditEvents = customer.auditEvents || [];
+  const laneSession = (customer.laneSessions || [])[0] || null;
   const primaryVehicle = vehicles[0];
 
   return {
@@ -73,6 +74,7 @@ export function flattenCustomerForSearch(customer) {
     hasCriticalIssue: subscriptions.some(
       (subscription) => subscription.status === "OVERDUE",
     ),
+    laneSession,
     searchText: [
       customer.firstName,
       customer.lastName,
@@ -100,6 +102,10 @@ export function flattenCustomerForSearch(customer) {
       ]),
       ...supportNotes.map((note) => note.note),
       ...auditEvents.flatMap((event) => [event.type, event.message]),
+      laneSession?.status,
+      laneSession?.issueCode,
+      laneSession?.issueSeverity,
+      laneSession?.detectedPlate,
     ]
       .filter(Boolean)
       .join(" "),

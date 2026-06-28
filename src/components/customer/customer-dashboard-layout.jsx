@@ -1,6 +1,7 @@
 "use client";
 
 import { startTransition, useMemo, useState } from "react";
+import Link from "next/link";
 import { toast } from "sonner";
 
 import { CustomerActionPanel } from "./customer-action-panel.jsx";
@@ -30,6 +31,50 @@ const successMessages = {
   "payment-updated": "Payment method updated, failed membership payment retried, and audit timeline refreshed.",
   "payment-retried": "Failed membership payment retried and audit timeline refreshed.",
 };
+
+function LaneContextBanner({ laneContext, onAction }) {
+  if (!laneContext) return null;
+
+  const actionMap = {
+    FAILED_PAYMENT: "update-payment",
+    PLATE_MISMATCH: "transfer-vehicle",
+    NO_ACTIVE_SUBSCRIPTION: "change-plan",
+  };
+  const action = actionMap[laneContext.issueCode] || "";
+
+  return (
+    <Alert tone={laneContext.issueTone === "critical" ? "critical" : laneContext.issueTone}>
+      <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <Link
+          className="min-w-0 rounded-xl transition hover:underline"
+          href={laneContext.laneContextHref}
+        >
+          <div className="flex flex-wrap items-center gap-2">
+            <p className="font-semibold">Lane Context</p>
+            <Badge tone={laneContext.issueTone}>{laneContext.statusLabel}</Badge>
+            <span className="text-xs font-semibold uppercase tracking-wide">
+              {laneContext.detectedPlate}
+            </span>
+          </div>
+          <p className="mt-1 text-sm">
+            {laneContext.locationName} · {laneContext.laneName} · {laneContext.detectedAtLabel}
+          </p>
+          <p className="mt-2 text-sm font-medium">{laneContext.issueSummary}</p>
+          <p className="mt-1 text-sm">{laneContext.recommendedAction}</p>
+        </Link>
+        {action ? (
+          <button
+            className="inline-flex min-h-10 shrink-0 items-center justify-center rounded-xl bg-primary px-4 text-sm font-semibold text-primary-foreground shadow-sm transition hover:brightness-95"
+            onClick={() => onAction(action)}
+            type="button"
+          >
+            Open support flow
+          </button>
+        ) : null}
+      </div>
+    </Alert>
+  );
+}
 
 export function CustomerDashboardLayout({
   addSupportNoteAction,
@@ -109,6 +154,8 @@ export function CustomerDashboardLayout({
             </div>
           </Alert>
         ) : null}
+
+        <LaneContextBanner laneContext={customer.laneContext} onAction={handleWorkflowAction} />
 
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,7fr)_minmax(320px,3fr)]">
           <CustomerSummaryCard backHref={backHref} customer={customer} />

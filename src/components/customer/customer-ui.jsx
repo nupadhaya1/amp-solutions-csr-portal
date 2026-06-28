@@ -1,6 +1,7 @@
 "use client";
 
 import * as Dialog from "@radix-ui/react-dialog";
+import { Slot } from "@radix-ui/react-slot";
 import { X } from "lucide-react";
 
 function joinClasses(...classes) {
@@ -50,6 +51,7 @@ export function Badge({ children, tone = "default", className = "" }) {
 }
 
 export function Button({
+  asChild = false,
   children,
   className = "",
   disabled = false,
@@ -65,19 +67,20 @@ export function Button({
       ghost: "text-foreground hover:bg-surface",
     }[tone] || "bg-primary text-primary-foreground hover:brightness-95";
 
+  const Component = asChild ? Slot : "button";
+
   return (
-    <button
+    <Component
       className={joinClasses(
         "inline-flex min-h-10 items-center justify-center rounded-xl px-4 text-sm font-semibold shadow-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50",
         toneClass,
         className,
       )}
-      disabled={disabled}
-      type={type}
+      {...(!asChild ? { disabled, type } : {})}
       {...props}
     >
       {children}
-    </button>
+    </Component>
   );
 }
 

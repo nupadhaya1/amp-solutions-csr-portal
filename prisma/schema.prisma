@@ -65,6 +65,7 @@ model Customer {
   purchases     Purchase[]
   supportNotes  SupportNote[]
   auditEvents   AuditEvent[]
+  laneSessions  LaneSession[]
   createdAt     DateTime       @default(now())
   updatedAt     DateTime       @updatedAt
 }
@@ -80,6 +81,7 @@ model Vehicle {
   customer             Customer              @relation(fields: [customerId], references: [id], onDelete: Cascade)
   subscriptionVehicles SubscriptionVehicle[]
   purchases            Purchase[]
+  laneSessions         LaneSession[]
   createdAt            DateTime              @default(now())
   updatedAt            DateTime              @updatedAt
 
@@ -178,6 +180,32 @@ model AuditEvent {
 
   @@index([customerId])
   @@index([type])
+}
+
+model LaneSession {
+  id            String    @id @default(cuid())
+  customerId    String?
+  vehicleId     String?
+  locationName  String
+  laneName      String
+  status        String
+  detectedPlate String
+  detectedAt    DateTime
+  confidence    Float?
+  issueCode     String    @default("NONE")
+  issueSeverity String    @default("NONE")
+  resolvedAt    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  customer      Customer? @relation(fields: [customerId], references: [id])
+  vehicle       Vehicle?  @relation(fields: [vehicleId], references: [id])
+
+  @@index([customerId])
+  @@index([vehicleId])
+  @@index([status])
+  @@index([issueCode])
+  @@index([detectedPlate])
 }
 
 model FaqArticle {

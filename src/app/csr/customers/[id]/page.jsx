@@ -10,6 +10,7 @@ import {
   updateCustomerAccount,
 } from "@/lib/data/customer-actions";
 import { customerInclude } from "@/lib/data/customers";
+import { clearFailedPaymentLaneSessions } from "@/lib/data/lane-sessions";
 import { createCustomerDashboardViewModel } from "@/lib/domain/customer-dashboard-view-model.js";
 import { prisma } from "@/lib/prisma";
 import { supportNoteSchema } from "@/lib/validation/support-note";
@@ -172,12 +173,15 @@ async function updatePaymentMethod(formData) {
           actorType: "CSR",
         },
       });
+
+      await clearFailedPaymentLaneSessions({ prismaClient: tx, customerId });
     });
   } catch {
     redirect(`/csr/customers/${customerId}?action=invalid-payment`);
   }
 
   revalidatePath(`/csr/customers/${customerId}`);
+  revalidatePath("/csr/lane-context");
   redirect(`/csr/customers/${customerId}?action=payment-updated`);
 }
 
@@ -233,12 +237,15 @@ async function retryFailedCharge(formData) {
           actorType: "CSR",
         },
       });
+
+      await clearFailedPaymentLaneSessions({ prismaClient: tx, customerId });
     });
   } catch {
     redirect(`/csr/customers/${customerId}?action=invalid-payment`);
   }
 
   revalidatePath(`/csr/customers/${customerId}`);
+  revalidatePath("/csr/lane-context");
   redirect(`/csr/customers/${customerId}?action=payment-retried`);
 }
 
@@ -328,7 +335,7 @@ export default async function CustomerProfilePage({ params, searchParams }) {
   const plans = await prisma.subscriptionPlan.findMany({
     orderBy: [{ monthlyPrice: "asc" }, { name: "asc" }],
   });
-  const profile = createCustomerDashboardViewModel(customer, plans);
+  const profile = await createCustomerDashboardViewModel(customer, plans);
   const returnQuery = String(query?.returnQuery || "").trim();
   const backHref = returnQuery
     ? `/csr/customers?q=${encodeURIComponent(returnQuery)}`

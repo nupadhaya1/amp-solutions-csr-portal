@@ -24,6 +24,8 @@ test("customer grid exposes advanced field filters in a dropdown", () => {
   assert.match(source, /Advanced filters/);
   assert.match(source, /advancedFiltersOpen/);
   assert.match(source, /columnFilters/);
+  assert.match(source, /aria-controls="advanced-customer-filters"/);
+  assert.match(source, /id="advanced-customer-filters"/);
   assert.match(source, /getColumn\("fullName"\)/);
   assert.match(source, /getColumn\("contactSummary"\)/);
   assert.match(source, /getColumn\("vehicleSummary"\)/);
@@ -32,6 +34,8 @@ test("customer grid exposes advanced field filters in a dropdown", () => {
   assert.match(source, /Filter email or phone/);
   assert.match(source, /Filter vehicle or plate/);
   assert.match(source, /Filter plan/);
+  assert.doesNotMatch(source, /absolute right-0/);
+  assert.doesNotMatch(source, /shadow-xl/);
   assert.doesNotMatch(source, /header\.column\.id === "fullName"/);
 });
 

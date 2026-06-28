@@ -1,6 +1,13 @@
 // @ts-check
 
 import { getRecommendedNextSteps } from "./recommended-next-steps.js";
+import { searchSupportDocs } from "../docs/search-docs.js";
+import {
+  formatLaneDetectedTime,
+  getLaneIssueResolution,
+  getLaneSeverityTone,
+  getLaneStatusLabel,
+} from "./lane-context.js";
 
 const vehicleColorMap = {
   black: "#111827",
@@ -208,7 +215,30 @@ function buildActivity(event) {
   };
 }
 
-export function createCustomerDashboardViewModel(customer, plans = []) {
+function buildLaneContext(customer) {
+  const laneSession = (customer.laneSessions || [])[0] || null;
+  if (!laneSession) return null;
+
+  const resolution = getLaneIssueResolution(laneSession.issueCode);
+
+  return {
+    id: laneSession.id,
+    status: laneSession.status,
+    statusLabel: getLaneStatusLabel(laneSession.status),
+    detectedPlate: laneSession.detectedPlate,
+    locationName: laneSession.locationName,
+    laneName: laneSession.laneName,
+    issueCode: laneSession.issueCode,
+    issueSeverity: laneSession.issueSeverity,
+    issueTone: getLaneSeverityTone(laneSession.issueSeverity),
+    issueSummary: resolution.summary,
+    recommendedAction: resolution.recommendedAction,
+    detectedAtLabel: formatLaneDetectedTime(laneSession.detectedAt),
+    laneContextHref: `/csr/lane-context?customerId=${encodeURIComponent(customer.id)}`,
+  };
+}
+
+export async function createCustomerDashboardViewModel(customer, plans = [], options = {}) {
   const subscriptions = customer.subscriptions || [];
   const vehiclesWithSubscriptions = buildVehiclesWithSubscriptions(customer);
   const activeOrOverdueSubscriptions = subscriptions.filter((subscription) =>
@@ -271,6 +301,7 @@ export function createCustomerDashboardViewModel(customer, plans = []) {
         })),
     })),
     billing,
+    laneContext: buildLaneContext(customer),
     supportNotesPreview: (customer.supportNotes || []).slice(0, 3).map((note) => ({
       id: note.id,
       tag: inferNoteTag(note.note),
@@ -304,7 +335,9 @@ export function createCustomerDashboardViewModel(customer, plans = []) {
     })),
   };
 
-  profile.recommendedNextStep = getRecommendedNextSteps(profile);
+  profile.recommendedNextStep = await getRecommendedNextSteps(profile, {
+    searchDocs: options.searchDocs || searchSupportDocs,
+  });
 
   return profile;
 }

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import {
   BookOpen,
-  Brain,
+  CarFront,
   Grid2X2,
   PanelLeftClose,
   PanelLeftOpen,
@@ -18,7 +18,7 @@ import { supportDocCatalog } from "@/lib/docs/support-doc-catalog";
 const navItems = [
   { href: "/csr/dashboard", label: "Dashboard", icon: Grid2X2 },
   { href: "/csr/customers", label: "Customers", icon: UsersRound },
-  { href: "/csr/smart-search", label: "Smart search", icon: Brain },
+  { href: "/csr/lane-context", label: "Lane Context", icon: CarFront },
   { href: "/csr/docs", label: "Docs", icon: BookOpen },
 ];
 

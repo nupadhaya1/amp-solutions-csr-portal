@@ -36,6 +36,7 @@ const nextSeedMemberId = () => {
 async function reset() {
   await prisma.supportDocChunk.deleteMany();
   await prisma.supportDoc.deleteMany();
+  await prisma.laneSession.deleteMany();
   await prisma.auditEvent.deleteMany();
   await prisma.supportNote.deleteMany();
   await prisma.purchase.deleteMany();
@@ -907,10 +908,87 @@ export function buildSeedCustomers() {
   }));
 }
 
+export function buildSeedLaneSessions() {
+  return [
+    {
+      customerEmail: "alex.morgan@cedarbrookmail.test",
+      vehiclePlate: "CZR4821",
+      locationName: "AMP Buckhead",
+      laneName: "Lane 2",
+      status: "BLOCKED",
+      detectedPlate: "CZR4821",
+      detectedMinutesAgo: 2,
+      confidence: 0.98,
+      issueCode: "FAILED_PAYMENT",
+      issueSeverity: "BLOCKING",
+    },
+    {
+      customerEmail: "priya.shah@cedarbrookmail.test",
+      vehiclePlate: "RJP5294",
+      locationName: "AMP Midtown",
+      laneName: "Lane 1",
+      status: "IN_QUEUE",
+      detectedPlate: "RJP5294",
+      detectedMinutesAgo: 5,
+      confidence: 0.96,
+      issueCode: "NONE",
+      issueSeverity: "NONE",
+    },
+    {
+      customerEmail: "marcus.reed@cedarbrookmail.test",
+      vehiclePlate: "TGB9042",
+      locationName: "AMP Roswell Tunnel",
+      laneName: "Lane 3",
+      status: "AT_GATE",
+      detectedPlate: "MQL6187",
+      detectedMinutesAgo: 1,
+      confidence: 0.91,
+      issueCode: "PLATE_MISMATCH",
+      issueSeverity: "WARNING",
+    },
+  ];
+}
+
 async function seedCustomers(plans) {
   const customers = buildSeedCustomers();
   for (const customer of customers) {
     await createCustomer(customer, plans);
+  }
+}
+
+async function seedLaneSessions() {
+  const laneSessions = buildSeedLaneSessions();
+
+  for (const session of laneSessions) {
+    const customer = await prisma.customer.findUnique({
+      where: { email: session.customerEmail },
+      include: { vehicles: true },
+    });
+
+    if (!customer) {
+      throw new Error(`Missing seeded lane customer: ${session.customerEmail}`);
+    }
+
+    const vehicle = customer.vehicles.find((item) => item.licensePlate === session.vehiclePlate);
+
+    if (!vehicle) {
+      throw new Error(`Missing seeded lane vehicle: ${session.vehiclePlate}`);
+    }
+
+    await prisma.laneSession.create({
+      data: {
+        customerId: customer.id,
+        vehicleId: vehicle.id,
+        locationName: session.locationName,
+        laneName: session.laneName,
+        status: session.status,
+        detectedPlate: session.detectedPlate,
+        detectedAt: new Date(Date.now() - session.detectedMinutesAgo * 60 * 1000),
+        confidence: session.confidence,
+        issueCode: session.issueCode,
+        issueSeverity: session.issueSeverity,
+      },
+    });
   }
 }
 
@@ -998,6 +1076,7 @@ async function main() {
   await reset();
   const plans = await seedPlans();
   await seedCustomers(plans);
+  await seedLaneSessions();
   await seedFaqArticles();
 }
 

@@ -1,5 +1,7 @@
 // @ts-check
 
+import { getLaneSessionBadge } from "./lane-context.js";
+
 /**
  * @param {string} fullName
  */
@@ -66,6 +68,7 @@ export function createCustomerTableViewModel(rows, options = {}) {
   const tableRows = rows.map((row) => {
     const status = statusFor(row);
     const paymentFailed = hasPaymentFailure(row);
+    const laneBadge = getLaneSessionBadge(row.laneSession);
 
     return {
       ...row,
@@ -77,10 +80,12 @@ export function createCustomerTableViewModel(rows, options = {}) {
       priorityRank: status.rank,
       paymentLabel: paymentFailed ? "Payment failure" : "Current",
       paymentTone: paymentFailed ? "critical" : "success",
+      laneBadge,
       contactSummary: [row.email, row.phone].filter(Boolean).join(" "),
       vehicleSummary: [row.primaryVehicle, row.licensePlate]
         .filter(Boolean)
         .join(" "),
+      searchText: [row.searchText, laneBadge?.searchText].filter(Boolean).join(" "),
     };
   });
 
@@ -92,6 +97,7 @@ export function createCustomerTableViewModel(rows, options = {}) {
       attentionCount: tableRows.filter((row) => row.hasCriticalIssue).length,
       overdueCount: tableRows.filter(hasOverdueIssue).length,
       paymentFailureCount: tableRows.filter(hasPaymentFailure).length,
+      laneSessionCount: tableRows.filter((row) => row.laneBadge).length,
       activeFilterCount: countActiveFilters(options.activeFilters),
     },
   };

@@ -28,6 +28,11 @@ test("summarizes customer table rows and attention counts", () => {
       subscriptionSummary: "Family Unlimited ACTIVE",
       hasCriticalIssue: false,
       searchText: "MEMBERSHIP_PAYMENT PAID",
+      laneSession: {
+        status: "IN_QUEUE",
+        issueCode: "NONE",
+        issueSeverity: "NONE",
+      },
     },
   ];
 
@@ -47,11 +52,13 @@ test("summarizes customer table rows and attention counts", () => {
   assert.equal(viewModel.summary.attentionCount, 1);
   assert.equal(viewModel.summary.overdueCount, 1);
   assert.equal(viewModel.summary.paymentFailureCount, 1);
+  assert.equal(viewModel.summary.laneSessionCount, 1);
   assert.equal(viewModel.summary.activeFilterCount, 2);
   assert.deepEqual(
     viewModel.rows.map((row) => ({
       id: row.id,
       initials: row.initials,
+      laneBadge: row.laneBadge,
       paymentLabel: row.paymentLabel,
       statusLabel: row.statusLabel,
     })),
@@ -59,12 +66,18 @@ test("summarizes customer table rows and attention counts", () => {
       {
         id: "customer_alex",
         initials: "AM",
+        laneBadge: null,
         paymentLabel: "Payment failure",
         statusLabel: "Overdue",
       },
       {
         id: "customer_priya",
         initials: "PS",
+        laneBadge: {
+          label: "In queue",
+          tone: "success",
+          searchText: "Lane context In queue No issue NONE NONE",
+        },
         paymentLabel: "Current",
         statusLabel: "Active",
       },

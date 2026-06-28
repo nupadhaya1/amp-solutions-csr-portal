@@ -45,6 +45,10 @@ export const customerInclude = {
   auditEvents: {
     orderBy: { createdAt: "desc" },
   },
+  laneSessions: {
+    where: { status: { notIn: ["NO_ACTIVE_SESSION"] } },
+    orderBy: { detectedAt: "desc" },
+  },
 };
 
 export function listCustomersForSupport() {

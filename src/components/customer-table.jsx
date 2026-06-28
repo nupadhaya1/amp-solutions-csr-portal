@@ -36,6 +36,8 @@ import {
 const pillStyles = {
   critical: "bg-critical-background text-critical",
   success: "bg-success-background text-success",
+  warning: "bg-amber-50 text-amber-800",
+  info: "bg-primary/10 text-primary",
 };
 
 const statAccentMap = {
@@ -87,8 +89,9 @@ function ColumnFilter({ column, placeholder }) {
 
 function AdvancedFilters({ open, onOpenChange, table }) {
   return (
-    <div className="relative">
+    <div className="grid gap-3">
       <button
+        aria-controls="advanced-customer-filters"
         aria-expanded={open}
         className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-semibold transition hover:border-primary hover:text-primary"
         onClick={() => onOpenChange(!open)}
@@ -98,7 +101,10 @@ function AdvancedFilters({ open, onOpenChange, table }) {
         Advanced filters
       </button>
       {open ? (
-        <div className="absolute right-0 top-[calc(100%+0.5rem)] z-20 w-[min(640px,calc(100vw-3rem))] rounded-2xl border border-border bg-card p-4 shadow-xl shadow-slate-200/80">
+        <div
+          className="rounded-xl border border-border bg-surface p-3"
+          id="advanced-customer-filters"
+        >
           <div className="grid gap-3 sm:grid-cols-2">
             <ColumnFilter column={table.getColumn("fullName")} placeholder="Filter name or member ID" />
             <ColumnFilter column={table.getColumn("contactSummary")} placeholder="Filter email or phone" />
@@ -137,7 +143,10 @@ function CustomerCell({ customer }) {
       </div>
       <div className="min-w-0">
         <p className="truncate font-semibold">{customer.fullName}</p>
-        <p className="mt-1 truncate text-xs font-semibold text-muted">{customer.memberIdLabel}</p>
+        <div className="mt-1 flex flex-wrap items-center gap-1.5">
+          <p className="truncate text-xs font-semibold text-muted">{customer.memberIdLabel}</p>
+          {customer.laneBadge ? <Pill tone={customer.laneBadge.tone}>{customer.laneBadge.label}</Pill> : null}
+        </div>
       </div>
     </div>
   );
@@ -334,40 +343,42 @@ export function CustomerTable({ rows, summary, filters }) {
       </div>
 
       <div className="rounded-2xl border border-border bg-card p-4 shadow-sm shadow-slate-200/70">
-        <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-          <label className="flex min-h-12 min-w-0 flex-1 items-center gap-3 rounded-xl border border-border bg-surface px-4 focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10">
-            <Search className="shrink-0 text-muted" size={18} aria-hidden="true" />
-            <input
-              className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted"
-              onChange={(event) => {
-                const nextValue = event.target.value;
-                setGlobalFilter(nextValue);
+        <div className="grid gap-3">
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
+            <label className="flex min-h-12 min-w-0 flex-1 items-center gap-3 rounded-xl border border-border bg-surface px-4 focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10">
+              <Search className="shrink-0 text-muted" size={18} aria-hidden="true" />
+              <input
+                className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted"
+                onChange={(event) => {
+                  const nextValue = event.target.value;
+                  setGlobalFilter(nextValue);
+                  table.setPageIndex(0);
+                }}
+                placeholder="Filter customer grid by name, phone, email, red Honda, plate, payment issue..."
+                value={globalFilter ?? ""}
+              />
+            </label>
+            <AdvancedFilters
+              onOpenChange={setAdvancedFiltersOpen}
+              open={advancedFiltersOpen}
+              table={table}
+            />
+            <button
+              aria-label="Clear search"
+              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-semibold transition hover:border-primary hover:text-primary"
+              onClick={() => {
+                clearRememberedCustomerSearch();
+                setAdvancedFiltersOpen(false);
+                setGlobalFilter("");
+                setColumnFilters([]);
                 table.setPageIndex(0);
               }}
-              placeholder="Filter customer grid by name, phone, email, red Honda, plate, payment issue..."
-              value={globalFilter ?? ""}
-            />
-          </label>
-          <AdvancedFilters
-            onOpenChange={setAdvancedFiltersOpen}
-            open={advancedFiltersOpen}
-            table={table}
-          />
-          <button
-            aria-label="Clear search"
-            className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-semibold transition hover:border-primary hover:text-primary"
-            onClick={() => {
-              clearRememberedCustomerSearch();
-              setAdvancedFiltersOpen(false);
-              setGlobalFilter("");
-              setColumnFilters([]);
-              table.setPageIndex(0);
-            }}
-            type="button"
-          >
-            <FilterX size={16} aria-hidden="true" />
-            Clear search
-          </button>
+              type="button"
+            >
+              <FilterX size={16} aria-hidden="true" />
+              Clear search
+            </button>
+          </div>
         </div>
       </div>
 

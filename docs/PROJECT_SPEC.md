@@ -288,7 +288,7 @@ Route:
 
 Includes:
 
-- Smart search input
+- Customer search input
 - Standard filter mode
 - Customer result list
 - Empty state
@@ -573,7 +573,7 @@ Inline result fields:
 
 The dedicated search page should include:
 
-- Smart search
+- Customer search
 - Standard filters
 - Customer result cards/list rows
 - Empty state
