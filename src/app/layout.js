@@ -21,7 +21,6 @@ export const metadata = {
   icons: {
     icon: [
       { url: "/favicon-150x150.webp", sizes: "150x150", type: "image/webp" },
-      { url: "/logo-amp.svg", type: "image/svg+xml" },
     ],
     apple: [{ url: "/favicon-150x150.webp", sizes: "150x150", type: "image/webp" }],
     shortcut: "/favicon-150x150.webp",

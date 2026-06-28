@@ -233,11 +233,11 @@ export function createCustomerDashboardViewModel(customer, plans = []) {
     lastName: customer.lastName,
     fullName: `${customer.firstName} ${customer.lastName}`,
     shortName: customer.firstName,
-    memberId: customer.memberId || customer.id,
+    memberId: customer.memberId || "Not assigned",
     email: customer.email,
     phone: customer.phone,
     joinedAt: formatDate(customer.createdAt),
-    homeWashLocation: customer.homeWashLocation || customer.homeLocation?.name || "Not assigned",
+    homeWashLocation: customer.homeWashLocation || "Not assigned",
     status: customer.status,
     planTags: activePlanNames,
     actionAvailability: {

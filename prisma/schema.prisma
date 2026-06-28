@@ -59,6 +59,7 @@ model Customer {
   email         String         @unique
   phone         String
   status        CustomerStatus @default(ACTIVE)
+  homeWashLocation String      @default("AMP Buckhead")
   vehicles      Vehicle[]
   subscriptions Subscription[]
   purchases     Purchase[]
@@ -190,4 +191,40 @@ model FaqArticle {
   updatedAt DateTime @updatedAt
 
   @@index([category])
+}
+
+model SupportDoc {
+  id              String            @id @default(cuid())
+  slug            String            @unique
+  title           String
+  category        String
+  severity        String
+  tags            String            @default("[]")
+  customerPhrases String            @default("[]")
+  summary         String
+  body            String
+  source          String            @default("docs/csr")
+  version         Int               @default(1)
+  isPublished     Boolean           @default(true)
+  chunks          SupportDocChunk[]
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@index([category])
+  @@index([severity])
+  @@index([isPublished])
+}
+
+model SupportDocChunk {
+  id         String     @id @default(cuid())
+  docId      String
+  chunkIndex Int
+  heading    String
+  content    String
+  tokenCount Int        @default(0)
+  doc        SupportDoc @relation(fields: [docId], references: [id], onDelete: Cascade)
+  createdAt  DateTime   @default(now())
+
+  @@unique([docId, chunkIndex])
+  @@index([docId])
 }

@@ -18,10 +18,21 @@ test("customer page uses compact header, stat cards, and a single grid search", 
 
   assert.doesNotMatch(source, /function SummaryTile/);
   assert.doesNotMatch(source, /function FilterInput/);
-  assert.doesNotMatch(source, /name="name"/);
-  assert.doesNotMatch(source, /name="email"/);
-  assert.doesNotMatch(source, /name="phone"/);
-  assert.doesNotMatch(source, /name="licensePlate"/);
+});
+
+test("customer grid exposes advanced field filters in a dropdown", () => {
+  assert.match(source, /Advanced filters/);
+  assert.match(source, /advancedFiltersOpen/);
+  assert.match(source, /columnFilters/);
+  assert.match(source, /getColumn\("fullName"\)/);
+  assert.match(source, /getColumn\("contactSummary"\)/);
+  assert.match(source, /getColumn\("vehicleSummary"\)/);
+  assert.match(source, /getColumn\("subscriptionSummary"\)/);
+  assert.match(source, /Filter name or member ID/);
+  assert.match(source, /Filter email or phone/);
+  assert.match(source, /Filter vehicle or plate/);
+  assert.match(source, /Filter plan/);
+  assert.doesNotMatch(source, /header\.column\.id === "fullName"/);
 });
 
 test("customer page restores and clears the shared remembered search query", () => {

@@ -70,6 +70,8 @@ export function createCustomerTableViewModel(rows, options = {}) {
     return {
       ...row,
       initials: initialsFor(String(row.fullName || "")),
+      memberIdLabel: row.memberId || "No member ID",
+      customerIdentity: [row.fullName, row.memberId].filter(Boolean).join(" "),
       statusLabel: status.label,
       statusTone: status.tone,
       priorityRank: status.rank,

@@ -12,6 +12,15 @@ test("seed data includes a realistic support queue", () => {
   assert.ok(customers.some((customer) => customer.subscription.status === "PAUSED"));
 });
 
+test("seed data assigns every customer a home base wash location", () => {
+  const customers = buildSeedCustomers();
+  const homeWashLocations = customers.map((customer) => customer.customer.homeWashLocation);
+
+  assert.equal(homeWashLocations.length, customers.length);
+  assert.ok(homeWashLocations.every((location) => String(location || "").startsWith("AMP ")));
+  assert.ok(new Set(homeWashLocations).size >= 3);
+});
+
 test("seed data keeps customer emails and license plates unique", () => {
   const customers = buildSeedCustomers();
   const emails = customers.map((customer) => customer.customer.email);

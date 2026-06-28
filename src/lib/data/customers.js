@@ -59,11 +59,13 @@ export function listCustomerSearchRecords({ prismaClient = prisma } = {}) {
     orderBy: [{ updatedAt: "desc" }, { lastName: "asc" }],
     select: {
       id: true,
+      memberId: true,
       firstName: true,
       lastName: true,
       email: true,
       phone: true,
       status: true,
+      homeWashLocation: true,
       updatedAt: true,
       vehicles: {
         orderBy: { createdAt: "asc" },

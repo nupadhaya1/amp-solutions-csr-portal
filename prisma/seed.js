@@ -16,6 +16,14 @@ const SYSTEM_ACTOR = {
 };
 
 const date = (value) => new Date(`${value}T12:00:00.000Z`);
+const HOME_WASH_LOCATIONS = [
+  "AMP Buckhead",
+  "AMP Roswell Tunnel",
+  "AMP Midtown",
+  "AMP Sandy Springs",
+  "AMP Decatur",
+  "AMP Alpharetta",
+];
 
 let seedMemberIdCounter = 1;
 
@@ -26,6 +34,8 @@ const nextSeedMemberId = () => {
 };
 
 async function reset() {
+  await prisma.supportDocChunk.deleteMany();
+  await prisma.supportDoc.deleteMany();
   await prisma.auditEvent.deleteMany();
   await prisma.supportNote.deleteMany();
   await prisma.purchase.deleteMany();
@@ -175,7 +185,7 @@ async function createCustomer(
 }
 
 export function buildSeedCustomers() {
-  return [
+  const customers = [
     {
       customer: {
         memberId: "AMP-0001",
@@ -885,6 +895,16 @@ export function buildSeedCustomers() {
       ],
     },
   ];
+
+  return customers.map((entry, index) => ({
+    ...entry,
+    customer: {
+      ...entry.customer,
+      homeWashLocation:
+        entry.customer.homeWashLocation ||
+        HOME_WASH_LOCATIONS[index % HOME_WASH_LOCATIONS.length],
+    },
+  }));
 }
 
 async function seedCustomers(plans) {
