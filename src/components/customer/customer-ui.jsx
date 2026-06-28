@@ -39,7 +39,7 @@ export function Badge({ children, tone = "default", className = "" }) {
       warning: "border-amber-200 bg-amber-50 text-amber-800",
       critical: "border-red-200 bg-red-50 text-red-700",
       brand: "border-white/15 bg-white/10 text-white",
-      info: "border-blue-200 bg-blue-50 text-blue-700",
+      info: "border-accent/20 bg-accent/10 text-primary",
     }[tone] || "border-border bg-surface text-foreground";
 
   return (
@@ -123,7 +123,7 @@ export function Alert({ children, tone = "warning", className = "" }) {
       warning: "border-amber-200 bg-amber-50 text-amber-900",
       critical: "border-red-200 bg-red-50 text-red-800",
       success: "border-emerald-200 bg-emerald-50 text-emerald-800",
-      info: "border-blue-200 bg-blue-50 text-blue-800",
+      info: "border-accent/20 bg-accent/10 text-primary",
     }[tone] || "border-amber-200 bg-amber-50 text-amber-900";
 
   return <div className={joinClasses("rounded-2xl border px-4 py-3 text-sm", toneClass, className)}>{children}</div>;

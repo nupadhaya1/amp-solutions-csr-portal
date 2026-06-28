@@ -28,7 +28,7 @@ export function CustomerSummaryCard({ backHref, customer }) {
       <CardHeader className="border-b-0 pb-0">
         {backHref ? (
           <a className="mb-3 inline-flex text-sm font-semibold text-muted transition hover:text-primary" href={backHref}>
-            Back to results
+            Back to customer search
           </a>
         ) : null}
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">

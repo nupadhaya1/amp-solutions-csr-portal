@@ -13,10 +13,12 @@
     "db:migrate": "prisma migrate dev",
     "db:seed": "prisma db seed",
     "db:seed:dashboard": "python3 scripts/seed_dashboard_timeseries.py",
+    "db:seed:docs": "node scripts/seed-support-docs.js",
     "db:reset": "prisma migrate reset --force",
     "db:push": "prisma db push"
   },
   "dependencies": {
+    "@huggingface/transformers": "^4.2.0",
     "@prisma/client": "^6.19.3",
     "@radix-ui/react-dialog": "^1.1.17",
     "@radix-ui/react-dropdown-menu": "^2.1.18",

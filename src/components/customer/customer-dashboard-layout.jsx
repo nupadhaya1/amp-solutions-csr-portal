@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { CustomerActionPanel } from "./customer-action-panel.jsx";
 import { CustomerSummaryCard } from "./customer-summary-card.jsx";
 import { PaymentBillingCard } from "./payment-billing-card.jsx";
+import { PurchaseHistoryCard } from "./purchase-history-card.jsx";
 import { RecommendedNextStepsCard } from "./recommended-next-steps-card.jsx";
 import { RecentActivityTimeline } from "./recent-activity-timeline.jsx";
 import { SupportNotesCard } from "./support-notes-card.jsx";
@@ -122,6 +123,7 @@ export function CustomerDashboardLayout({
               onRetryPayment={handleRetryPayment}
               onUpdatePayment={() => handleWorkflowAction("update-payment")}
             />
+            <PurchaseHistoryCard purchases={customer.purchases} />
             <SupportNotesCard
               addSupportNoteAction={addSupportNoteAction}
               customerId={customer.id}

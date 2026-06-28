@@ -9,13 +9,12 @@ test("builds a dashboard-focused customer view model with action availability an
       id: "customer_1",
       firstName: "Drew",
       lastName: "Irwin",
+      memberId: "AMP-0999",
       email: "drew@example.com",
       phone: "404-555-0101",
       status: "OVERDUE",
       createdAt: "2026-01-12T00:00:00.000Z",
-      homeLocation: {
-        name: "Roswell Tunnel",
-      },
+      homeWashLocation: "AMP Roswell Tunnel",
       vehicles: [
         {
           id: "vehicle_1",
@@ -132,8 +131,8 @@ test("builds a dashboard-focused customer view model with action availability an
   );
 
   assert.equal(profile.fullName, "Drew Irwin");
-  assert.equal(profile.memberId, "customer_1");
-  assert.equal(profile.homeWashLocation, "Roswell Tunnel");
+  assert.equal(profile.memberId, "AMP-0999");
+  assert.equal(profile.homeWashLocation, "AMP Roswell Tunnel");
   assert.equal(profile.planTags[0], "Essential Wash");
   assert.equal(profile.actionAvailability.canEditAccount, true);
   assert.equal(profile.actionAvailability.canAddVehicle, true);
@@ -146,6 +145,10 @@ test("builds a dashboard-focused customer view model with action availability an
   assert.equal(profile.billing.lastFailedCharge.amount, "$29.99");
   assert.equal(profile.supportNotesPreview.length, 3);
   assert.equal(profile.recentActivityPreview.length, 1);
+  assert.equal(profile.purchases.length, 2);
+  assert.equal(profile.purchases[0].statusLabel, "Paid");
+  assert.equal(profile.purchases[1].statusLabel, "Failed");
+  assert.equal(profile.purchases[0].typeLabel, "Membership Payment");
   assert.match(profile.recommendedNextStep.title, /update payment method/i);
 });
 

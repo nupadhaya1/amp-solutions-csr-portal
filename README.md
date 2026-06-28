@@ -28,6 +28,7 @@ The primary workflow is a customer calling because they cannot get a wash. The C
    - cancel subscription
 6. Confirm the audit timeline records the CSR action.
 7. Open `/presentation` for the take-home walkthrough and `/mobile` for the companion demo.
+8. Open `/csr/docs` to search source-of-truth support playbooks for common CSR scenarios.
 
 ## Tech Stack
 
@@ -39,6 +40,8 @@ The primary workflow is a customer calling because they cannot get a wash. The C
 - Zod
 - Fuse.js
 - Framer Motion
+- Local Hugging Face embeddings
+- pgvector
 
 ## Local Setup
 
@@ -49,6 +52,7 @@ npm run db:generate
 npm run db:push
 npm run db:seed
 npm run db:seed:dashboard
+npm run db:seed:docs
 npm run dev
 ```
 
@@ -89,9 +93,42 @@ npm run db:seed:dashboard
 
 Then open `/csr/dashboard` to review the dashboard charts and attention queue.
 
+## CSR Docs Semantic Search
+
+The `/csr/docs` route provides searchable source-of-truth support playbooks for unable-to-wash issues, failed payments, payment updates, cancellation, purchase questions, refunds, coupons, vehicle transfers, plan changes, duplicate accounts, gate/kiosk incidents, audit review, and escalation.
+
+Docs live in `docs/csr/*.md` and are seeded into Postgres with:
+
+```bash
+npm run db:seed:docs
+```
+
+The docs seed uses local/free embeddings from `Xenova/all-MiniLM-L6-v2` through `@huggingface/transformers`. Embeddings are 384-dimensional and stored in Postgres with `pgvector`; the app falls back to keyword search if model loading or vector search fails. This is not an LLM chatbot, and it does not send customer data to a hosted model.
+
+Enable pgvector before seeding docs:
+
+```sql
+CREATE EXTENSION IF NOT EXISTS vector;
+```
+
+For local development:
+
+```bash
+vercel env pull .env.development.local
+set -a; source ./.env.development.local; set +a
+npm run db:generate
+npm run db:push
+npm run db:seed
+npm run db:seed:dashboard
+npm run db:seed:docs
+npm run dev
+```
+
+The vector setup SQL is also available at `prisma/sql/support-docs-vector.sql`. The seed script creates the extension and vector column automatically when the database allows it.
+
 ## Seeded Demo Data
 
-The demo seed includes 16 customers, 25 vehicles, 16 subscriptions, 20 purchases, support notes, audit events, and 9 FAQ articles.
+The current demo dataset includes 220 customers plus related vehicles, subscriptions, purchases, support notes, audit events, and 9 FAQ articles.
 
 Representative support scenarios:
 
@@ -111,6 +148,8 @@ Representative support scenarios:
 - `/csr/customers`: customer lookup and search
 - `/csr/search`: redirects to `/csr/customers`
 - `/csr/smart-search`: semantic customer and FAQ search
+- `/csr/docs`: source-of-truth CSR docs search
+- `/csr/docs/[slug]`: CSR docs article detail
 - `/csr/customers/[id]`: customer profile
 - `/mobile`: mock mobile companion
 - `/presentation`: browser presentation
@@ -125,6 +164,7 @@ Representative support scenarios:
 - Vehicle creation with normalized license plates and audit events.
 - Subscription cancellation, plan changes, and vehicle coverage transfer.
 - Smart Search over local semantic vectors for customer cases and FAQ articles.
+- CSR Docs search over seeded Markdown playbooks, local MiniLM embeddings, pgvector retrieval, and keyword fallback.
 - Browser presentation route and mobile companion demo route.
 - Vercel Analytics and Speed Insights.
 
@@ -156,6 +196,7 @@ npm run db:generate
 npm run db:push
 npm run db:seed
 npm run db:seed:dashboard
+npm run db:seed:docs
 npm run db:reset
 ```
 

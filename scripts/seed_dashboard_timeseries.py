@@ -23,6 +23,14 @@ CSR_ACTOR = "Bob Roberts"
 SYSTEM_ACTOR = "AMP System"
 
 DASHBOARD_MEMBER_ID_OFFSET = 2000
+HOME_WASH_LOCATIONS = [
+    "AMP Buckhead",
+    "AMP Roswell Tunnel",
+    "AMP Midtown",
+    "AMP Sandy Springs",
+    "AMP Decatur",
+    "AMP Alpharetta",
+]
 
 random.seed(42)
 
@@ -55,6 +63,10 @@ def make_id(prefix):
 
 def member_id_for_index(index):
     return f"AMP-{DASHBOARD_MEMBER_ID_OFFSET + index:04d}"
+
+
+def home_wash_location_for_index(index):
+    return HOME_WASH_LOCATIONS[index % len(HOME_WASH_LOCATIONS)]
 
 
 def email_part(value):
@@ -128,12 +140,12 @@ def delete_existing_dashboard_demo(conn):
         return deleted_by_id + deleted_by_email
 
 
-def insert_customer(cur, customer_id, member_id, first_name, last_name, email, phone, status, created_at):
+def insert_customer(cur, customer_id, member_id, first_name, last_name, email, phone, status, created_at, home_wash_location):
     cur.execute(
         """
         INSERT INTO "Customer"
-        (id, "memberId", "firstName", "lastName", email, phone, status, "createdAt", "updatedAt")
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        (id, "memberId", "firstName", "lastName", email, phone, status, "homeWashLocation", "createdAt", "updatedAt")
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """,
         (
             customer_id,
@@ -143,6 +155,7 @@ def insert_customer(cur, customer_id, member_id, first_name, last_name, email, p
             email,
             phone,
             status,
+            home_wash_location,
             created_at,
             created_at,
         ),
@@ -371,6 +384,7 @@ def main():
                         phone,
                         customer_status,
                         created_at,
+                        home_wash_location_for_index(customer_index),
                     )
                     inserted["customers"] += 1
 
@@ -494,6 +508,7 @@ def main():
                         f"470-555-{1000 + customer_index:04d}",
                         "ACTIVE" if was_fixed else "OVERDUE",
                         issue_date,
+                        home_wash_location_for_index(customer_index),
                     )
                     inserted["customers"] += 1
 

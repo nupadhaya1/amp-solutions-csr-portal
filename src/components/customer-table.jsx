@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   flexRender,
   getCoreRowModel,
@@ -22,9 +22,16 @@ import {
   CreditCard,
   FilterX,
   Search,
+  SlidersHorizontal,
   UserRound,
   UsersRound,
 } from "lucide-react";
+
+import {
+  clearRememberedCustomerSearch,
+  getRememberedCustomerSearch,
+  setRememberedCustomerSearch,
+} from "@/lib/customer-search-session";
 
 const pillStyles = {
   critical: "bg-critical-background text-critical",
@@ -32,8 +39,8 @@ const pillStyles = {
 };
 
 const statAccentMap = {
-  total: "bg-blue-50 text-blue-700 ring-blue-100",
-  filtered: "bg-sky-50 text-sky-700 ring-sky-100",
+  total: "bg-accent/10 text-primary ring-accent/15",
+  filtered: "bg-primary/10 text-primary ring-primary/15",
   attention: "bg-red-50 text-red-700 ring-red-100",
   overdue: "bg-amber-50 text-amber-700 ring-amber-100",
   payment: "bg-rose-50 text-rose-700 ring-rose-100",
@@ -64,6 +71,48 @@ function HeaderButton({ header, children }) {
   );
 }
 
+function ColumnFilter({ column, placeholder }) {
+  if (!column?.getCanFilter()) return null;
+
+  return (
+    <input
+      aria-label={placeholder}
+      className="h-9 w-full min-w-0 rounded-lg border border-border bg-card px-3 text-sm font-medium normal-case tracking-normal text-foreground outline-none placeholder:text-muted focus:border-primary focus:ring-2 focus:ring-primary/10"
+      onChange={(event) => column.setFilterValue(event.target.value)}
+      placeholder={placeholder}
+      value={column.getFilterValue() ?? ""}
+    />
+  );
+}
+
+function AdvancedFilters({ open, onOpenChange, table }) {
+  return (
+    <div className="relative">
+      <button
+        aria-expanded={open}
+        className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-semibold transition hover:border-primary hover:text-primary"
+        onClick={() => onOpenChange(!open)}
+        type="button"
+      >
+        <SlidersHorizontal size={16} aria-hidden="true" />
+        Advanced filters
+      </button>
+      {open ? (
+        <div className="absolute right-0 top-[calc(100%+0.5rem)] z-20 w-[min(640px,calc(100vw-3rem))] rounded-2xl border border-border bg-card p-4 shadow-xl shadow-slate-200/80">
+          <div className="grid gap-3 sm:grid-cols-2">
+            <ColumnFilter column={table.getColumn("fullName")} placeholder="Filter name or member ID" />
+            <ColumnFilter column={table.getColumn("contactSummary")} placeholder="Filter email or phone" />
+            <ColumnFilter column={table.getColumn("vehicleSummary")} placeholder="Filter vehicle or plate" />
+            <ColumnFilter column={table.getColumn("subscriptionSummary")} placeholder="Filter plan" />
+            <ColumnFilter column={table.getColumn("statusLabel")} placeholder="Filter status" />
+            <ColumnFilter column={table.getColumn("paymentLabel")} placeholder="Filter payment" />
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function StatCard({ icon: Icon, label, tone, value }) {
   return (
     <article className="rounded-2xl border border-border bg-card p-3 shadow-sm shadow-slate-200/70">
@@ -88,6 +137,7 @@ function CustomerCell({ customer }) {
       </div>
       <div className="min-w-0">
         <p className="truncate font-semibold">{customer.fullName}</p>
+        <p className="mt-1 truncate text-xs font-semibold text-muted">{customer.memberIdLabel}</p>
       </div>
     </div>
   );
@@ -103,14 +153,40 @@ function Pill({ children, tone = "success" }) {
 
 export function CustomerTable({ rows, summary, filters }) {
   const [sorting, setSorting] = useState([{ id: "priorityRank", desc: false }]);
+  const [advancedFiltersOpen, setAdvancedFiltersOpen] = useState(false);
+  const [columnFilters, setColumnFilters] = useState([]);
   const [globalFilter, setGlobalFilter] = useState(filters.q || "");
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
-  const currentSearch = String(globalFilter || filters.q || "").trim();
+  const currentSearch = String(globalFilter || "").trim();
+
+  useEffect(() => {
+    const routeQuery = String(filters.q || "").trim();
+
+    if (routeQuery) {
+      setGlobalFilter(routeQuery);
+      return;
+    }
+
+    const rememberedQuery = getRememberedCustomerSearch();
+    if (rememberedQuery) {
+      setGlobalFilter(rememberedQuery);
+    }
+  }, [filters.q]);
+
+  useEffect(() => {
+    if (currentSearch) {
+      setRememberedCustomerSearch(currentSearch);
+      return;
+    }
+
+    clearRememberedCustomerSearch();
+  }, [currentSearch]);
 
   const columns = useMemo(
     () => [
       {
-        accessorKey: "fullName",
+        accessorFn: (row) => row.customerIdentity,
+        id: "fullName",
         header: "Customer",
         cell: ({ row }) => <CustomerCell customer={row.original} />,
       },
@@ -170,7 +246,7 @@ export function CustomerTable({ rows, summary, filters }) {
         cell: ({ row }) => (
           <Link
             className="inline-flex items-center gap-2 whitespace-nowrap font-semibold text-primary hover:underline"
-            href={`/csr/customers/${row.original.id}${currentSearch ? `?returnQuery=${encodeURIComponent(currentSearch)}` : ""}`}
+            href={`/csr/customers/${row.original.id}`}
           >
             Open profile
             <ArrowRight size={14} aria-hidden="true" />
@@ -178,7 +254,7 @@ export function CustomerTable({ rows, summary, filters }) {
         ),
       },
     ],
-    [currentSearch],
+    [],
   );
 
   // eslint-disable-next-line react-hooks/incompatible-library -- TanStack Table keeps callback APIs on the table instance; this component owns that instance locally.
@@ -187,10 +263,17 @@ export function CustomerTable({ rows, summary, filters }) {
     columns,
     state: {
       sorting,
+      columnFilters,
       globalFilter,
       pagination,
     },
     onSortingChange: setSorting,
+    onColumnFiltersChange: (updater) => {
+      setColumnFilters((current) =>
+        typeof updater === "function" ? updater(current) : updater,
+      );
+      setPagination((current) => ({ ...current, pageIndex: 0 }));
+    },
     onGlobalFilterChange: setGlobalFilter,
     onPaginationChange: setPagination,
     globalFilterFn: (row, _columnId, value) => {
@@ -204,6 +287,7 @@ export function CustomerTable({ rows, summary, filters }) {
 
       const searchable = [
         row.original.fullName,
+        row.original.memberId,
         row.original.email,
         row.original.phone,
         row.original.primaryVehicle,
@@ -256,21 +340,34 @@ export function CustomerTable({ rows, summary, filters }) {
             <input
               className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted"
               onChange={(event) => {
-                setGlobalFilter(event.target.value);
+                const nextValue = event.target.value;
+                setGlobalFilter(nextValue);
                 table.setPageIndex(0);
               }}
               placeholder="Filter customer grid by name, phone, email, red Honda, plate, payment issue..."
               value={globalFilter ?? ""}
             />
           </label>
-          <Link
+          <AdvancedFilters
+            onOpenChange={setAdvancedFiltersOpen}
+            open={advancedFiltersOpen}
+            table={table}
+          />
+          <button
             aria-label="Clear search"
             className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-semibold transition hover:border-primary hover:text-primary"
-            href="/csr/customers"
+            onClick={() => {
+              clearRememberedCustomerSearch();
+              setAdvancedFiltersOpen(false);
+              setGlobalFilter("");
+              setColumnFilters([]);
+              table.setPageIndex(0);
+            }}
+            type="button"
           >
             <FilterX size={16} aria-hidden="true" />
             Clear search
-          </Link>
+          </button>
         </div>
       </div>
 
