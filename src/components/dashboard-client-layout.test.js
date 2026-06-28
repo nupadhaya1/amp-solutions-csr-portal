@@ -39,6 +39,16 @@ test("KPI cards do not render cramped sparkline charts", () => {
   assert.doesNotMatch(statCardSource, /grid-cols-\[1fr_86px\]/);
 });
 
+test("dashboard skeleton KPI cards keep loader rows inside the card bounds", () => {
+  const skeletonSource = source.slice(
+    source.indexOf("function DashboardSkeleton"),
+    source.indexOf("function DashboardError"),
+  );
+
+  assert.doesNotMatch(skeletonSource, /className="h-24 /);
+  assert.match(skeletonSource, /min-h-\[7\.75rem\]/);
+});
+
 test("dashboard customer search button is separate from the input shell", () => {
   const searchSource = source.slice(
     source.indexOf("function DashboardSearch"),
@@ -66,13 +76,24 @@ test("dashboard customer search supports debounced fuzzy autocomplete", () => {
   assert.match(searchSource, /role="option"/);
   assert.match(searchSource, /ArrowDown/);
   assert.match(searchSource, /ArrowUp/);
+  assert.match(searchSource, /event\.key === "Enter" && activeIndex >= 0/);
+  assert.match(searchSource, /setIsComboboxOpen\(true\)/);
+  assert.match(searchSource, /setSearchError/);
+  assert.match(searchSource, /Searching customers\.\.\./);
   assert.match(searchSource, /setRememberedCustomerSearch/);
   assert.match(searchSource, /bg-primary\/15/);
   assert.match(searchSource, /hover:bg-primary\/10/);
   assert.match(searchSource, /Clear search/);
   assert.match(searchSource, /LoaderCircle/);
   assert.match(searchSource, /disabled=\{isSearching\}/);
-  assert.doesNotMatch(searchSource, /returnQuery/);
+  assert.match(searchSource, /htmlFor="dashboard-customer-search"/);
+  assert.match(searchSource, /id="dashboard-customer-search"/);
+  assert.match(searchSource, /onMouseDown=\{\(event\) =>/);
+  assert.match(searchSource, /setActiveIndex\(nextResults\.length > 0 \? 0 : -1\)/);
+  assert.match(searchSource, /data-search-action="open-results"/);
+  assert.match(searchSource, /submitter\?\.dataset\?\.searchAction === "open-results" \? null : results\[activeIndex\]/);
+  assert.doesNotMatch(searchSource, /<label className="grid gap-2">/);
+  assert.match(searchSource, /returnQuery/);
   assert.doesNotMatch(searchSource, />Searching</);
 });
 

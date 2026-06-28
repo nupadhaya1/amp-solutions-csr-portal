@@ -11,7 +11,7 @@ import {
   PanelLeftOpen,
   UsersRound,
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import { supportDocCatalog } from "@/lib/docs/support-doc-catalog";
 
@@ -88,9 +88,42 @@ export function PortalShell({ children }) {
   const router = useRouter();
   const currentCustomerName = useCurrentCustomer(pathname);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [docCategoryOverrides, setDocCategoryOverrides] = useState({ categories: {}, routeSlug: "" });
   const showingDocs = pathname.startsWith("/csr/docs");
   const activeDocSlug = pathname.match(/^\/csr\/docs\/([^/?#]+)/)?.[1] || "";
-  const groupedDocs = docsCategoryGroups();
+  const groupedDocs = useMemo(() => [...docsCategoryGroups().entries()], []);
+  const docCategoryNames = useMemo(() => groupedDocs.map(([category]) => category), [groupedDocs]);
+  const activeDocCategory = useMemo(
+    () => groupedDocs.find(([, docs]) => docs.some((doc) => doc.slug === activeDocSlug))?.[0] || "",
+    [activeDocSlug, groupedDocs],
+  );
+  const activeDocCategoryOverrides =
+    docCategoryOverrides.routeSlug === activeDocSlug ? docCategoryOverrides.categories : {};
+
+  function isDocCategoryOpen(category) {
+    return activeDocCategoryOverrides[category] ?? (!activeDocSlug || category === activeDocCategory);
+  }
+
+  const allDocsExpanded = docCategoryNames.every((category) => isDocCategoryOpen(category));
+
+  function toggleDocCategory(category, open) {
+    setDocCategoryOverrides((currentOverrides) => {
+      const currentCategories =
+        currentOverrides.routeSlug === activeDocSlug ? currentOverrides.categories : {};
+
+      return {
+        categories: { ...currentCategories, [category]: open },
+        routeSlug: activeDocSlug,
+      };
+    });
+  }
+
+  function setAllDocCategories(open) {
+    setDocCategoryOverrides({
+      categories: Object.fromEntries(docCategoryNames.map((category) => [category, open])),
+      routeSlug: activeDocSlug,
+    });
+  }
 
   return (
     <main className="h-screen overflow-hidden text-foreground">
@@ -128,40 +161,82 @@ export function PortalShell({ children }) {
               ) : null}
             </div>
 
-            <nav className="grid gap-2">
+            <nav className="flex min-h-0 flex-1 flex-col gap-2">
               {navItems.map((item) => {
                 const Icon = item.icon;
                 const selected = isActivePath(pathname, item.href);
                 const isDocsItem = item.href === "/csr/docs";
 
                 return (
-                  <div className="grid gap-2" key={item.href}>
-                    <Link
-                      className={`flex min-h-11 items-center rounded-2xl text-sm font-semibold transition ${
-                        sidebarCollapsed ? "justify-center px-0" : "gap-3 px-4"
-                      } ${
-                        selected
-                          ? "bg-primary text-primary-foreground shadow-sm"
-                          : "text-foreground/80 hover:bg-card hover:text-foreground hover:shadow-sm"
-                      }`}
-                      href={item.href}
-                      onFocus={() => router.prefetch(item.href)}
-                      onMouseEnter={() => router.prefetch(item.href)}
-                      prefetch
-                      title={item.label}
-                    >
-                      <Icon aria-hidden="true" size={18} />
-                      {!sidebarCollapsed ? item.label : <span className="sr-only">{item.label}</span>}
-                    </Link>
+                  <div
+                    className={
+                      !sidebarCollapsed && isDocsItem && showingDocs
+                        ? "grid min-h-0 flex-1 grid-rows-[auto_minmax(0,1fr)] gap-2"
+                        : "grid flex-shrink-0 gap-2"
+                    }
+                    key={item.href}
+                  >
+                    {!sidebarCollapsed && isDocsItem && showingDocs ? (
+                      <div
+                        className={`docs-nav-item flex min-h-11 items-center rounded-2xl text-sm font-semibold transition ${
+                          selected
+                            ? "bg-primary text-primary-foreground shadow-sm"
+                            : "text-foreground/80 hover:bg-card hover:text-foreground hover:shadow-sm"
+                        }`}
+                      >
+                        <Link
+                          className="flex min-w-0 flex-1 items-center gap-3 self-stretch rounded-l-2xl px-4"
+                          href={item.href}
+                          onFocus={() => router.prefetch(item.href)}
+                          onMouseEnter={() => router.prefetch(item.href)}
+                          prefetch
+                          title={item.label}
+                        >
+                          <Icon aria-hidden="true" size={18} />
+                          {item.label}
+                        </Link>
+                        <button
+                          aria-label={allDocsExpanded ? "Collapse all docs categories" : "Expand all docs categories"}
+                          className={`docs-expand-toggle mr-2 flex h-7 shrink-0 items-center rounded-lg px-2 text-[11px] font-semibold transition ${
+                            selected
+                              ? "bg-primary-foreground/15 text-primary-foreground hover:bg-primary-foreground/25"
+                              : "bg-primary/10 text-primary hover:bg-primary/15"
+                          }`}
+                          onClick={() => setAllDocCategories(!allDocsExpanded)}
+                          type="button"
+                        >
+                          {allDocsExpanded ? "Collapse all" : "Expand all"}
+                        </button>
+                      </div>
+                    ) : (
+                      <Link
+                        className={`flex min-h-11 min-w-0 flex-1 items-center rounded-2xl text-sm font-semibold transition ${
+                          sidebarCollapsed ? "justify-center px-0" : "gap-3 px-4"
+                        } ${
+                          selected
+                            ? "bg-primary text-primary-foreground shadow-sm"
+                            : "text-foreground/80 hover:bg-card hover:text-foreground hover:shadow-sm"
+                        }`}
+                        href={item.href}
+                        onFocus={() => router.prefetch(item.href)}
+                        onMouseEnter={() => router.prefetch(item.href)}
+                        prefetch
+                        title={item.label}
+                      >
+                        <Icon aria-hidden="true" size={18} />
+                        {!sidebarCollapsed ? item.label : <span className="sr-only">{item.label}</span>}
+                      </Link>
+                    )}
 
                     {!sidebarCollapsed && isDocsItem && showingDocs ? (
-                      <div className="docs-subtabs ml-5 max-h-[44vh] overflow-y-auto border-l border-border pl-3">
-                        <div className="grid gap-3 py-1">
-                          {[...groupedDocs.entries()].map(([category, docs]) => (
+                      <div className="docs-subtabs ml-5 min-h-0 overflow-y-auto border-l border-border pl-3">
+                        <div className="grid gap-3 pb-2">
+                          {groupedDocs.map(([category, docs]) => (
                             <details
                               className="group grid gap-1"
                               key={category}
-                              open={!activeDocSlug || docs.some((doc) => doc.slug === activeDocSlug)}
+                              onToggle={(event) => toggleDocCategory(category, event.currentTarget.open)}
+                              open={isDocCategoryOpen(category)}
                             >
                               <summary
                                 className={`flex cursor-pointer list-none items-center justify-between rounded-lg px-2 py-1.5 text-[11px] font-semibold uppercase tracking-wide ring-1 ${

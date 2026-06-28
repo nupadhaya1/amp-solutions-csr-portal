@@ -12,9 +12,9 @@ const shellSource = readFileSync(fileURLToPath(new URL("./portal-shell.js", impo
 test("customer profile removes top workspace tabs in favor of dashboard layout", () => {
   assert.match(profileSource, /CustomerDashboardLayout/);
   assert.match(profileSource, /createCustomerDashboardViewModel/);
-  assert.match(profileSource, /backHref="\/csr\/customers"/);
+  assert.match(profileSource, /returnQuery/);
+  assert.match(profileSource, /backHref=\{backHref\}/);
   assert.doesNotMatch(profileSource, /CustomerWorkspaceTabs/);
-  assert.doesNotMatch(profileSource, /returnQuery/);
 });
 
 test("sidebar uses AMP branding and nests the active customer under all customers", () => {

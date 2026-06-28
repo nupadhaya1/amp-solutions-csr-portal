@@ -262,8 +262,11 @@ function DashboardSearch() {
   const [results, setResults] = useState([]);
   const [activeIndex, setActiveIndex] = useState(-1);
   const [isSearching, setIsSearching] = useState(false);
+  const [searchError, setSearchError] = useState("");
+  const [isComboboxOpen, setIsComboboxOpen] = useState(false);
   const trimmedQuery = query.trim();
-  const showResults = trimmedQuery.length >= 2 && results.length > 0;
+  const canShowCombobox = trimmedQuery.length >= 2 && isComboboxOpen;
+  const showResults = canShowCombobox && (isSearching || searchError || results.length > 0);
 
   useEffect(() => {
     if (trimmedQuery.length < 2) {
@@ -273,6 +276,7 @@ function DashboardSearch() {
     const controller = new AbortController();
     const timeoutId = setTimeout(async () => {
       setIsSearching(true);
+      setSearchError("");
 
       try {
         const params = new URLSearchParams({ q: trimmedQuery, limit: "6" });
@@ -292,6 +296,7 @@ function DashboardSearch() {
         if (error.name !== "AbortError") {
           setResults([]);
           setActiveIndex(-1);
+          setSearchError("Unable to search customers.");
         }
       } finally {
         if (!controller.signal.aborted) {
@@ -310,11 +315,13 @@ function DashboardSearch() {
     const nextQuery = event.target.value;
     setQuery(nextQuery);
     setRememberedCustomerSearch(nextQuery);
+    setIsComboboxOpen(true);
 
     if (nextQuery.trim().length < 2) {
       setResults([]);
       setActiveIndex(-1);
       setIsSearching(false);
+      setSearchError("");
     }
   }
 
@@ -323,15 +330,21 @@ function DashboardSearch() {
     setResults([]);
     setActiveIndex(-1);
     setIsSearching(false);
+    setSearchError("");
+    setIsComboboxOpen(false);
     clearRememberedCustomerSearch();
   }
 
   function customerProfileHref(customer) {
-    return `/csr/customers/${customer.id}`;
+    const params = new URLSearchParams();
+    if (trimmedQuery) params.set("returnQuery", trimmedQuery);
+    const suffix = params.toString() ? `?${params}` : "";
+    return `/csr/customers/${customer.id}${suffix}`;
   }
 
   function openCustomer(customer) {
     setRememberedCustomerSearch(trimmedQuery);
+    setIsComboboxOpen(false);
     router.push(customerProfileHref(customer));
   }
 
@@ -340,12 +353,15 @@ function DashboardSearch() {
     if (trimmedQuery) params.set("q", trimmedQuery);
     const suffix = params.toString() ? `?${params}` : "";
     setRememberedCustomerSearch(trimmedQuery);
+    setIsComboboxOpen(false);
     router.push(`/csr/customers${suffix}`);
   }
 
   function handleSubmit(event) {
     event.preventDefault();
-    const selectedCustomer = results[activeIndex];
+    const submitter = event.nativeEvent?.submitter;
+    const selectedCustomer =
+      submitter?.dataset?.searchAction === "open-results" ? null : results[activeIndex];
 
     if (selectedCustomer) {
       openCustomer(selectedCustomer);
@@ -360,16 +376,23 @@ function DashboardSearch() {
 
     if (event.key === "ArrowDown") {
       event.preventDefault();
+      setIsComboboxOpen(true);
       setActiveIndex((current) => (current + 1) % results.length);
     }
 
     if (event.key === "ArrowUp") {
       event.preventDefault();
+      setIsComboboxOpen(true);
       setActiveIndex((current) => (current <= 0 ? results.length - 1 : current - 1));
     }
 
+    if (event.key === "Enter" && activeIndex >= 0) {
+      event.preventDefault();
+      openCustomer(results[activeIndex]);
+    }
+
     if (event.key === "Escape") {
-      setResults([]);
+      setIsComboboxOpen(false);
       setActiveIndex(-1);
     }
   }
@@ -380,8 +403,10 @@ function DashboardSearch() {
       className="rounded-2xl border border-border bg-card p-4 shadow-sm shadow-slate-200/70"
       onSubmit={handleSubmit}
     >
-      <label className="grid gap-2">
-        <span className="text-sm font-semibold">Search customers</span>
+      <div className="grid gap-2">
+        <label className="text-sm font-semibold" htmlFor="dashboard-customer-search">
+          Search customers
+        </label>
         <div className="flex flex-col gap-3 sm:flex-row">
           <div className="relative min-w-0 flex-1">
             <div className="flex min-h-12 items-center gap-3 rounded-xl border border-border bg-surface px-4 focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10">
@@ -392,8 +417,10 @@ function DashboardSearch() {
                 aria-controls="dashboard-customer-results"
                 aria-expanded={showResults}
                 className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted"
+                id="dashboard-customer-search"
                 name="q"
                 onChange={handleQueryChange}
+                onFocus={() => setIsComboboxOpen(true)}
                 onKeyDown={handleKeyDown}
                 placeholder="Find by name, phone, plate, payment issue, or subscription status..."
                 role="combobox"
@@ -419,42 +446,53 @@ function DashboardSearch() {
                 id="dashboard-customer-results"
                 role="listbox"
               >
-                {results.map((customer, index) => (
-                  <button
-                    aria-selected={index === activeIndex}
-                    className={`grid w-full gap-1 px-4 py-3 text-left transition ${
-                      index === activeIndex
-                        ? "bg-primary/15 text-foreground ring-1 ring-inset ring-primary/25"
-                        : "hover:bg-primary/10 hover:text-foreground"
-                    }`}
-                    id={`dashboard-customer-result-${index}`}
-                    key={customer.id}
-                    onClick={() => openCustomer(customer)}
-                    onFocus={() => setActiveIndex(index)}
-                    role="option"
-                    type="button"
-                  >
-                    <span className="font-semibold">{customer.fullName}</span>
-                    <span className="text-xs text-muted">
-                      {customer.primaryVehicle} · {customer.licensePlate || "No plate"}
-                    </span>
-                    <span className="text-xs text-muted">
-                      {customer.phone} · {customer.subscriptionSummary}
-                    </span>
-                  </button>
-                ))}
+                {isSearching ? (
+                  <div className="px-4 py-3 text-sm font-semibold text-muted">Searching customers...</div>
+                ) : searchError ? (
+                  <div className="px-4 py-3 text-sm font-semibold text-critical">{searchError}</div>
+                ) : (
+                  results.map((customer, index) => (
+                    <button
+                      aria-selected={index === activeIndex}
+                      className={`grid w-full gap-1 px-4 py-3 text-left transition ${
+                        index === activeIndex
+                          ? "bg-primary/15 text-foreground ring-1 ring-inset ring-primary/25"
+                          : "hover:bg-primary/10 hover:text-foreground"
+                      }`}
+                      id={`dashboard-customer-result-${index}`}
+                      key={customer.id}
+                      onClick={() => openCustomer(customer)}
+                      onFocus={() => setActiveIndex(index)}
+                      onMouseDown={(event) => {
+                        event.preventDefault();
+                        openCustomer(customer);
+                      }}
+                      role="option"
+                      type="button"
+                    >
+                      <span className="font-semibold">{customer.fullName}</span>
+                      <span className="text-xs text-muted">
+                        {customer.primaryVehicle} · {customer.licensePlate || "No plate"}
+                      </span>
+                      <span className="text-xs text-muted">
+                        {customer.phone} · {customer.subscriptionSummary}
+                      </span>
+                    </button>
+                  ))
+                )}
               </div>
             ) : null}
           </div>
           <button
             className="inline-flex min-h-12 shrink-0 items-center justify-center rounded-xl bg-primary px-5 text-sm font-semibold text-primary-foreground transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:brightness-100"
+            data-search-action="open-results"
             disabled={isSearching}
             type="submit"
           >
             Search
           </button>
         </div>
-      </label>
+      </div>
     </form>
   );
 }
@@ -708,7 +746,7 @@ function DashboardSkeleton() {
       <section className="grid gap-3 md:grid-cols-2 xl:grid-cols-4">
         {[0, 1, 2, 3].map((item) => (
           <div
-            className="h-24 rounded-2xl border border-border bg-card p-4 shadow-sm shadow-slate-200/70"
+            className="min-h-[7.75rem] rounded-2xl border border-border bg-card p-4 shadow-sm shadow-slate-200/70"
             key={item}
           >
             <LoaderCircle className="animate-spin text-muted" size={24} aria-hidden="true" />

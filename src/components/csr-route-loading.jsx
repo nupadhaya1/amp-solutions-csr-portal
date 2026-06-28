@@ -21,7 +21,7 @@ export function CsrRouteLoading({ label = "Loading" }) {
       <section className="mt-8 grid gap-5 md:grid-cols-2 xl:grid-cols-4">
         {[0, 1, 2, 3].map((item) => (
           <div
-            className="h-36 rounded-2xl border border-border bg-card p-5 shadow-sm shadow-slate-200/70"
+            className="min-h-[10.75rem] rounded-2xl border border-border bg-card p-5 shadow-sm shadow-slate-200/70"
             key={item}
           >
             <div className="h-12 w-12 rounded-2xl bg-surface-muted" />

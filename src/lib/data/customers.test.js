@@ -23,6 +23,7 @@ test("loads lightweight customer records for autocomplete search", async () => {
   assert.equal(calls[0].select.purchases, undefined);
   assert.equal(calls[0].select.supportNotes, undefined);
   assert.equal(calls[0].select.auditEvents, undefined);
+  assert.equal(calls[0].select.homeWashLocation, undefined);
   assert.ok(calls[0].select.vehicles.select);
   assert.ok(calls[0].select.subscriptions.select.plan.select);
 });

@@ -1,7 +1,7 @@
 "use client";
 
-import { useCallback, useState } from "react";
-import { BookOpen, LoaderCircle, Search } from "lucide-react";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { BookOpen, LoaderCircle, Search, X } from "lucide-react";
 
 import { DocsResultCard } from "./docs-result-card";
 import { DocsSuggestedSearches } from "./docs-suggested-searches";
@@ -12,10 +12,18 @@ export function DocsSearchWorkspace({ initialQuery = "", initialResults = [] }) 
   const [results, setResults] = useState(initialResults);
   const [error, setError] = useState("");
   const [isSearching, setIsSearching] = useState(false);
+  const didAutoSearchMountRef = useRef(false);
+  const searchRequestRef = useRef(0);
 
-  const runSearch = useCallback((nextQuery) => {
+  const runSearch = useCallback((nextQuery, { syncInput = true } = {}) => {
     const normalizedQuery = String(nextQuery || "").trim().replace(/\s+/g, " ");
-    setQuery(normalizedQuery);
+    const requestId = searchRequestRef.current + 1;
+    searchRequestRef.current = requestId;
+
+    if (syncInput) {
+      setQuery(normalizedQuery);
+    }
+
     setActiveQuery(normalizedQuery);
     setError("");
 
@@ -36,19 +44,48 @@ export function DocsSearchWorkspace({ initialQuery = "", initialResults = [] }) 
       .then(async (response) => {
         const payload = await response.json();
 
+        if (searchRequestRef.current !== requestId) return;
+
         if (!response.ok || payload.error) {
           throw new Error(payload.error || "Unable to search CSR docs.");
         }
         setResults(payload.data?.results || []);
       })
       .catch((searchError) => {
+        if (searchRequestRef.current !== requestId) return;
+
         setError(searchError.message || "Unable to search CSR docs.");
         setResults([]);
       })
       .finally(() => {
-        setIsSearching(false);
+        if (searchRequestRef.current === requestId) {
+          setIsSearching(false);
+        }
       });
   }, []);
+
+  useEffect(() => {
+    if (!didAutoSearchMountRef.current) {
+      didAutoSearchMountRef.current = true;
+      return undefined;
+    }
+
+    const searchDelay = window.setTimeout(() => {
+      runSearch(query, { syncInput: false });
+    }, 300);
+
+    return () => window.clearTimeout(searchDelay);
+  }, [query, runSearch]);
+
+  function clearSearch() {
+    searchRequestRef.current += 1;
+    setQuery("");
+    setActiveQuery("");
+    setResults([]);
+    setError("");
+    setIsSearching(false);
+    window.history.pushState(null, "", "/csr/docs");
+  }
 
   return (
     <div className="grid gap-5">
@@ -92,6 +129,16 @@ export function DocsSearchWorkspace({ initialQuery = "", initialResults = [] }) 
                 />
                 {isSearching ? (
                   <LoaderCircle className="shrink-0 animate-spin text-muted" size={16} aria-hidden="true" />
+                ) : null}
+                {query ? (
+                  <button
+                    aria-label="Clear search"
+                    className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-muted transition hover:bg-card hover:text-foreground"
+                    onClick={clearSearch}
+                    type="button"
+                  >
+                    <X size={16} aria-hidden="true" />
+                  </button>
                 ) : null}
               </div>
               <button

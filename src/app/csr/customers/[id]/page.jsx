@@ -329,12 +329,16 @@ export default async function CustomerProfilePage({ params, searchParams }) {
     orderBy: [{ monthlyPrice: "asc" }, { name: "asc" }],
   });
   const profile = createCustomerDashboardViewModel(customer, plans);
+  const returnQuery = String(query?.returnQuery || "").trim();
+  const backHref = returnQuery
+    ? `/csr/customers?q=${encodeURIComponent(returnQuery)}`
+    : "/csr/customers";
 
   return (
     <CustomerDashboardLayout
       addSupportNoteAction={addSupportNote}
       addVehicleAction={addVehicle}
-      backHref="/csr/customers"
+      backHref={backHref}
       cancelSubscriptionAction={cancelSubscription}
       changePlanAction={changePlan}
       customer={profile}
