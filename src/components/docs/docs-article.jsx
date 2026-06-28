@@ -53,6 +53,19 @@ export function MarkdownArticleBody({ body }) {
       return;
     }
 
+    const imageMatch = trimmed.match(/^!\[(.*?)\]\((.*?)\)$/);
+    if (imageMatch) {
+      flushList();
+      const [, alt, src] = imageMatch;
+      nodes.push(
+        <figure className="my-5 overflow-hidden rounded-2xl border border-border bg-surface p-3" key={index}>
+          <img alt={alt} className="w-full rounded-xl" src={src} />
+          <figcaption className="mt-2 text-xs font-semibold text-muted">{alt}</figcaption>
+        </figure>,
+      );
+      return;
+    }
+
     const bullet = trimmed.match(/^(?:[-*]|\d+\.)\s+(.+)$/);
     if (bullet) {
       list.push(bullet[1]);

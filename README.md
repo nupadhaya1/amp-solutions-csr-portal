@@ -1,49 +1,167 @@
 # AMP CSR Command Center
 
-A support portal for resolving customer membership, vehicle, subscription, and payment issues for AMP car wash memberships.
+> **Live demo:** https://amp-csr-portal.nupadhaya.com  
+> **Presentation:** https://amp-csr-portal.nupadhaya.com/presentation  
+> **CSR Docs:** https://amp-csr-portal.nupadhaya.com/csr/docs  
+> **Lane Context:** https://amp-csr-portal.nupadhaya.com/csr/lane-context  
+> **GitHub:** https://github.com/nupadhaya1/amp-solutions-csr-portal
 
-## Submission Links
+A full-stack customer service representative portal for AMP car wash memberships. The app helps a CSR quickly find a customer, understand their account/payment/vehicle/lane context, resolve common membership issues, and leave an audit trail.
 
-- Live app: https://amp-csr-portal.nupadhaya.com
-- Vercel app alias: https://amp-solutions-csr-portal.vercel.app
-- GitHub repo: https://github.com/nupadhaya1/amp-solutions-csr-portal
-- Presentation route: https://amp-csr-portal.nupadhaya.com/presentation
-- Mobile companion route: https://amp-csr-portal.nupadhaya.com/mobile
+## Why this project exists
 
-## MVP Focus
+AMP members may call support when they cannot get a wash, have questions about a recent purchase, want to cancel, or need a subscription transferred to a new vehicle. This portal is designed around that real CSR workflow:
 
-The primary workflow is a customer calling because they cannot get a wash. The CSR should be able to search by caller details or a realistic license plate, open the customer profile, see the overdue subscription, find the failed membership payment, and take a support action.
+```txt
+Search fast → Diagnose clearly → Take the right action → Persist an audit trail
+```
 
-## Reviewer Walkthrough
+## Reviewer demo path
 
-1. Open the live app at `/csr/dashboard`.
-2. Search by caller details or license plate `CZR4821`.
-3. Open the customer profile for the overdue account.
-4. Review the critical unable-to-wash banner, affected subscription, failed membership payment, and purchase history.
-5. Add a support note or complete a CSR action:
-   - edit account information
-   - add a vehicle
-   - transfer subscription coverage
-   - change subscription plan
-   - cancel subscription
-6. Confirm the audit timeline records the CSR action.
-7. Open `/presentation` for the take-home walkthrough and `/mobile` for the companion demo.
-8. Open `/csr/docs` to search source-of-truth support playbooks for common CSR scenarios.
+Use this path first during review:
 
-## Tech Stack
+1. Open https://amp-csr-portal.nupadhaya.com/csr/dashboard.
+2. Search for `CZR4821` or `failed payment`.
+3. Open the overdue customer profile.
+4. Review the unable-to-wash banner, lane context, failed membership payment, vehicle subscription, and purchase history.
+5. Use a CSR action such as update payment, retry failed charge, add vehicle, transfer coverage, change plan, cancel membership, or add a support note.
+6. Confirm the activity/audit timeline records the action.
+7. Open https://amp-csr-portal.nupadhaya.com/csr/lane-context to see live lane/session context.
+8. Open https://amp-csr-portal.nupadhaya.com/csr/docs to search support playbooks.
+9. Open https://amp-csr-portal.nupadhaya.com/presentation for the in-app walkthrough.
+
+## Take-home requirement coverage
+
+| Requirement | Implementation |
+|---|---|
+| View list of users | `/csr/customers` customer grid with stats, pagination, filters, and row actions |
+| Quickly find a specific user | Dashboard search, customer grid search, remembered search state, plate/name/email/phone/status support |
+| View account details | Customer profile summary with member ID, contact info, home wash location, account status, plan tags |
+| View active vehicle subscriptions | Vehicle/subscription cards with covered vehicles, plan names, statuses, and capacity labels |
+| Edit account information | Server action-backed edit account dialog with Zod validation and audit event |
+| Add/remove/transfer subscriptions | Add vehicle, transfer coverage, cancel membership, and change plan flows |
+| View purchase history | Purchase history card showing membership payments, single washes, coupon redemptions, refunds, failed charges |
+| Backend persistence | Prisma + Postgres/Neon, with seeded customers, vehicles, subscriptions, purchases, lane sessions, support notes, and audit events |
+| Useful extra functionality | Lane context, semantic CSR docs, recommended next steps, mobile companion route, presentation route, dashboard charts |
+
+## Main routes
+
+| Route | Purpose |
+|---|---|
+| `/` | Redirects into the CSR portal |
+| `/csr/dashboard` | CSR landing page with search, metrics, attention queue, and charts |
+| `/csr/customers` | Customer lookup grid with stats, filters, and pagination |
+| `/csr/customers/[id]` | Customer profile and all CSR actions |
+| `/csr/lane-context` | Operational lane/session view for vehicles at gate, in queue, blocked, or cleared |
+| `/csr/docs` | Searchable CSR support playbooks |
+| `/csr/docs/[slug]` | Individual support playbook article |
+| `/mobile` | Demo companion customer-side mobile state |
+| `/presentation` | Browser-based take-home presentation |
+| `/demo` | Manual demo launcher |
+
+## Tech stack
 
 - Next.js App Router
+- React 19
 - JavaScript
-- Tailwind CSS
-- Prisma
+- Tailwind CSS v4
+- Prisma ORM
 - Postgres / Neon
-- Zod
-- Fuse.js
+- Zod validation
+- TanStack Table
+- TanStack Query
+- Radix UI dialogs/tabs/dropdowns
+- Fuse.js / local deterministic search
+- `@huggingface/transformers` using `Xenova/all-MiniLM-L6-v2`
+- pgvector support-doc retrieval
+- Chart.js / react-chartjs-2
 - Framer Motion
-- Local Hugging Face embeddings
-- pgvector
+- Vercel Analytics and Speed Insights
 
-## Local Setup
+## Architecture overview
+
+```mermaid
+flowchart LR
+  A[CSR browser] --> B[Next.js App Router]
+  B --> C[Server Components]
+  B --> D[Client Workspaces]
+  C --> E[Server Actions / API Routes]
+  D --> E
+  E --> F[Zod Validation]
+  F --> G[Domain Logic / View Models]
+  G --> H[Prisma ORM]
+  H --> I[(Postgres / Neon)]
+  G --> J[Smart Search / Docs Search]
+  J --> K[(Support Docs + pgvector)]
+```
+
+## Data model summary
+
+Core models:
+
+- `Customer`: account identity, contact details, status, home wash location.
+- `Vehicle`: customer vehicle record with license plate.
+- `SubscriptionPlan`: available membership plans and vehicle capacity.
+- `Subscription`: active/overdue/cancelled/paused membership state.
+- `SubscriptionVehicle`: join table that attaches vehicles to subscriptions.
+- `Purchase`: membership payments, single washes, coupon redemptions, refunds, and failed payments.
+- `SupportNote`: CSR-authored notes.
+- `AuditEvent`: system and CSR action history.
+- `LaneSession`: live lane context such as blocked, at gate, in queue, plate mismatch, or failed payment.
+- `FaqArticle`: simple FAQ records used by smart search.
+- `SupportDoc` / `SupportDocChunk`: source-of-truth playbooks with local embeddings and pgvector retrieval.
+
+## Seeded demo data
+
+Run both seed steps for the full demo dataset:
+
+```bash
+npm run db:seed
+npm run db:seed:dashboard
+npm run db:seed:docs
+```
+
+The base seed creates 16 curated customers for specific CSR scenarios. The dashboard time-series seed adds generated demo customers so the deployed environment shows 220 customers, dashboard trends, attention queues, and more realistic pagination. Support docs seed adds searchable source-of-truth Markdown playbooks.
+
+Representative seeded support scenarios:
+
+- Failed payment / unable to wash: `CZR4821`, `JTF6093`, generated `FIX####` plates.
+- Vehicle transfer: Marcus Reed, Ben Wilson, plus plate mismatch lane context.
+- Purchase/refund question: Alicia Brown, Harper Davis.
+- Cancellation: Ethan Brooks, Olivia Martinez.
+- Paused subscription: Daniel Kim.
+- Multi-vehicle/family plan management: Priya Shah, Grace Lee, Sophia Nguyen, Mia Thompson.
+- Lane context: blocked failed payment, in-queue healthy member, plate mismatch warning.
+
+## CSR Docs semantic search
+
+The `/csr/docs` route searches operational playbooks stored in `docs/csr/*.md`.
+
+Search flow:
+
+```mermaid
+flowchart LR
+  A[Markdown playbook] --> B[Parse frontmatter]
+  B --> C[Chunk article]
+  C --> D[MiniLM embedding]
+  D --> E[SupportDocChunk.embedding vector(384)]
+  F[CSR search query] --> G[MiniLM query embedding]
+  G --> H[pgvector cosine search]
+  H --> I[Keyword boost + dedupe]
+  I --> J[Ranked docs results]
+```
+
+The app uses local/free embeddings from `Xenova/all-MiniLM-L6-v2` through `@huggingface/transformers`. The seed creates a 384-dimensional `embedding` column on `SupportDocChunk` and indexes it with pgvector. If vector search fails, the app falls back to database keyword search and then static Markdown search.
+
+Enable vector support manually if needed:
+
+```sql
+CREATE EXTENSION IF NOT EXISTS vector;
+CREATE EXTENSION IF NOT EXISTS pg_trgm;
+ALTER TABLE "SupportDocChunk" ADD COLUMN IF NOT EXISTS embedding vector(384);
+```
+
+## Local setup
 
 ```bash
 npm install
@@ -56,141 +174,26 @@ npm run db:seed:docs
 npm run dev
 ```
 
-The local app runs at `http://localhost:3000`.
+The app runs at `http://localhost:3000`.
 
-If local builds need database access, load the pulled development variables first:
+If local commands need database access:
 
 ```bash
 set -a; source ./.env.development.local; set +a
-npm run build
 ```
 
-## Database
-
-Development, preview, and production use the Vercel-connected Neon database resource named `nupadhaya`, with this app using the separate `amp_csr` database inside that Neon project. Do not commit `.env.development.local`, `.env.local`, or production connection strings.
-
-For local development, pull the Vercel development environment variables:
+## Environment variables
 
 ```bash
-vercel env pull .env.development.local
-npm run db:push
-npm run db:seed
+DATABASE_URL="postgresql://USER:PASSWORD@HOST:5432/DATABASE?sslmode=require"
+DATABASE_URL_UNPOOLED="postgresql://USER:PASSWORD@HOST:5432/DATABASE?sslmode=require"
 ```
 
-To reset seeded data during development:
+Do not commit `.env.local`, `.env.development.local`, or production connection strings.
+
+## Database commands
 
 ```bash
-npm run db:reset
-```
-
-To add historical dashboard data, run the Prisma seed first so subscription
-plans exist, then run the dashboard time-series seed:
-
-```bash
-npm run db:seed
-npm run db:seed:dashboard
-```
-
-Then open `/csr/dashboard` to review the dashboard charts and attention queue.
-
-## CSR Docs Semantic Search
-
-The `/csr/docs` route provides searchable source-of-truth support playbooks for unable-to-wash issues, failed payments, payment updates, cancellation, purchase questions, refunds, coupons, vehicle transfers, plan changes, duplicate accounts, gate/kiosk incidents, audit review, and escalation.
-
-Docs live in `docs/csr/*.md` and are seeded into Postgres with:
-
-```bash
-npm run db:seed:docs
-```
-
-The docs seed uses local/free embeddings from `Xenova/all-MiniLM-L6-v2` through `@huggingface/transformers`. Embeddings are 384-dimensional and stored in Postgres with `pgvector`; the app falls back to keyword search if model loading or vector search fails. This is not an LLM chatbot, and it does not send customer data to a hosted model.
-
-Enable pgvector before seeding docs:
-
-```sql
-CREATE EXTENSION IF NOT EXISTS vector;
-```
-
-For local development:
-
-```bash
-vercel env pull .env.development.local
-set -a; source ./.env.development.local; set +a
-npm run db:generate
-npm run db:push
-npm run db:seed
-npm run db:seed:dashboard
-npm run db:seed:docs
-npm run dev
-```
-
-The vector setup SQL is also available at `prisma/sql/support-docs-vector.sql`. The seed script creates the extension and vector column automatically when the database allows it.
-
-## Seeded Demo Data
-
-The current demo dataset includes 220 customers plus related vehicles, subscriptions, purchases, support notes, audit events, and 9 FAQ articles.
-
-Representative support scenarios:
-
-- Alex Morgan and Maya Patel: failed membership payments and overdue subscriptions
-- Priya Shah and Grace Lee: healthy family plan accounts
-- Marcus Reed and Ben Wilson: vehicle transfer workflows
-- Alicia Brown and Harper Davis: purchase and refund history workflows
-- Ethan Brooks and Olivia Martinez: cancellation workflows
-- Daniel Kim: paused subscription
-- Sophia Nguyen and Mia Thompson: multi-vehicle plan management
-
-## Planned Routes
-
-- `/`: redirects to `/csr/dashboard`
-- `/csr`: redirects to `/csr/dashboard`
-- `/csr/dashboard`: CSR dashboard
-- `/csr/customers`: customer lookup and search
-- `/csr/search`: redirects to `/csr/customers`
-- `/csr/docs`: source-of-truth CSR docs search
-- `/csr/docs/[slug]`: CSR docs article detail
-- `/csr/customers/[id]`: customer profile
-- `/mobile`: mock mobile companion
-- `/presentation`: browser presentation
-- `/demo`: manual demo launcher
-
-## Implemented Features
-
-- Database-backed CSR dashboard summary.
-- Smart customer search across names, contact details, vehicles, purchases, support notes, and audit history.
-- Customer profile with account details, vehicles, subscriptions, purchase history, support notes, and audit timeline.
-- Account editing with audit events.
-- Vehicle creation with normalized license plates and audit events.
-- Subscription cancellation, plan changes, and vehicle coverage transfer.
-- Smart Search over local semantic vectors for customer cases and FAQ articles.
-- CSR Docs search over seeded Markdown playbooks, local MiniLM embeddings, pgvector retrieval, and keyword fallback.
-- Browser presentation route and mobile companion demo route.
-- Vercel Analytics and Speed Insights.
-
-## Smart Search Approach
-
-The Smart Search tab uses a local KNN-style search:
-
-- Build support documents from customer records, support notes, audit events, purchases, subscriptions, and FAQ articles.
-- Tokenize and normalize the text locally.
-- Expand common support synonyms such as vehicle/car/truck, membership/subscription, and failed/declined/overdue.
-- Build TF-IDF weighted vectors per request.
-- Rank nearest documents with cosine similarity.
-
-This keeps the MVP private, free, deterministic, and deployable on Vercel without model hosting. A production upgrade path would be:
-
-1. Add `pgvector` to Postgres.
-2. Generate embeddings during seed/import or write-time updates.
-3. Use a small embedding model such as MiniLM locally in a worker, or a managed embedding API if allowed.
-4. Query nearest neighbors with vector distance and blend the score with account priority signals.
-
-## Scripts
-
-```bash
-npm run dev
-npm run build
-npm run lint
-npm test
 npm run db:generate
 npm run db:push
 npm run db:seed
@@ -199,9 +202,7 @@ npm run db:seed:docs
 npm run db:reset
 ```
 
-## Verification
-
-Current submission checks:
+## Verification commands
 
 ```bash
 npm test
@@ -209,22 +210,53 @@ npm run lint
 set -a; source ./.env.development.local; set +a; npm run build
 ```
 
-The app uses Vercel and Neon free-tier resources. Environment variable values are stored in Vercel/Neon and are not committed to the repository.
+## Current deployment
 
-## MVP Tradeoffs
+The take-home deployment uses:
 
-- Mock CSR identity instead of real authentication
-- Smart Search uses local TF-IDF vectors instead of a production LLM or hosted embedding service
-- No real payment processing, proration, refunds, or tax calculations
-- Mock mobile companion is demo-only
-- AWS architecture is summarized in the presentation route, while MVP deployment targets Vercel and Neon
+```txt
+Vercel → Next.js app
+Neon → Postgres database
+Vercel env vars → DATABASE_URL / DATABASE_URL_UNPOOLED
+Vercel Analytics + Speed Insights → basic app telemetry
+```
 
-## Demo Walkthrough
+## AWS production deployment plan
 
-1. Open `/csr/dashboard` for the CSR portal dashboard.
-2. Search by caller details or license plate `CZR4821`.
-3. Open the customer profile and review the critical unable-to-wash banner.
-4. Confirm the overdue subscription and failed membership payment.
-5. Add a support note or complete a CSR action such as plan change, vehicle transfer, or cancellation.
-6. Review the audit timeline update.
-7. Open `/presentation` for the reviewer walkthrough and `/mobile` for the companion demo.
+A production AMP deployment could use:
+
+```mermaid
+flowchart LR
+  A[Route 53] --> B[CloudFront]
+  B --> C[AWS WAF]
+  C --> D[ALB]
+  D --> E[ECS Fargate Next.js service]
+  E --> F[(RDS Postgres Multi-AZ)]
+  E --> G[ElastiCache Redis]
+  E --> H[Secrets Manager]
+  E --> I[CloudWatch Logs / Metrics]
+  J[GitHub Actions] --> K[ECR]
+  K --> E
+```
+
+Production hardening would add auth/RBAC, payment provider webhooks, audit retention, rate limiting, structured logging, alerting, database backups, connection pooling, pgvector/OpenSearch for support retrieval, and multi-location permissions.
+
+## MVP tradeoffs
+
+- Mock CSR identity (`Bob Roberts`) instead of production authentication.
+- Payment update/retry flows are demo-safe and do not call a real payment provider.
+- Lane context is seeded/mock operational context rather than a real gate/kiosk integration.
+- Mobile app is a companion demo route, not a production React Native app.
+- Docs search uses local embeddings/pgvector with keyword fallback instead of a hosted LLM chatbot.
+- Dashboard data is seeded for demo realism, not connected to production analytics events.
+
+## What I would build next
+
+1. Add real authentication and role-based CSR permissions.
+2. Integrate a real payment provider with webhooks, retries, proration, refunds, and decline codes.
+3. Connect lane sessions to real plate-reader/gate/kiosk events.
+4. Add queue/worker processing for payment retry, plan updates, and notifications.
+5. Add structured audit retention and compliance controls.
+6. Add test coverage around all server actions and workflow state transitions.
+7. Replace mock mobile route with real mobile-app status integration.
+8. Add observability dashboards for CSR resolution time, blocked-wash volume, and recovered revenue.

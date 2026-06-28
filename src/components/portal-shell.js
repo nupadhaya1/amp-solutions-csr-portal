@@ -32,6 +32,7 @@ const categoryTone = {
   Purchases: "bg-amber-50 text-amber-700 ring-amber-100",
   "Service Access": "bg-critical-background text-critical ring-critical/10",
   Subscription: "bg-primary/10 text-primary ring-primary/15",
+  "System Design": "bg-primary/10 text-primary ring-primary/15",
   "Vehicle Management": "bg-teal-50 text-teal-700 ring-teal-100",
 };
 
@@ -151,7 +152,12 @@ export function PortalShell({ children }) {
                   src="/logo-amp.svg"
                   width={240}
                 />
-                {!sidebarCollapsed ? <h1 style={{ marginTop: "2px" }}> | CSR-Portal</h1> : null}
+                {!sidebarCollapsed ? (
+                  <div className="ml-3 leading-tight">
+                    <p className="text-sm font-semibold text-foreground">CSR Command Center</p>
+                    <p className="text-xs font-medium text-muted">AMP support operations</p>
+                  </div>
+                ) : null}
               </div>
               {!sidebarCollapsed ? (
                 <>

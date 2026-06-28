@@ -25,7 +25,7 @@ import {
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
-const stack = ["Next.js", "Prisma", "Postgres/Neon", "Tailwind", "Server Actions", "Fuse.js"];
+const stack = ["Next.js", "React", "Prisma", "Postgres/Neon", "Tailwind", "Server Actions", "pgvector", "MiniLM"];
 
 const requirements = [
   "View list of users",
@@ -37,26 +37,24 @@ const requirements = [
   "Transfer subscription coverage",
   "Cancel/change plan",
   "Persist data on backend",
+  "Helpful extras: lane context, docs search, recommended next steps",
 ];
 
 const scaleItems = [
   "Auth + RBAC for CSR permissions",
-  "Real payment provider integration",
-  "Event-driven audit trail",
-  "Queue/workers for billing and subscription updates",
-  "Postgres read replicas or connection pooling",
-  "Observability: logs, traces, metrics",
-  "Rate limiting",
-  "Support notes with compliance controls",
-  "Search upgrade path: pgvector / embeddings",
+  "Real payment webhooks",
+  "Lane/kiosk event ingestion",
+  "CloudWatch logs and alarms",
+  "RDS backups and connection pooling",
+  "Queue workers for retries and notifications",
 ];
 
 const tradeoffs = [
   "Mock CSR identity instead of real auth",
   "No real payment processor",
-  "Customer search is local/deterministic for MVP",
+  "Seeded lane context rather than real gate/kiosk integration",
   "Mobile app is a demo companion",
-  "Production would add authorization, payment webhooks, operational dashboards, and stronger audit controls",
+  "Dashboard data is seeded",
 ];
 
 function cn(...classes) {
@@ -157,6 +155,15 @@ function LivePortalFrame({ caption, large = false, path = "/" }) {
           />
         </div>
       </div>
+      {caption ? <p className="mt-3 text-sm leading-6 text-muted">{caption}</p> : null}
+    </div>
+  );
+}
+
+function DiagramCard({ alt, caption, src }) {
+  return (
+    <div className="rounded-3xl border border-border bg-card p-4 shadow-sm shadow-slate-200/70">
+      <img alt={alt} className="w-full rounded-2xl border border-border bg-surface" src={src} />
       {caption ? <p className="mt-3 text-sm leading-6 text-muted">{caption}</p> : null}
     </div>
   );
@@ -328,6 +335,29 @@ function BillingPhone() {
   );
 }
 
+function LaneContextPhone() {
+  return (
+    <div>
+      <PhoneHeader>Lane status</PhoneHeader>
+      <div className="grid gap-3">
+        <div className="rounded-2xl border border-critical/30 bg-critical-background p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-critical">At gate</p>
+          <p className="mt-2 text-lg font-semibold">Payment blocker</p>
+          <p className="mt-2 text-sm leading-6 text-muted">Vehicle is identified, but membership approval is blocked.</p>
+        </div>
+        <div className="rounded-2xl border border-warning/30 bg-warning-background p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-warning">Plate mismatch</p>
+          <p className="mt-2 text-sm font-semibold">Coverage may need transfer</p>
+        </div>
+        <div className="rounded-2xl border border-success/30 bg-success-background p-4">
+          <p className="text-xs font-semibold uppercase tracking-wide text-success">Cleared</p>
+          <p className="mt-2 text-sm font-semibold">Ready to queue after remediation</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function ArchitectureDiagram() {
   const nodes = [
     { icon: Monitor, label: "Browser" },
@@ -399,9 +429,9 @@ function ChecklistGrid({ items }) {
 function IntroSlide() {
   return (
     <SlideShell
-      eyebrow="AMP Software take-home demo"
+      eyebrow="Intro"
       title="AMP CSR Command Center"
-      subtitle="A demo portal for helping car wash members resolve account, billing, vehicle, and subscription issues."
+      subtitle="A full-stack support portal for resolving car wash membership, payment, vehicle, lane, and subscription issues."
     >
       <div className="grid gap-6 lg:grid-cols-[1fr_420px]">
         <div className="rounded-3xl border border-border bg-card p-7 shadow-sm shadow-slate-200/70">
@@ -429,6 +459,21 @@ function IntroSlide() {
             Built around the real CSR call flow: find the member, understand the blocker,
             take the action, and leave a trace.
           </p>
+          <div className="mt-8 flex flex-wrap gap-3">
+            {[
+              ["Open portal", "/csr/dashboard"],
+              ["Open docs", "/csr/docs"],
+              ["Lane context", "/csr/lane-context"],
+            ].map(([label, href]) => (
+              <Link
+                className="rounded-xl bg-primary-foreground px-4 py-3 text-sm font-semibold text-primary"
+                href={href}
+                key={href}
+              >
+                {label}
+              </Link>
+            ))}
+          </div>
         </div>
       </div>
     </SlideShell>
@@ -455,7 +500,11 @@ function ProblemSlide() {
             </div>
           ))}
         </div>
-        <ProblemFlow />
+        <DiagramCard
+          alt="Support flow"
+          caption="The app keeps the call flow visible: search, diagnose, act, audit, and confirm."
+          src="/docs/diagrams/support-flow.svg"
+        />
       </div>
     </SlideShell>
   );
@@ -473,19 +522,96 @@ function MvpSlide() {
   );
 }
 
+function DocsSearchSlide() {
+  return (
+    <SlideShell
+      eyebrow="Docs"
+      title="Searchable support playbooks turn tribal knowledge into source-of-truth guidance."
+      subtitle="CSRs can search natural support scenarios and open remediation steps without leaving the portal."
+    >
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_440px]">
+        <LivePortalFrame
+          large
+          path="/csr/docs?q=customer%20says%20gate%20denied%20but%20app%20is%20active"
+        />
+        <div className="grid gap-4">
+          <DiagramCard
+            alt="Semantic search"
+            caption="This is deterministic source-of-truth retrieval with vector ranking, keyword fallback, and static Markdown fallback."
+            src="/docs/diagrams/semantic-search.svg"
+          />
+          <div className="flex flex-wrap gap-2">
+            {["Markdown source of truth", "MiniLM local embeddings", "pgvector + keyword fallback"].map((item) => (
+              <Pill key={item} tone="primary">{item}</Pill>
+            ))}
+          </div>
+        </div>
+      </div>
+    </SlideShell>
+  );
+}
+
+function CurrentArchitectureSlide() {
+  return (
+    <SlideShell
+      eyebrow="Architecture"
+      title="A simple full-stack path from browser action to persisted audit event."
+      subtitle="The implementation keeps UI, server actions, domain logic, and Prisma data access easy to inspect."
+    >
+      <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
+        <DiagramCard alt="Current architecture" src="/docs/diagrams/current-architecture.svg" />
+        <div className="grid gap-3">
+          {[
+            "Server actions own mutations",
+            "View models shape CSR-friendly data",
+            "Prisma persists support state",
+            "Docs search uses local embeddings and pgvector",
+          ].map((item) => (
+            <div className="rounded-2xl border border-border bg-card p-4 shadow-sm shadow-slate-200/70" key={item}>
+              <p className="text-sm font-semibold leading-6">{item}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </SlideShell>
+  );
+}
+
+function DataModelSlide() {
+  return (
+    <SlideShell
+      eyebrow="Data model"
+      title="The customer record connects account, vehicle, payment, lane, and support context."
+      subtitle="The schema is centered on the entities a CSR actually needs during a call."
+    >
+      <div className="grid gap-5">
+        <DiagramCard alt="Data model" src="/docs/diagrams/data-model.svg" />
+        <div className="flex flex-wrap gap-2">
+          {["Customer", "Vehicle", "Subscription", "Purchase", "SupportNote", "AuditEvent", "LaneSession", "SupportDoc"].map((item) => (
+            <Pill key={item}>{item}</Pill>
+          ))}
+        </div>
+      </div>
+    </SlideShell>
+  );
+}
+
 function ScaleSlide() {
   return (
     <SlideShell
-      eyebrow="Production scale"
-      title="The MVP has a straightforward path to production controls."
-      subtitle="The foundation is intentionally simple, but the boundaries map cleanly to real support operations."
+      eyebrow="Production"
+      title="The MVP can move cleanly from Vercel/Neon to an AWS production architecture."
+      subtitle="The same boundaries map to CDN, WAF, containers, RDS, secrets, logs, and CI/CD."
     >
-      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-        {scaleItems.map((item) => (
-          <div className="rounded-2xl border border-border bg-card p-4 shadow-sm shadow-slate-200/70" key={item}>
-            <p className="text-sm font-semibold leading-6">{item}</p>
-          </div>
-        ))}
+      <div className="grid gap-5 lg:grid-cols-[1fr_420px]">
+        <DiagramCard alt="AWS production deployment" src="/docs/diagrams/aws-production.svg" />
+        <div className="grid gap-3">
+          {scaleItems.map((item) => (
+            <div className="rounded-2xl border border-border bg-card p-4 shadow-sm shadow-slate-200/70" key={item}>
+              <p className="text-sm font-semibold leading-6">{item}</p>
+            </div>
+          ))}
+        </div>
       </div>
     </SlideShell>
   );
@@ -499,12 +625,38 @@ function TradeoffsSlide() {
       subtitle="These are deliberate MVP boundaries and the next pieces I would harden first."
     >
       <div className="grid gap-4 lg:grid-cols-2">
-        {tradeoffs.map((item) => (
-          <div className="flex items-start gap-3 rounded-2xl border border-border bg-card p-5 shadow-sm shadow-slate-200/70" key={item}>
-            <ArrowRight className="mt-0.5 shrink-0 text-primary" size={20} aria-hidden="true" />
-            <p className="font-semibold leading-7">{item}</p>
+        <div className="rounded-3xl border border-border bg-card p-6 shadow-sm shadow-slate-200/70">
+          <h2 className="text-xl font-semibold">MVP tradeoffs</h2>
+          <div className="mt-5 grid gap-3">
+            {tradeoffs.map((item) => (
+              <div className="flex items-start gap-3 rounded-2xl border border-border bg-surface p-4" key={item}>
+                <ArrowRight className="mt-0.5 shrink-0 text-primary" size={18} aria-hidden="true" />
+                <p className="text-sm font-semibold leading-6">{item}</p>
+              </div>
+            ))}
           </div>
-        ))}
+        </div>
+        <div className="rounded-3xl border border-border bg-card p-6 shadow-sm shadow-slate-200/70">
+          <h2 className="text-xl font-semibold">Next hardening steps</h2>
+          <div className="mt-5 grid gap-3">
+            {[
+              "Auth/RBAC",
+              "Real payments and webhooks",
+              "Production lane event stream",
+              "Stronger server-action authorization",
+              "More workflow state-transition tests",
+              "Observability dashboards",
+            ].map((item) => (
+              <div className="flex items-start gap-3 rounded-2xl border border-border bg-surface p-4" key={item}>
+                <CheckCircle2 className="mt-0.5 shrink-0 text-success" size={18} aria-hidden="true" />
+                <p className="text-sm font-semibold leading-6">{item}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+      <div className="mt-5 rounded-3xl border border-primary/20 bg-primary/5 p-5 text-center text-xl font-semibold text-primary">
+        Search fast. Diagnose clearly. Act safely. Leave an audit trail.
       </div>
     </SlideShell>
   );
@@ -550,6 +702,7 @@ function createSlides() {
   return [
     { id: "intro", label: "Intro", render: () => <IntroSlide /> },
     { id: "problem", label: "Problem", render: () => <ProblemSlide /> },
+    { id: "mvp", label: "MVP coverage", render: () => <MvpSlide /> },
     {
       id: "blocked-wash",
       label: "Blocked wash",
@@ -557,12 +710,28 @@ function createSlides() {
         <ScenarioSlide
           caption="Search for the overdue demo customer or license plate CZR4821, then open the profile."
           framePath="/csr/customers?q=CZR4821"
-          note="CSR searches by license plate, opens the profile, sees the overdue subscription and failed payment, then records the support action."
+          note="CSR searches by license plate, opens the profile, sees the overdue subscription, failed payment, lane context, and purchase history, then updates payment or retries the charge."
           phoneTitle="Customer mobile view"
           title="Unable to get a wash"
           subtitle="The customer is blocked at the gate because the membership payment failed."
         >
           <BlockedWashPhone />
+        </ScenarioSlide>
+      ),
+    },
+    {
+      id: "lane-context",
+      label: "Lane context",
+      render: () => (
+        <ScenarioSlide
+          caption="CSR sees vehicles at gate, blocked, in queue, cleared, or needing plate/coverage attention."
+          framePath="/csr/lane-context"
+          note="Lane sessions link directly back to the customer profile and recommended remediation flow."
+          phoneTitle="Operational lane view"
+          title="The portal now includes operational context from the wash lane."
+          subtitle="This mirrors the real-world attendant workflow: vehicles can be at gate, blocked, in queue, or cleared."
+        >
+          <LaneContextPhone />
         </ScenarioSlide>
       ),
     },
@@ -588,33 +757,21 @@ function createSlides() {
       render: () => (
         <ScenarioSlide
           caption="CSR reviews purchase history, subscription status, support notes, and audit timeline."
-          framePath="/csr/customers?q=failed%20payment"
-          note="CSR can update demo-safe payment details, retry the failed membership payment, restore the subscription, and leave an audit entry."
+          framePath="/csr/customers?q=refund"
+          note="The purchase history card closes the take-home requirement around recent purchase questions."
           phoneTitle="Customer billing view"
-          title="Purchase / billing question"
-          subtitle="The caller needs help understanding a charge and a blocked membership."
+          title="Purchase history is visible inside the customer profile."
+          subtitle="The CSR can explain membership payments, failed charges, single washes, coupon redemptions, and refunds."
         >
           <BillingPhone />
         </ScenarioSlide>
       ),
     },
-    { id: "mvp", label: "MVP", render: () => <MvpSlide /> },
-    {
-      id: "architecture",
-      label: "Architecture",
-      render: () => (
-        <SlideShell
-          eyebrow="Current architecture"
-          title="A simple full-stack path from browser interaction to persisted audit events."
-          subtitle="The implementation keeps UI, server actions, domain logic, and Prisma data access easy to inspect for a take-home review."
-        >
-          <ArchitectureDiagram />
-        </SlideShell>
-      ),
-    },
-    { id: "scale", label: "Scale", render: () => <ScaleSlide /> },
+    { id: "docs-search", label: "Docs", render: () => <DocsSearchSlide /> },
+    { id: "architecture", label: "Architecture", render: () => <CurrentArchitectureSlide /> },
+    { id: "data-model", label: "Data model", render: () => <DataModelSlide /> },
+    { id: "production", label: "Production", render: () => <ScaleSlide /> },
     { id: "tradeoffs", label: "Tradeoffs", render: () => <TradeoffsSlide /> },
-    { id: "closing", label: "Closing", render: () => <ClosingSlide /> },
   ];
 }
 

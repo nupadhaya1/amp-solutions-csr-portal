@@ -1,0 +1,57 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" role="img" aria-labelledby="title desc">
+<title id="title">Core data model</title>
+<desc id="desc">Customer-centered support records for memberships, vehicles, purchases, and lane context</desc>
+<defs>
+  <filter id="shadow" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="0" dy="10" stdDeviation="10" flood-color="#0f172a" flood-opacity="0.08"/></filter>
+  <marker id="arrow" markerWidth="14" markerHeight="14" refX="10" refY="5" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#0b75e1"/></marker>
+</defs>
+<rect width="1280" height="720" rx="32" fill="#f4f7fb"/>
+<circle cx="120" cy="110" r="260" fill="#0b75e1" opacity="0.10"/>
+<circle cx="1180" cy="45" r="230" fill="#003264" opacity="0.08"/>
+<text x="60" y="76" font-size="34" font-weight="800" fill="#061b33">Core data model</text>
+<text x="60" y="112" font-size="17" font-weight="600" fill="#526476">Customer-centered support records for memberships, vehicles, purchases, and lane context</text>
+<path d="M 190.0 283 C 342.5 283, 342.5 80, 495.0 80" fill="none" stroke="#0b75e1" stroke-width="3" stroke-linecap="round" marker-end="url(#arrow)" opacity="0.9"/><text x="342.5" y="173.5" font-size="12" font-weight="700" text-anchor="middle" fill="#526476">owns</text><path d="M 190.0 283 C 342.5 283, 342.5 270, 495.0 270" fill="none" stroke="#0b75e1" stroke-width="3" stroke-linecap="round" marker-end="url(#arrow)" opacity="0.9"/><text x="342.5" y="268.5" font-size="12" font-weight="700" text-anchor="middle" fill="#526476">has</text><path d="M 495.0 383 C 495.0 383, 495.0 80, 495.0 80" fill="none" stroke="#0b75e1" stroke-width="3" stroke-linecap="round" marker-end="url(#arrow)" opacity="0.9"/><text x="495.0" y="223.5" font-size="12" font-weight="700" text-anchor="middle" fill="#526476">covers</text><path d="M 190.0 283 C 502.5 283, 502.5 80, 815.0 80" fill="none" stroke="#0b75e1" stroke-width="3" stroke-linecap="round" marker-end="url(#arrow)" opacity="0.9"/><text x="502.5" y="173.5" font-size="12" font-weight="700" text-anchor="middle" fill="#526476">makes</text><path d="M 495.0 193 C 655.0 193, 655.0 270, 815.0 270" fill="none" stroke="#0b75e1" stroke-width="3" stroke-linecap="round" marker-end="url(#arrow)" opacity="0.9"/><text x="655.0" y="223.5" font-size="12" font-weight="700" text-anchor="middle" fill="#526476">detected</text><path d="M 1110.0 283 C 650.0 283, 650.0 170, 190.0 170" fill="none" stroke="#0b75e1" stroke-width="3" stroke-linecap="round" marker-end="url(#arrow)" opacity="0.9"/><text x="650.0" y="218.5" font-size="12" font-weight="700" text-anchor="middle" fill="#526476">guides</text>
+<g>
+  <rect x="80" y="180" width="220" height="95" rx="22" fill="#ffffff" stroke="#d7e2ec" stroke-width="2" filter="url(#shadow)"/>
+  <rect x="98" y="198" width="46" height="46" rx="14" fill="#003264" opacity="0.12"/>
+  <circle cx="121" cy="221" r="8" fill="#003264"/>
+  <text x="158" y="216" font-size="18" font-weight="700" fill="#061b33">Customer</text>
+  <text x="158" y="241" font-size="13" font-weight="600" fill="#526476">Profile + status</text>
+</g>
+<g>
+  <rect x="380" y="90" width="230" height="95" rx="22" fill="#ffffff" stroke="#d7e2ec" stroke-width="2" filter="url(#shadow)"/>
+  <rect x="398" y="108" width="46" height="46" rx="14" fill="#0b75e1" opacity="0.12"/>
+  <circle cx="421" cy="131" r="8" fill="#0b75e1"/>
+  <text x="458" y="126" font-size="18" font-weight="700" fill="#061b33">Vehicle</text>
+  <text x="458" y="151" font-size="13" font-weight="600" fill="#526476">Plate + make/model</text>
+</g>
+<g>
+  <rect x="380" y="280" width="230" height="95" rx="22" fill="#ffffff" stroke="#d7e2ec" stroke-width="2" filter="url(#shadow)"/>
+  <rect x="398" y="298" width="46" height="46" rx="14" fill="#067647" opacity="0.12"/>
+  <circle cx="421" cy="321" r="8" fill="#067647"/>
+  <text x="458" y="316" font-size="18" font-weight="700" fill="#061b33">Subscription</text>
+  <text x="458" y="341" font-size="13" font-weight="600" fill="#526476">Plan + status</text>
+</g>
+<g>
+  <rect x="690" y="90" width="250" height="95" rx="22" fill="#ffffff" stroke="#d7e2ec" stroke-width="2" filter="url(#shadow)"/>
+  <rect x="708" y="108" width="46" height="46" rx="14" fill="#b54708" opacity="0.12"/>
+  <circle cx="731" cy="131" r="8" fill="#b54708"/>
+  <text x="768" y="126" font-size="18" font-weight="700" fill="#061b33">Purchase</text>
+  <text x="768" y="151" font-size="13" font-weight="600" fill="#526476">Charges + coupons</text>
+</g>
+<g>
+  <rect x="690" y="280" width="250" height="95" rx="22" fill="#ffffff" stroke="#d7e2ec" stroke-width="2" filter="url(#shadow)"/>
+  <rect x="708" y="298" width="46" height="46" rx="14" fill="#b42318" opacity="0.12"/>
+  <circle cx="731" cy="321" r="8" fill="#b42318"/>
+  <text x="768" y="316" font-size="18" font-weight="700" fill="#061b33">LaneSession</text>
+  <text x="768" y="341" font-size="13" font-weight="600" fill="#526476">Gate context</text>
+</g>
+<g>
+  <rect x="1000" y="180" width="220" height="95" rx="22" fill="#ffffff" stroke="#d7e2ec" stroke-width="2" filter="url(#shadow)"/>
+  <rect x="1018" y="198" width="46" height="46" rx="14" fill="#003264" opacity="0.12"/>
+  <circle cx="1041" cy="221" r="8" fill="#003264"/>
+  <text x="1078" y="216" font-size="18" font-weight="700" fill="#061b33">SupportDoc</text>
+  <text x="1078" y="241" font-size="13" font-weight="600" fill="#526476">Searchable playbooks</text>
+</g>
+<text x="60" y="670" font-size="13" font-weight="700" fill="#526476">AMP CSR Command Center · project documentation diagram</text>
+</svg>

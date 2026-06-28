@@ -18,6 +18,16 @@ test("docs page delegates interactive search to a client workspace", () => {
   assert.match(pageSource, /searchSupportDocs/);
 });
 
+test("docs article renderer supports Markdown image figures", () => {
+  const articleSource = readFileSync(fileURLToPath(new URL("./docs-article.jsx", import.meta.url)), "utf8");
+
+  assert.match(articleSource, /imageMatch/);
+  assert.match(articleSource, /trimmed\.match\(\/\^!\\\[\(\.\*\?\)\\\]\\\(\(\.\*\?\)\\\)\$\/\)/);
+  assert.match(articleSource, /<figure className="my-5 overflow-hidden rounded-2xl border border-border bg-surface p-3"/);
+  assert.match(articleSource, /<img alt=\{alt\} className="w-full rounded-xl" src=\{src\} \/>/);
+  assert.match(articleSource, /<figcaption className="mt-2 text-xs font-semibold text-muted">/);
+});
+
 test("docs search keeps prompts above the search field and button outside input shell", () => {
   assert.match(workspaceSource, /DocsSuggestedSearches/);
   assert.match(workspaceSource, /search-input-shell/);
