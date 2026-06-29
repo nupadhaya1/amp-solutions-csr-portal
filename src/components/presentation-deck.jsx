@@ -14,6 +14,7 @@ import {
   Phone,
   Search,
   ShieldCheck,
+  SquareArrowOutUpRight,
   Sparkles,
   Workflow,
 } from "lucide-react";
@@ -1096,8 +1097,8 @@ export function PresentationDeck() {
               className="inline-flex h-10 items-center gap-2 rounded-xl border border-border bg-card px-3 text-sm font-semibold text-muted hover:border-primary hover:text-primary"
               href="/demo"
             >
-              <ArrowLeft size={16} aria-hidden="true" />
-              Back
+              <SquareArrowOutUpRight size={16} aria-hidden="true" />
+              Demo
             </Link>
             <button
               className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-card text-muted hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
