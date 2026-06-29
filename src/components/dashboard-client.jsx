@@ -314,7 +314,6 @@ function DashboardSearch() {
   function handleQueryChange(event) {
     const nextQuery = event.target.value;
     setQuery(nextQuery);
-    setRememberedCustomerSearch(nextQuery);
     setIsComboboxOpen(true);
 
     if (nextQuery.trim().length < 2) {

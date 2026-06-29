@@ -97,6 +97,24 @@ test("dashboard customer search supports debounced fuzzy autocomplete", () => {
   assert.doesNotMatch(searchSource, />Searching</);
 });
 
+test("dashboard customer search only remembers committed searches", () => {
+  const searchSource = source.slice(
+    source.indexOf("function DashboardSearch"),
+    source.indexOf("function DashboardCharts"),
+  );
+  const changeHandlerSource = searchSource.slice(
+    searchSource.indexOf("function handleQueryChange"),
+    searchSource.indexOf("function clearSearch"),
+  );
+  const openCustomerSource = searchSource.slice(
+    searchSource.indexOf("function openCustomer"),
+    searchSource.indexOf("function handleSubmit"),
+  );
+
+  assert.doesNotMatch(changeHandlerSource, /setRememberedCustomerSearch/);
+  assert.match(openCustomerSource, /setRememberedCustomerSearch\(trimmedQuery\)/);
+});
+
 test("dashboard insights use one shared timeframe control and larger chart cards", () => {
   const chartCardSource = source.slice(
     source.indexOf("function ChartCard"),
