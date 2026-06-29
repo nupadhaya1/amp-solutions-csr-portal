@@ -296,20 +296,64 @@ model SupportDocChunk {
   @@index([docId])
 }`;
 
-const awsServices = [
-  ["Route 53", "DNS", "/aws-icons/route-53.svg"],
-  ["CloudFront", "CDN edge", "/aws-icons/cloudfront.svg"],
-  ["AWS WAF", "Edge protection", "/aws-icons/waf.svg"],
-  ["Application Load Balancer", "Ingress", "/aws-icons/application-load-balancer.svg"],
-  ["Amazon ECS", "Orchestration", "/aws-icons/ecs.svg"],
-  ["AWS Fargate", "Serverless compute", "/aws-icons/fargate.svg"],
-  ["Amazon ECR", "Image registry", "/aws-icons/ecr.svg"],
-  ["Amazon RDS PostgreSQL", "Relational data", "/aws-icons/rds.svg"],
-  ["Amazon ElastiCache", "Redis cache", "/aws-icons/elasticache.svg"],
-  ["AWS Secrets Manager", "Runtime secrets", "/aws-icons/secrets-manager.svg"],
-  ["Amazon CloudWatch", "Logs and metrics", "/aws-icons/cloudwatch.svg"],
-  ["VPC", "Private network", "/aws-icons/vpc.svg"],
-  ["IAM", "Access control", "/aws-icons/iam.svg"],
+function getPrismaDeclaration(kind, name) {
+  return prismaSchema.match(new RegExp(`${kind} ${name} \\{[\\s\\S]*?\\n\\}`))?.[0] ?? "";
+}
+
+const dataModelEntities = [
+  {
+    name: "Customer",
+    detail: "Profile, status, contact info",
+    schema: [getPrismaDeclaration("enum", "CustomerStatus"), getPrismaDeclaration("model", "Customer")].join("\n\n"),
+  },
+  {
+    name: "Vehicle",
+    detail: "Plate, make, model, coverage",
+    schema: getPrismaDeclaration("model", "Vehicle"),
+  },
+  {
+    name: "Subscription",
+    detail: "Plan, status, billing cycle",
+    schema: [
+      getPrismaDeclaration("enum", "SubscriptionStatus"),
+      getPrismaDeclaration("model", "SubscriptionPlan"),
+      getPrismaDeclaration("model", "Subscription"),
+      getPrismaDeclaration("model", "SubscriptionVehicle"),
+    ].join("\n\n"),
+  },
+  {
+    name: "Purchase",
+    detail: "Payments, washes, coupons, refunds",
+    schema: [
+      getPrismaDeclaration("enum", "PurchaseType"),
+      getPrismaDeclaration("enum", "PurchaseStatus"),
+      getPrismaDeclaration("model", "Purchase"),
+    ].join("\n\n"),
+  },
+  {
+    name: "LaneSession",
+    detail: "Gate, queue, blocked, plate mismatch",
+    schema: getPrismaDeclaration("model", "LaneSession"),
+  },
+  {
+    name: "SupportNote",
+    detail: "CSR notes and follow-up context",
+    schema: getPrismaDeclaration("model", "SupportNote"),
+  },
+  {
+    name: "AuditEvent",
+    detail: "Every support action is traceable",
+    schema: [
+      getPrismaDeclaration("enum", "AuditEventType"),
+      getPrismaDeclaration("enum", "ActorType"),
+      getPrismaDeclaration("model", "AuditEvent"),
+    ].join("\n\n"),
+  },
+  {
+    name: "SupportDoc",
+    detail: "Searchable playbooks for CSRs",
+    schema: [getPrismaDeclaration("model", "FaqArticle"), getPrismaDeclaration("model", "SupportDoc"), getPrismaDeclaration("model", "SupportDocChunk")].join("\n\n"),
+  },
 ];
 
 function cn(...classes) {
@@ -438,11 +482,9 @@ function ScenarioSlide({ children, context, flowHeadline, flowSteps, phoneTitle,
           <h1 className="text-3xl font-semibold tracking-tight text-foreground lg:text-4xl">{title}</h1>
           {subtitle ? <p className="mt-2 text-base leading-7 text-muted">{subtitle}</p> : null}
         </div>
-        <div className="grid min-h-0 flex-1 gap-5">
-          <div className="grid min-h-0 items-start gap-5 lg:grid-cols-[320px_minmax(0,1fr)]">
-            <div className="max-h-[34vh] overflow-hidden">
-              <MockPhone label={phoneTitle}>{children}</MockPhone>
-            </div>
+        <div className="grid min-h-0 flex-1 items-start gap-6 lg:grid-cols-[360px_minmax(0,1fr)]">
+          <MockPhone label={phoneTitle}>{children}</MockPhone>
+          <div className="flex min-h-0 flex-col gap-5">
             <div className="rounded-3xl border border-border bg-card p-5 shadow-sm shadow-slate-200/70">
               <p className="text-xs font-semibold uppercase tracking-wide text-primary">Mock customer / car context</p>
               <p className="mt-3 text-2xl font-semibold leading-8">{context.title}</p>
@@ -456,8 +498,8 @@ function ScenarioSlide({ children, context, flowHeadline, flowSteps, phoneTitle,
                 ))}
               </div>
             </div>
+            <ScenarioFlowPanel headline={flowHeadline} steps={flowSteps} />
           </div>
-          <ScenarioFlowPanel headline={flowHeadline} steps={flowSteps} />
         </div>
       </div>
     </section>
@@ -740,6 +782,9 @@ function DocsSearchSlide() {
 }
 
 function DataModelSlide() {
+  const [selectedModelName, setSelectedModelName] = useState(null);
+  const selectedEntity = dataModelEntities.find((entity) => entity.name === selectedModelName);
+
   return (
     <SlideShell
       eyebrow="Data model"
@@ -748,50 +793,41 @@ function DataModelSlide() {
     >
       <div className="grid max-h-[64vh] gap-4 overflow-hidden lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
         <div className="grid gap-4 overflow-auto pr-1">
-          {[
-            ["Customer", "Profile, status, contact info"],
-            ["Vehicle", "Plate, make, model, coverage"],
-            ["Subscription", "Plan, status, billing cycle"],
-            ["Purchase", "Payments, washes, coupons, refunds"],
-            ["LaneSession", "Gate, queue, blocked, plate mismatch"],
-            ["SupportNote", "CSR notes and follow-up context"],
-            ["AuditEvent", "Every support action is traceable"],
-            ["SupportDoc", "Searchable playbooks for CSRs"],
-          ].map(([name, detail]) => (
-            <div className="rounded-2xl border border-border bg-card p-4 shadow-sm shadow-slate-200/70" key={name}>
+          {dataModelEntities.map(({ name, detail }) => (
+            <button
+              className={cn(
+                "rounded-2xl border bg-card p-4 text-left shadow-sm shadow-slate-200/70 transition hover:border-primary hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary",
+                selectedModelName === name ? "border-primary bg-primary/5" : "border-border",
+              )}
+              key={name}
+              onClick={() => setSelectedModelName(name)}
+              type="button"
+              aria-pressed={selectedModelName === name}
+            >
               <p className="text-xl font-semibold">{name}</p>
               <p className="mt-1 text-sm font-medium leading-6 text-muted">{detail}</p>
-            </div>
+            </button>
           ))}
         </div>
-        <details className="min-h-0 rounded-3xl border border-border bg-card p-5 shadow-sm shadow-slate-200/70" open>
-          <summary className="cursor-pointer text-lg font-semibold">View actual Prisma schema</summary>
-          <pre className="mt-4 max-h-[52vh] overflow-auto rounded-2xl border border-border bg-slate-950 p-4 text-xs leading-5 text-slate-100">
-            <code>{prismaSchema}</code>
-          </pre>
-        </details>
-      </div>
-    </SlideShell>
-  );
-}
-
-function AwsServiceCard({ detail, icon, name }) {
-  return (
-    <div className="rounded-2xl border border-border bg-card p-4 shadow-sm shadow-slate-200/70">
-      <div className="flex items-center gap-3">
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-surface-muted">
-          {icon ? (
-            <Image alt="" aria-hidden="true" className="h-11 w-11" height={44} src={icon} width={44} />
+        <div className="min-h-0 rounded-3xl border border-border bg-card p-5 shadow-sm shadow-slate-200/70">
+          <p className="text-lg font-semibold">View actual Prisma schema</p>
+          {selectedEntity ? (
+            <>
+              <p className="mt-2 text-sm font-medium text-muted">{selectedEntity.name} schema excerpt</p>
+              <pre className="mt-4 max-h-[52vh] overflow-auto rounded-2xl border border-border bg-slate-950 p-4 text-xs leading-5 text-slate-100">
+                <code>{selectedEntity.schema}</code>
+              </pre>
+            </>
           ) : (
-            <span className="h-5 w-5 rounded-full bg-[#ff9900]" aria-hidden="true" />
+            <div className="mt-4 flex min-h-[52vh] items-center justify-center rounded-2xl border border-dashed border-border bg-surface p-6 text-center">
+              <p className="max-w-sm text-lg font-semibold leading-7 text-muted">
+                Choose one of the options to view its Prisma schema.
+              </p>
+            </div>
           )}
-        </span>
-        <div>
-          <p className="text-lg font-semibold">{name}</p>
-          <p className="text-sm font-medium text-muted">{detail}</p>
         </div>
       </div>
-    </div>
+    </SlideShell>
   );
 }
 
@@ -822,23 +858,20 @@ function DiagramArrow() {
 function AwsArchitectureDiagram() {
   const edge = [
     ["CSR Browser", "User"],
-    ["Route 53", "DNS", "/aws-icons/route-53.svg"],
     ["CloudFront", "CDN", "/aws-icons/cloudfront.svg"],
-    ["AWS WAF", "Protection", "/aws-icons/waf.svg"],
     ["Application Load Balancer", "Ingress", "/aws-icons/application-load-balancer.svg"],
     ["ECS Fargate Next.js Service", "App", "/aws-icons/fargate.svg"],
+    ["RDS PostgreSQL Multi-AZ", "Data", "/aws-icons/rds.svg"],
   ];
 
   const dependencies = [
-    ["RDS PostgreSQL Multi-AZ", "Data", "/aws-icons/rds.svg"],
-    ["ElastiCache Redis", "Cache", "/aws-icons/elasticache.svg"],
     ["Secrets Manager", "Secrets", "/aws-icons/secrets-manager.svg"],
     ["CloudWatch Logs/Metrics", "Observe", "/aws-icons/cloudwatch.svg"],
   ];
 
   return (
     <div className="rounded-3xl border border-border bg-surface p-5">
-      <div className="grid items-stretch gap-3 xl:grid-cols-[1fr_auto_1fr_auto_1fr_auto_1fr_auto_1fr_auto_1fr]">
+      <div className="grid items-stretch gap-3 xl:grid-cols-[1fr_auto_1fr_auto_1fr_auto_1fr_auto_1fr]">
         {edge.map(([name, detail, icon], index) => (
           <div className="contents" key={name}>
             <DiagramNode detail={detail} icon={icon} name={name} />
@@ -848,7 +881,7 @@ function AwsArchitectureDiagram() {
       </div>
       <div className="mt-4 grid gap-3 md:grid-cols-[1fr_1fr]">
         <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4">
-          <p className="text-sm font-semibold text-primary">Service dependencies</p>
+          <p className="text-sm font-semibold text-primary">Runtime basics</p>
           <div className="mt-3 grid gap-3 sm:grid-cols-2">
             {dependencies.map(([name, detail, icon]) => (
               <DiagramNode detail={detail} icon={icon} key={name} name={name} />
@@ -875,15 +908,10 @@ function ScaleSlide() {
     <SlideShell
       eyebrow="Production"
       title="The MVP can move cleanly from Vercel/Neon to an AWS production architecture."
-      subtitle="The same boundaries map to CDN, WAF, containers, RDS, secrets, logs, and CI/CD."
+      subtitle="The same boundaries map to CDN delivery, load balancing, containers, RDS, secrets, logs, and CI/CD."
     >
       <div className="grid max-h-[64vh] gap-4 overflow-auto">
         <AwsArchitectureDiagram />
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {awsServices.map(([name, detail, icon]) => (
-            <AwsServiceCard detail={detail} icon={icon} key={name} name={name} />
-          ))}
-        </div>
       </div>
     </SlideShell>
   );
