@@ -1072,7 +1072,8 @@ async function seedFaqArticles() {
   }
 }
 
-async function main() {
+export async function resetDemoData() {
+  seedMemberIdCounter = 1;
   await reset();
   const plans = await seedPlans();
   await seedCustomers(plans);
@@ -1080,8 +1081,10 @@ async function main() {
   await seedFaqArticles();
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1]).href) {
-  main()
+const isSeedCli = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
+
+if (isSeedCli) {
+  resetDemoData()
     .then(async () => {
       await prisma.$disconnect();
     })

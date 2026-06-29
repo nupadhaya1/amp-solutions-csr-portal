@@ -1,5 +1,10 @@
 import Link from "next/link";
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
 import { ArrowRight, MonitorPlay } from "lucide-react";
+
+import { resetDemoData } from "../../../prisma/seed.js";
+import { ResetMockDataButton } from "./reset-mock-data-button.jsx";
 
 const destinations = [
   {
@@ -19,7 +24,18 @@ const destinations = [
   },
 ];
 
-export default function DemoHub() {
+async function resetMockData() {
+  "use server";
+
+  await resetDemoData();
+  revalidatePath("/", "layout");
+  redirect("/demo?reset=done");
+}
+
+export default async function DemoHub({ searchParams }) {
+  const query = await searchParams;
+  const resetComplete = query?.reset === "done";
+
   return (
     <main className="min-h-screen bg-background text-foreground">
       <section className="mx-auto flex min-h-screen w-full max-w-5xl flex-col justify-center px-6 py-10">
@@ -33,6 +49,14 @@ export default function DemoHub() {
         <p className="mt-5 max-w-2xl text-lg leading-8 text-muted">
           Choose the live portal, presentation walkthrough, or system design overview.
         </p>
+        <form action={resetMockData} className="mt-6 flex flex-wrap items-center gap-3">
+          <ResetMockDataButton />
+          {resetComplete ? (
+            <p className="text-sm font-semibold text-success">
+              Mock data reset to the seeded demo state.
+            </p>
+          ) : null}
+        </form>
         <div className="mt-8 grid gap-4 md:grid-cols-3">
           {destinations.map((destination) => (
             <Link
