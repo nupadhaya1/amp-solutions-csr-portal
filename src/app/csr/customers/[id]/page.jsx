@@ -365,6 +365,7 @@ async function changePlan(formData) {
       actorName: CSR_NAME,
       input: {
         planId: String(formData.get("planId") || ""),
+        keepVehicleIds: formData.getAll("keepVehicleIds").map((value) => String(value)),
       },
     });
   } catch {
@@ -372,6 +373,7 @@ async function changePlan(formData) {
   }
 
   revalidatePath(`/csr/customers/${customerId}`);
+  revalidatePath("/csr/lane-context");
   redirect(`/csr/customers/${customerId}?action=plan-changed`);
 }
 

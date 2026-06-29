@@ -16,12 +16,7 @@ function requireCustomerId(customerId) {
   }
 }
 
-export async function updateCustomerAccount({
-  prismaClient,
-  customerId,
-  actorName,
-  input,
-}) {
+export async function updateCustomerAccount({ prismaClient, customerId, actorName, input }) {
   requireCustomerId(customerId);
   const data = updateCustomerSchema.parse(input);
 
@@ -48,12 +43,7 @@ export async function updateCustomerAccount({
   });
 }
 
-export async function addCustomerVehicle({
-  prismaClient,
-  customerId,
-  actorName,
-  input,
-}) {
+export async function addCustomerVehicle({ prismaClient, customerId, actorName, input }) {
   requireCustomerId(customerId);
   const data = addVehicleSchema.parse(input);
 
@@ -91,6 +81,7 @@ export async function cancelCustomerSubscription({
   input,
 }) {
   requireCustomerId(customerId);
+
   if (!subscriptionId) {
     throw new Error("Subscription id is required.");
   }
@@ -102,6 +93,9 @@ export async function cancelCustomerSubscription({
       where: {
         id: subscriptionId,
         customerId,
+        status: {
+          in: ["ACTIVE", "OVERDUE"],
+        },
       },
       data: {
         status: "CANCELLED",
@@ -109,8 +103,18 @@ export async function cancelCustomerSubscription({
     });
 
     if (result.count === 0) {
-      throw new Error("Subscription was not found for this customer.");
+      throw new Error("Active subscription was not found for this customer.");
     }
+
+    const removedCoverage = await tx.subscriptionVehicle.updateMany({
+      where: {
+        subscriptionId,
+        removedAt: null,
+      },
+      data: {
+        removedAt: new Date(),
+      },
+    });
 
     const remainingActiveSubscriptions = await tx.subscription.count({
       where: {
@@ -128,6 +132,7 @@ export async function cancelCustomerSubscription({
         message: "Subscription cancelled by CSR.",
         metadata: {
           reason: data.reason || "",
+          removedVehicleCoverageCount: removedCoverage.count,
         },
         actorName,
         actorType: "CSR",

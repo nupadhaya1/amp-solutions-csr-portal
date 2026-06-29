@@ -12,7 +12,9 @@ import {
 } from "./customer-actions.js";
 
 function createPrismaStub(options = {}) {
-  const coveredVehicles = options.coveredVehicles || [{ id: "coverage_existing", vehicleId: "vehicle_existing" }];
+  const coveredVehicles = options.coveredVehicles || [
+    { id: "coverage_existing", vehicleId: "vehicle_existing" },
+  ];
   const calls = [];
   const tx = {
     customer: {
@@ -158,7 +160,7 @@ test("adds a customer vehicle with a normalized realistic plate and audit event"
   });
 });
 
-test("cancels a subscription and records the CSR reason", async () => {
+test("cancels a subscription, unassigns active vehicle coverage, and records the CSR reason", async () => {
   const prisma = createPrismaStub();
 
   await cancelCustomerSubscription({
@@ -174,11 +176,30 @@ test("cancels a subscription and records the CSR reason", async () => {
   assert.deepEqual(prisma.calls[0], [
     "subscription.updateMany",
     {
-      where: { id: "subscription_1", customerId: "customer_1" },
+      where: {
+        id: "subscription_1",
+        customerId: "customer_1",
+        status: {
+          in: ["ACTIVE", "OVERDUE"],
+        },
+      },
       data: { status: "CANCELLED" },
     },
   ]);
-  assert.deepEqual(prisma.calls[1], [
+
+  assert.equal(prisma.calls[1][0], "subscriptionVehicle.updateMany");
+  assert.deepEqual(prisma.calls[1][1], {
+    where: {
+      subscriptionId: "subscription_1",
+      removedAt: null,
+    },
+    data: {
+      removedAt: prisma.calls[1][1].data.removedAt,
+    },
+  });
+  assert.ok(prisma.calls[1][1].data.removedAt instanceof Date);
+
+  assert.deepEqual(prisma.calls[2], [
     "subscription.count",
     {
       where: {
@@ -189,17 +210,20 @@ test("cancels a subscription and records the CSR reason", async () => {
       },
     },
   ]);
-  assert.equal(prisma.calls[2][1].data.type, "SUBSCRIPTION_CANCELLED");
-  assert.deepEqual(prisma.calls[3], [
+
+  assert.equal(prisma.calls[3][1].data.type, "SUBSCRIPTION_CANCELLED");
+  assert.deepEqual(prisma.calls[3][1].data.metadata, {
+    reason: "Customer sold the vehicle.",
+    removedVehicleCoverageCount: 1,
+  });
+
+  assert.deepEqual(prisma.calls[4], [
     "customer.update",
     {
       where: { id: "customer_1" },
       data: { status: "CANCELLED" },
     },
   ]);
-  assert.deepEqual(prisma.calls[2][1].data.metadata, {
-    reason: "Customer sold the vehicle.",
-  });
 });
 
 test("transfers active subscription coverage between vehicles", async () => {
@@ -355,6 +379,8 @@ test("downgrades a multi-vehicle plan by keeping the CSR-selected vehicle", asyn
       },
     },
   ]);
+  assert.ok(prisma.calls[2][1].data.removedAt instanceof Date);
+
   assert.deepEqual(prisma.calls[3], [
     "subscription.update",
     {
@@ -393,6 +419,8 @@ test("starts a cancelled membership and records the selected plan", async () => 
       },
     },
   ]);
+  assert.ok(prisma.calls[0][1].data.nextBillingDate instanceof Date);
+
   assert.equal(prisma.calls[1][0], "customer.update");
   assert.deepEqual(prisma.calls[1][1], {
     where: { id: "customer_1" },
