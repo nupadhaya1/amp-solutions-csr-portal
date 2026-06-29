@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 
 import { getStaticSupportDocBySlug } from "@/lib/docs/static-docs";
 import { supportDocCatalog, systemDesignCategory } from "@/lib/docs/support-doc-catalog";
@@ -123,6 +123,13 @@ export default async function DemoSystemDesignPage() {
     <main className="min-h-screen bg-background px-6 py-10 text-foreground">
       <section className="mx-auto grid w-full max-w-4xl gap-8">
         <div>
+          <Link
+            className="mb-6 inline-flex h-10 items-center gap-2 rounded-xl border border-border bg-card px-3 text-sm font-semibold text-muted hover:text-foreground"
+            href="/demo"
+          >
+            <ArrowLeft size={16} aria-hidden="true" />
+            Back
+          </Link>
           <p className="text-sm font-semibold uppercase tracking-wide text-primary">System design</p>
           <h1 className="mt-3 max-w-4xl text-5xl font-semibold tracking-tight">
             AMP CSR Command Center architecture overview

@@ -14,7 +14,6 @@ import {
   Phone,
   Search,
   ShieldCheck,
-  Smartphone,
   Sparkles,
   Workflow,
 } from "lucide-react";
@@ -396,19 +395,15 @@ function Pill({ children, tone = "neutral" }) {
   );
 }
 
-function MockPhone({ children, label = "Customer mobile view" }) {
+function MockPhone({ children }) {
   return (
-    <div>
-      <div className="mb-3 flex items-center gap-2 text-sm font-semibold text-muted">
-        <Smartphone size={16} aria-hidden="true" />
-        {label}
-      </div>
+    <div className="flex h-full">
       <div
-        className="mx-auto w-full max-w-[340px] rounded-[2.25rem] border border-slate-300 bg-slate-950 p-3 shadow-2xl shadow-slate-300/60"
+        className="mx-auto flex h-full w-full max-w-[340px] rounded-[2.25rem] border border-slate-300 bg-slate-950 p-3 shadow-2xl shadow-slate-300/60"
       >
-        <div className="rounded-[1.8rem] bg-surface p-4">
+        <div className="flex min-h-0 flex-1 flex-col rounded-[1.8rem] bg-surface p-4">
           <div className="mx-auto mb-4 h-1.5 w-16 rounded-full bg-slate-300" />
-          <div className="min-h-[440px] rounded-[1.35rem] bg-card p-4 shadow-inner">
+          <div className="min-h-[440px] flex-1 rounded-[1.35rem] bg-card p-4 shadow-inner">
             {children}
           </div>
         </div>
@@ -474,7 +469,7 @@ function ScenarioFlowPanel({ headline, steps }) {
   );
 }
 
-function ScenarioSlide({ children, context, flowHeadline, flowSteps, phoneTitle, title, subtitle }) {
+function ScenarioSlide({ children, context, flowHeadline, flowSteps, title, subtitle }) {
   return (
     <section className="grid h-[calc(100vh-76px)] overflow-hidden px-5 py-4 sm:px-8 lg:px-10">
       <div className="mx-auto flex min-h-0 w-full max-w-[1600px] flex-col">
@@ -482,10 +477,10 @@ function ScenarioSlide({ children, context, flowHeadline, flowSteps, phoneTitle,
           <h1 className="text-3xl font-semibold tracking-tight text-foreground lg:text-4xl">{title}</h1>
           {subtitle ? <p className="mt-2 text-base leading-7 text-muted">{subtitle}</p> : null}
         </div>
-        <div className="grid min-h-0 flex-1 items-start gap-6 lg:grid-cols-[360px_minmax(0,1fr)]">
-          <MockPhone label={phoneTitle}>{children}</MockPhone>
+        <div className="grid min-h-0 flex-1 items-stretch gap-6 lg:grid-cols-[360px_minmax(0,1fr)]">
+          <MockPhone>{children}</MockPhone>
           <div className="flex min-h-0 flex-col gap-5">
-            <div className="rounded-3xl border border-border bg-card p-5 shadow-sm shadow-slate-200/70">
+            <div className="shrink-0 rounded-3xl border border-border bg-card p-5 shadow-sm shadow-slate-200/70">
               <p className="text-xs font-semibold uppercase tracking-wide text-primary">Mock customer / car context</p>
               <p className="mt-3 text-2xl font-semibold leading-8">{context.title}</p>
               <p className="mt-2 max-w-4xl text-base leading-7 text-muted">{context.body}</p>
@@ -791,7 +786,7 @@ function DataModelSlide() {
       title="The customer record connects account, vehicle, payment, lane, and support context."
       subtitle="The schema is centered on the entities a CSR actually needs during a call."
     >
-      <div className="grid max-h-[64vh] gap-4 overflow-hidden lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+      <div className="grid max-h-[64vh] gap-4 overflow-hidden lg:grid-cols-[minmax(0,0.82fr)_minmax(0,1.18fr)]">
         <div className="grid gap-4 overflow-auto pr-1">
           {dataModelEntities.map(({ name, detail }) => (
             <button
@@ -814,7 +809,7 @@ function DataModelSlide() {
           {selectedEntity ? (
             <>
               <p className="mt-2 text-sm font-medium text-muted">{selectedEntity.name} schema excerpt</p>
-              <pre className="mt-4 max-h-[52vh] overflow-auto rounded-2xl border border-border bg-slate-950 p-4 text-xs leading-5 text-slate-100">
+              <pre className="mt-3 max-h-[52vh] overflow-hidden whitespace-pre-wrap rounded-2xl border border-border bg-slate-950 p-3 text-[9px] leading-[1.18] text-slate-100">
                 <code>{selectedEntity.schema}</code>
               </pre>
             </>
@@ -943,7 +938,6 @@ function createSlides() {
             "Update the card or retry the charge.",
             "Confirm the customer can wash again.",
           ]}
-          phoneTitle="Customer mobile view"
           title="Unable to get a wash"
           subtitle="The customer is blocked at the gate because the membership payment failed."
         >
@@ -972,7 +966,6 @@ function createSlides() {
             "Transfer coverage to the new car.",
             "Leave an audit trail on the account.",
           ]}
-          phoneTitle="Customer mobile view"
           title="New vehicle transfer"
           subtitle="A member bought a new vehicle and wants the existing membership moved."
         >
@@ -1001,7 +994,6 @@ function createSlides() {
             "Explain what happened in plain language.",
             "Add a note if follow-up is needed.",
           ]}
-          phoneTitle="Customer billing view"
           title="Purchase history is right where the CSR needs it."
           subtitle="The CSR can explain membership payments, failed charges, single washes, coupon redemptions, and refunds."
         >
@@ -1030,7 +1022,6 @@ function createSlides() {
             "Use the recommended fix path.",
             "Move the car back into the queue.",
           ]}
-          phoneTitle="Operational lane view"
           title="Lane context shows the worker's view at the wash."
           subtitle="The CSR can see whether the car is at the gate, blocked, in queue, or cleared."
         >
@@ -1101,6 +1092,13 @@ export function PresentationDeck() {
             ))}
           </div>
           <div className="flex items-center gap-2">
+            <Link
+              className="inline-flex h-10 items-center gap-2 rounded-xl border border-border bg-card px-3 text-sm font-semibold text-muted hover:border-primary hover:text-primary"
+              href="/demo"
+            >
+              <ArrowLeft size={16} aria-hidden="true" />
+              Back
+            </Link>
             <button
               className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-border bg-card text-muted hover:border-primary hover:text-primary disabled:cursor-not-allowed disabled:opacity-40"
               disabled={index === 0}

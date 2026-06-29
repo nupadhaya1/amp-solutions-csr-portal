@@ -9,6 +9,7 @@ import {
   Grid2X2,
   PanelLeftClose,
   PanelLeftOpen,
+  SquareArrowOutUpRight,
   UsersRound,
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -286,21 +287,29 @@ export function PortalShell({ children }) {
               })}
             </nav>
 
-            <button
-              aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-              className={`mt-auto flex h-8 w-8 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground shadow-sm transition hover:border-primary/30 hover:text-primary ${
-                sidebarCollapsed ? "self-center" : "self-end"
-              }`}
-              onClick={() => setSidebarCollapsed((value) => !value)}
-              title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-              type="button"
-            >
-              {sidebarCollapsed ? (
-                <PanelLeftOpen aria-hidden="true" className="h-4 w-4" />
-              ) : (
-                <PanelLeftClose aria-hidden="true" className="h-4 w-4" />
-              )}
-            </button>
+            <div className={`mt-auto grid gap-2 ${sidebarCollapsed ? "self-center" : "self-end"}`}>
+              <Link
+                aria-label="Open demo hub"
+                className="flex h-8 w-8 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground shadow-sm transition hover:border-primary/30 hover:text-primary"
+                href="/demo"
+                title="Open demo hub"
+              >
+                <SquareArrowOutUpRight aria-hidden="true" className="h-4 w-4" />
+              </Link>
+              <button
+                aria-label={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+                className="flex h-8 w-8 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground shadow-sm transition hover:border-primary/30 hover:text-primary"
+                onClick={() => setSidebarCollapsed((value) => !value)}
+                title={sidebarCollapsed ? "Expand sidebar" : "Collapse sidebar"}
+                type="button"
+              >
+                {sidebarCollapsed ? (
+                  <PanelLeftOpen aria-hidden="true" className="h-4 w-4" />
+                ) : (
+                  <PanelLeftClose aria-hidden="true" className="h-4 w-4" />
+                )}
+              </button>
+            </div>
           </div>
         </aside>
 

@@ -96,6 +96,9 @@ test("CSR sidebar can collapse to an icon rail", () => {
   assert.match(shellSource, /lg:grid-cols-\[76px_1fr\]/);
   assert.match(shellSource, /lg:grid-cols-\[272px_1fr\]/);
   assert.match(shellSource, /title=\{item\.label\}/);
-  assert.match(shellSource, /mt-auto flex h-8 w-8/);
+  assert.match(shellSource, /mt-auto grid gap-2/);
+  assert.match(shellSource, /aria-label="Open demo hub"/);
+  assert.match(shellSource, /href="\/demo"/);
+  assert.match(shellSource, /SquareArrowOutUpRight/);
   assert.match(shellSource, /!sidebarCollapsed && isDocsItem && showingDocs/);
 });
