@@ -4,6 +4,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 import { parseSupportDocMarkdown } from "./parse-doc.js";
+import { systemDesignCategory } from "./support-doc-catalog.js";
 import { normalizeSearchQuery } from "./vector.js";
 
 const docsDir = path.join(process.cwd(), "docs", "csr");
@@ -53,13 +54,17 @@ function snippetFromBody(body) {
   return summary.replace(/\s+/g, " ").trim().slice(0, 260);
 }
 
-export async function listStaticSupportDocs() {
+export async function listStaticSupportDocs(options = {}) {
   const files = (await fs.readdir(docsDir)).filter((file) => file.endsWith(".md")).sort();
   const docs = [];
+  const includeSystemDesign = options.includeSystemDesign === true;
 
   for (const file of files) {
     const raw = await fs.readFile(path.join(docsDir, file), "utf8");
-    docs.push(parseSupportDocMarkdown(raw));
+    const doc = parseSupportDocMarkdown(raw);
+    if (includeSystemDesign || doc.category !== systemDesignCategory) {
+      docs.push(doc);
+    }
   }
 
   return docs;
@@ -68,8 +73,8 @@ export async function listStaticSupportDocs() {
 /**
  * @param {string} slug
  */
-export async function getStaticSupportDocBySlug(slug) {
-  const docs = await listStaticSupportDocs();
+export async function getStaticSupportDocBySlug(slug, options = {}) {
+  const docs = await listStaticSupportDocs(options);
   return docs.find((doc) => doc.slug === slug) || null;
 }
 

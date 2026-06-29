@@ -1,7 +1,7 @@
 "use client";
 
 import { useRef } from "react";
-import { CalendarDays, Copy, Mail, MapPin, Phone } from "lucide-react";
+import { ArrowLeft, CalendarDays, Copy, Mail, MapPin, Phone } from "lucide-react";
 import { toast } from "sonner";
 
 import { Badge, Card, CardContent, CardHeader, CardTitle } from "./customer-ui.jsx";
@@ -43,7 +43,11 @@ export function CustomerSummaryCard({ backHref, customer }) {
     <Card className="h-full">
       <CardHeader className="border-b-0 pb-0">
         {backHref ? (
-          <a className="mb-2 inline-flex text-sm font-semibold text-muted transition hover:text-primary" href={backHref}>
+          <a
+            className="mb-2 inline-flex h-9 w-fit items-center gap-2 rounded-xl border border-border bg-card px-3 text-sm font-semibold text-muted shadow-sm transition hover:border-primary/30 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            href={backHref}
+          >
+            <ArrowLeft aria-hidden="true" className="h-4 w-4" />
             Back to customer search
           </a>
         ) : null}

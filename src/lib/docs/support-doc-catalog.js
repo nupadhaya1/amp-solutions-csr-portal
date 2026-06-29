@@ -1,11 +1,13 @@
+export const systemDesignCategory = "System Design";
+
 export const supportDocCatalog = [
-  { slug: "project-overview", title: "Project overview and requirement coverage", category: "System Design" },
-  { slug: "system-architecture", title: "System architecture", category: "System Design" },
-  { slug: "aws-production-deployment", title: "AWS production deployment plan", category: "System Design" },
-  { slug: "feature-flows", title: "CSR feature flows", category: "System Design" },
-  { slug: "data-model-and-seeding", title: "Data model and seeded demo data", category: "System Design" },
-  { slug: "search-and-knowledge-base", title: "Search and knowledge base architecture", category: "System Design" },
-  { slug: "reviewer-demo-guide", title: "Reviewer demo guide", category: "System Design" },
+  { slug: "project-overview", title: "Project overview and requirement coverage", category: systemDesignCategory },
+  { slug: "system-architecture", title: "System architecture", category: systemDesignCategory },
+  { slug: "aws-production-deployment", title: "AWS production deployment plan", category: systemDesignCategory },
+  { slug: "feature-flows", title: "CSR feature flows", category: systemDesignCategory },
+  { slug: "data-model-and-seeding", title: "Data model and seeded demo data", category: systemDesignCategory },
+  { slug: "search-and-knowledge-base", title: "Search and knowledge base architecture", category: systemDesignCategory },
+  { slug: "reviewer-demo-guide", title: "Reviewer demo guide", category: systemDesignCategory },
   { slug: "account-contact-update", title: "Update account contact information", category: "Account" },
   { slug: "duplicate-account", title: "Duplicate customer account", category: "Account" },
   { slug: "failed-membership-payment", title: "Failed recurring membership payment", category: "Billing" },
@@ -31,3 +33,13 @@ export const supportDocCatalog = [
   { slug: "transfer-subscription-new-vehicle", title: "Transfer subscription to a new vehicle", category: "Vehicle Management" },
   { slug: "wrong-vehicle-covered", title: "Wrong vehicle has subscription coverage", category: "Vehicle Management" },
 ];
+
+export const systemDesignDocSlugs = new Set(
+  supportDocCatalog.filter((doc) => doc.category === systemDesignCategory).map((doc) => doc.slug),
+);
+
+export function isSystemDesignDocSlug(slug) {
+  return systemDesignDocSlugs.has(slug);
+}
+
+export const supportDocNavCatalog = supportDocCatalog.filter((doc) => doc.category !== systemDesignCategory);

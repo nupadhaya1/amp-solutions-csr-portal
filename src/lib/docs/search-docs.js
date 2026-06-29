@@ -3,6 +3,7 @@
 import { prisma } from "../prisma.js";
 import { embedText } from "./embed.js";
 import { searchStaticSupportDocs } from "./static-docs.js";
+import { systemDesignCategory } from "./support-doc-catalog.js";
 import { normalizeSearchQuery, toPgVector } from "./vector.js";
 
 /**
@@ -135,6 +136,7 @@ async function keywordSearchSupportDocs(q, limit) {
   const docs = await prisma.supportDoc.findMany({
     where: {
       isPublished: true,
+      category: { not: systemDesignCategory },
       OR: [
         { title: { contains: q, mode: "insensitive" } },
         { summary: { contains: q, mode: "insensitive" } },
@@ -197,22 +199,24 @@ export async function searchSupportDocs(query, options = {}) {
       FROM "SupportDocChunk" c
       JOIN "SupportDoc" d ON d.id = c."docId"
       WHERE d."isPublished" = true
+        AND d.category <> $3
         AND c.embedding IS NOT NULL
       ORDER BY c.embedding <=> $1::vector
       LIMIT $2`,
       vector,
       Math.max(limit * 3, limit),
+      systemDesignCategory,
     );
 
     const results = dedupeBestDocResults(rows.map((row) => formatSearchRow(row, q))).slice(0, limit);
     return results.length ? results : searchStaticSupportDocs(q, { limit });
   } catch (error) {
-    console.error("Vector docs search failed, falling back to keyword search", error);
+    console.warn("Vector docs search failed, falling back to keyword search", error);
     try {
       const results = await keywordSearchSupportDocs(q, limit);
       return results.length ? results : searchStaticSupportDocs(q, { limit });
     } catch (fallbackError) {
-      console.error("Database keyword docs search failed, falling back to markdown search", fallbackError);
+      console.warn("Database keyword docs search failed, falling back to markdown search", fallbackError);
       return searchStaticSupportDocs(q, { limit });
     }
   }

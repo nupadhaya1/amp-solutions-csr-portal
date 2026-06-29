@@ -28,7 +28,7 @@ export default function DemoHub() {
           Demo hub
         </div>
         <h1 className="max-w-3xl text-5xl font-semibold leading-tight">
-          AMP CSR Command Center demo
+          AMP CSR Command Center Demo
         </h1>
         <p className="mt-5 max-w-2xl text-lg leading-8 text-muted">
           Choose the live portal, presentation walkthrough, or system design overview.
@@ -48,9 +48,7 @@ export default function DemoHub() {
                   aria-hidden="true"
                 />
               </div>
-              <p className="mt-3 text-sm leading-6 text-muted">
-                {destination.description}
-              </p>
+              <p className="mt-3 text-sm leading-6 text-muted">{destination.description}</p>
             </Link>
           ))}
         </div>

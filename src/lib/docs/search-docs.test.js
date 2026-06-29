@@ -1,7 +1,11 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
 import test from "node:test";
 
 import { dedupeBestDocResults, scoreKeywordMatch, validateDocsSearchParams } from "./search-docs.js";
+
+const searchDocsSource = readFileSync(fileURLToPath(new URL("./search-docs.js", import.meta.url)), "utf8");
 
 test("validates docs search params", () => {
   assert.deepEqual(validateDocsSearchParams({ q: " customer cannot wash ", limit: "30" }), {
@@ -35,4 +39,9 @@ test("scores direct keyword matches in operational fields", () => {
   });
 
   assert.ok(score > 0.1);
+});
+
+test("database docs search excludes system design docs from CSR docs results", () => {
+  assert.match(searchDocsSource, /category: \{ not: systemDesignCategory \}/);
+  assert.match(searchDocsSource, /AND d\.category <> \$3/);
 });

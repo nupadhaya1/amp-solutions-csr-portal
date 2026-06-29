@@ -12,6 +12,19 @@ const workspaceSource = readFileSync(
   "utf8",
 );
 const shellSource = readFileSync(fileURLToPath(new URL("../portal-shell.js", import.meta.url)), "utf8");
+const catalogSource = readFileSync(
+  fileURLToPath(new URL("../../lib/docs/support-doc-catalog.js", import.meta.url)),
+  "utf8",
+);
+const demoSystemDesignSource = readFileSync(
+  fileURLToPath(new URL("../../app/demo/systemDesign/page.jsx", import.meta.url)),
+  "utf8",
+);
+const docArticleRouteSource = readFileSync(
+  fileURLToPath(new URL("../../app/csr/docs/[slug]/page.jsx", import.meta.url)),
+  "utf8",
+);
+const middlewareSource = readFileSync(fileURLToPath(new URL("../../../middleware.js", import.meta.url)), "utf8");
 
 test("docs page delegates interactive search to a client workspace", () => {
   assert.match(pageSource, /DocsSearchWorkspace/);
@@ -62,13 +75,37 @@ test("docs search runs while typing with a debounce", () => {
 test("docs article index renders as nested subtabs under the Docs sidebar item", () => {
   assert.match(shellSource, /docs-subtabs/);
   assert.match(shellSource, /activeDocSlug/);
-  assert.match(shellSource, /supportDocCatalog/);
+  assert.match(shellSource, /supportDocNavCatalog/);
   assert.match(shellSource, /pathname\.startsWith\("\/csr\/docs"\)/);
   assert.match(shellSource, /categoryTone/);
   assert.match(shellSource, /details/);
   assert.match(shellSource, /open=\{isDocCategoryOpen\(category\)\}/);
   assert.doesNotMatch(shellSource, /defaultOpen/);
   assert.doesNotMatch(shellSource, /DocsArticleNav/);
+});
+
+test("docs sidebar omits system design documents from the nav panel", () => {
+  assert.match(catalogSource, /supportDocNavCatalog/);
+  assert.match(catalogSource, /doc\.category !== systemDesignCategory/);
+  assert.match(shellSource, /supportDocNavCatalog/);
+  assert.doesNotMatch(shellSource, /supportDocCatalog/);
+});
+
+test("system design docs live under the demo route instead of CSR docs", () => {
+  assert.match(demoSystemDesignSource, /getStaticSupportDocBySlug\(doc\.slug, \{ includeSystemDesign: true \}\)/);
+  assert.match(demoSystemDesignSource, /id="full-system-design-docs"/);
+  assert.doesNotMatch(demoSystemDesignSource, /href="\/csr\/docs\/project-overview"/);
+  assert.match(docArticleRouteSource, /isSystemDesignDocSlug\(resolvedParams\.slug\)/);
+  assert.match(docArticleRouteSource, /redirect\("\/demo\/systemDesign"\)/);
+  assert.match(middlewareSource, /isSystemDesignDocSlug\(slug\)/);
+  assert.match(middlewareSource, /url\.pathname = "\/demo\/systemDesign"/);
+  assert.match(middlewareSource, /matcher: "\/csr\/docs\/:path\*"/);
+});
+
+test("sidebar uses original CSR portal branding", () => {
+  assert.match(shellSource, /> \| CSR-Portal<\/h1>/);
+  assert.doesNotMatch(shellSource, /CSR Command Center/);
+  assert.doesNotMatch(shellSource, /AMP support operations/);
 });
 
 test("docs sidebar subtabs fill available height and can expand or collapse all categories", () => {

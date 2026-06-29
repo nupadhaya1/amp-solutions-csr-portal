@@ -14,7 +14,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 
-import { supportDocCatalog } from "@/lib/docs/support-doc-catalog";
+import { supportDocNavCatalog } from "@/lib/docs/support-doc-catalog";
 
 const navItems = [
   { href: "/csr/dashboard", label: "Dashboard", icon: Grid2X2 },
@@ -78,7 +78,7 @@ function useCurrentCustomer(pathname) {
 }
 
 function docsCategoryGroups() {
-  return supportDocCatalog.reduce((groups, doc) => {
+  return supportDocNavCatalog.reduce((groups, doc) => {
     if (!groups.has(doc.category)) groups.set(doc.category, []);
     groups.get(doc.category).push(doc);
     return groups;
@@ -153,12 +153,7 @@ export function PortalShell({ children }) {
                   src="/logo-amp.svg"
                   width={240}
                 />
-                {!sidebarCollapsed ? (
-                  <div className="ml-3 leading-tight">
-                    <p className="text-sm font-semibold text-foreground">CSR Command Center</p>
-                    <p className="text-xs font-medium text-muted">AMP support operations</p>
-                  </div>
-                ) : null}
+                {!sidebarCollapsed ? <h1 style={{ marginTop: "2px" }}> | CSR-Portal</h1> : null}
               </div>
               {!sidebarCollapsed ? (
                 <>

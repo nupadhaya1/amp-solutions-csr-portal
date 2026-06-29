@@ -1,10 +1,11 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import { DocsArticle } from "@/components/docs/docs-article";
 import { MotionPanel } from "@/components/motion-panel";
 import { getStaticSupportDocBySlug } from "@/lib/docs/static-docs";
+import { isSystemDesignDocSlug } from "@/lib/docs/support-doc-catalog";
 import { prisma } from "@/lib/prisma";
 
 function parseJsonArray(value) {
@@ -19,6 +20,10 @@ function parseJsonArray(value) {
 export default async function CsrDocArticlePage({ params }) {
   const resolvedParams = await params;
   let doc = null;
+
+  if (isSystemDesignDocSlug(resolvedParams.slug)) {
+    redirect("/demo/systemDesign");
+  }
 
   if (prisma.supportDoc) {
     try {
