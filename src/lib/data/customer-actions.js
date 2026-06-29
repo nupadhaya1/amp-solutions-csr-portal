@@ -2,8 +2,10 @@
 
 import {
   addVehicleSchema,
+  assignVehicleToSubscriptionSchema,
   cancelSubscriptionSchema,
   changeSubscriptionPlanSchema,
+  startMembershipSchema,
   transferSubscriptionSchema,
   updateCustomerSchema,
 } from "../validation/customer-actions.js";
@@ -110,6 +112,15 @@ export async function cancelCustomerSubscription({
       throw new Error("Subscription was not found for this customer.");
     }
 
+    const remainingActiveSubscriptions = await tx.subscription.count({
+      where: {
+        customerId,
+        status: {
+          in: ["ACTIVE", "OVERDUE"],
+        },
+      },
+    });
+
     await tx.auditEvent.create({
       data: {
         customerId,
@@ -122,6 +133,13 @@ export async function cancelCustomerSubscription({
         actorType: "CSR",
       },
     });
+
+    if (remainingActiveSubscriptions === 0) {
+      await tx.customer.update({
+        where: { id: customerId },
+        data: { status: "CANCELLED" },
+      });
+    }
 
     return result;
   });
@@ -179,6 +197,114 @@ export async function transferSubscriptionVehicle({
   });
 }
 
+export async function assignVehicleToSubscription({
+  prismaClient,
+  customerId,
+  subscriptionId,
+  actorName,
+  input,
+}) {
+  requireCustomerId(customerId);
+  if (!subscriptionId) {
+    throw new Error("Subscription id is required.");
+  }
+
+  const data = assignVehicleToSubscriptionSchema.parse(input);
+
+  return prismaClient.$transaction(async (tx) => {
+    const subscription = await tx.subscription.findFirst({
+      where: {
+        id: subscriptionId,
+        customerId,
+        status: {
+          in: ["ACTIVE", "OVERDUE"],
+        },
+      },
+      include: {
+        plan: true,
+        vehicles: {
+          where: {
+            removedAt: null,
+          },
+          select: {
+            id: true,
+          },
+        },
+      },
+    });
+
+    if (!subscription) {
+      throw new Error("Active subscription was not found for this customer.");
+    }
+
+    if (subscription.vehicles.length >= Number(subscription.plan?.maxVehicles || 0)) {
+      throw new Error("This plan has no open vehicle slots.");
+    }
+
+    const vehicle = await tx.vehicle.findFirst({
+      where: {
+        id: data.vehicleId,
+        customerId,
+      },
+      select: {
+        id: true,
+        year: true,
+        make: true,
+        model: true,
+        licensePlate: true,
+      },
+    });
+
+    if (!vehicle) {
+      throw new Error("Vehicle was not found for this customer.");
+    }
+
+    const existingCoverage = await tx.subscriptionVehicle.findFirst({
+      where: {
+        vehicleId: data.vehicleId,
+        removedAt: null,
+        subscription: {
+          status: {
+            not: "CANCELLED",
+          },
+        },
+      },
+      select: {
+        id: true,
+      },
+    });
+
+    if (existingCoverage) {
+      throw new Error("Vehicle already has active membership coverage.");
+    }
+
+    const coverage = await tx.subscriptionVehicle.create({
+      data: {
+        subscriptionId,
+        vehicleId: data.vehicleId,
+      },
+    });
+
+    await tx.auditEvent.create({
+      data: {
+        customerId,
+        type: "SUBSCRIPTION_ADDED",
+        message: "Vehicle assigned to membership coverage.",
+        metadata: {
+          vehicleId: data.vehicleId,
+          vehicle: `${vehicle.year} ${vehicle.make} ${vehicle.model}`,
+          licensePlate: vehicle.licensePlate,
+          subscriptionId,
+        },
+        actorName,
+        actorType: "CSR",
+      },
+    });
+
+    return coverage;
+  });
+}
+
 export async function changeSubscriptionPlan({
   prismaClient,
   customerId,
@@ -194,8 +320,82 @@ export async function changeSubscriptionPlan({
   const data = changeSubscriptionPlanSchema.parse(input);
 
   return prismaClient.$transaction(async (tx) => {
-    const subscription = await tx.subscription.update({
-      where: { id: subscriptionId },
+    const [subscription, targetPlan] = await Promise.all([
+      tx.subscription.findFirst({
+        where: {
+          id: subscriptionId,
+          customerId,
+          status: {
+            in: ["ACTIVE", "OVERDUE"],
+          },
+        },
+        include: {
+          vehicles: {
+            where: {
+              removedAt: null,
+            },
+            select: {
+              id: true,
+              vehicleId: true,
+            },
+          },
+        },
+      }),
+      tx.subscriptionPlan.findUnique({
+        where: {
+          id: data.planId,
+        },
+      }),
+    ]);
+
+    if (!subscription) {
+      throw new Error("Active subscription was not found for this customer.");
+    }
+
+    if (!targetPlan) {
+      throw new Error("Selected plan was not found.");
+    }
+
+    const coveredVehicleIds = subscription.vehicles.map((coverage) => coverage.vehicleId);
+    const maxVehicles = Number(targetPlan.maxVehicles || 0);
+    let removedVehicleIds = [];
+
+    if (coveredVehicleIds.length > maxVehicles) {
+      const keepVehicleIds = [...new Set(data.keepVehicleIds)];
+
+      if (keepVehicleIds.length !== maxVehicles) {
+        throw new Error("Choose which vehicles should remain on this plan.");
+      }
+
+      const keepVehicleIdSet = new Set(keepVehicleIds);
+      const allKeptVehiclesAreCovered = keepVehicleIds.every((vehicleId) =>
+        coveredVehicleIds.includes(vehicleId),
+      );
+
+      if (!allKeptVehiclesAreCovered) {
+        throw new Error("Vehicles kept on the plan must already be covered.");
+      }
+
+      removedVehicleIds = coveredVehicleIds.filter((vehicleId) => !keepVehicleIdSet.has(vehicleId));
+
+      await tx.subscriptionVehicle.updateMany({
+        where: {
+          subscriptionId,
+          vehicleId: {
+            in: removedVehicleIds,
+          },
+          removedAt: null,
+        },
+        data: {
+          removedAt: new Date(),
+        },
+      });
+    }
+
+    const subscriptionUpdate = await tx.subscription.update({
+      where: {
+        id: subscriptionId,
+      },
       data: {
         planId: data.planId,
       },
@@ -209,12 +409,70 @@ export async function changeSubscriptionPlan({
         metadata: {
           planId: data.planId,
           subscriptionId,
+          removedVehicleIds,
         },
         actorName,
         actorType: "CSR",
       },
     });
 
-    return subscription;
+    return subscriptionUpdate;
+  });
+}
+
+export async function startCustomerMembership({
+  prismaClient,
+  customerId,
+  subscriptionId,
+  actorName,
+  input,
+}) {
+  requireCustomerId(customerId);
+  if (!subscriptionId) {
+    throw new Error("Subscription id is required.");
+  }
+
+  const data = startMembershipSchema.parse(input);
+  const nextBillingDate = new Date();
+  nextBillingDate.setDate(nextBillingDate.getDate() + 30);
+
+  return prismaClient.$transaction(async (tx) => {
+    const result = await tx.subscription.updateMany({
+      where: {
+        id: subscriptionId,
+        customerId,
+        status: "CANCELLED",
+      },
+      data: {
+        status: "ACTIVE",
+        planId: data.planId,
+        nextBillingDate,
+      },
+    });
+
+    if (result.count === 0) {
+      throw new Error("Cancelled subscription was not found for this customer.");
+    }
+
+    await tx.customer.update({
+      where: { id: customerId },
+      data: { status: "ACTIVE" },
+    });
+
+    await tx.auditEvent.create({
+      data: {
+        customerId,
+        type: "SUBSCRIPTION_ADDED",
+        message: "Membership started by CSR.",
+        metadata: {
+          planId: data.planId,
+          subscriptionId,
+        },
+        actorName,
+        actorType: "CSR",
+      },
+    });
+
+    return result;
   });
 }

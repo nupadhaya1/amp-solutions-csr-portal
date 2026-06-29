@@ -17,6 +17,19 @@ function ActionButton({ disabled, label, onClick, reason }) {
 
 export function CustomerActionPanel({ customer, onAction }) {
   const { actionAvailability } = customer;
+  const membershipAction = actionAvailability.canStartMembership
+    ? {
+        disabled: false,
+        label: "Start membership",
+        onClick: () => onAction("start-membership"),
+        reason: actionAvailability.disabledReasons.startMembership,
+      }
+    : {
+        disabled: !actionAvailability.canCancelMembership,
+        label: "Cancel membership",
+        onClick: () => onAction("cancel-membership"),
+        reason: actionAvailability.disabledReasons.cancelMembership,
+      };
 
   return (
     <Card className="h-full">
@@ -31,28 +44,16 @@ export function CustomerActionPanel({ customer, onAction }) {
       <CardContent className="grid gap-3">
         <ActionButton label="Edit account" onClick={() => onAction("edit-account")} />
         <ActionButton
-          disabled={!actionAvailability.canAddVehicle}
-          label="Add vehicle"
-          onClick={() => onAction("add-vehicle")}
-          reason={actionAvailability.disabledReasons.addVehicle}
-        />
-        <ActionButton
           disabled={!actionAvailability.canChangePlan}
           label="Change plan"
           onClick={() => onAction("change-plan")}
           reason={actionAvailability.disabledReasons.changePlan}
         />
         <ActionButton
-          disabled={!actionAvailability.canTransferVehicle}
-          label="Transfer vehicle"
-          onClick={() => onAction("transfer-vehicle")}
-          reason={actionAvailability.disabledReasons.transferVehicle}
-        />
-        <ActionButton
-          disabled={!actionAvailability.canCancelMembership}
-          label="Cancel membership"
-          onClick={() => onAction("cancel-membership")}
-          reason={actionAvailability.disabledReasons.cancelMembership}
+          disabled={membershipAction.disabled}
+          label={membershipAction.label}
+          onClick={membershipAction.onClick}
+          reason={membershipAction.reason}
         />
       </CardContent>
     </Card>

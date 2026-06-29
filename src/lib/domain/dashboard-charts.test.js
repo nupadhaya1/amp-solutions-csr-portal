@@ -36,7 +36,7 @@ test("aggregates dashboard chart data from existing customer rows", () => {
           },
           {
             type: "ACCOUNT_UPDATED",
-            actorName: "Bob Roberts",
+            actorName: "Nikhil Upadhaya",
             metadata: {
               paymentMethod: { brand: "Visa" },
               resolvedPayments: 1,
@@ -60,4 +60,33 @@ test("aggregates dashboard chart data from existing customer rows", () => {
   assert.deepEqual(charts.csrFixImpact.recoveredRevenue, [0, 29.99]);
   assert.equal(charts.monthlyRevenue.daily.labels.length, 7);
   assert.equal(charts.needsAttention.daily.values.at(-1), 0);
+});
+
+test("ignores former demo actor when calculating CSR fix impact", () => {
+  const charts = createDashboardCharts(
+    [
+      {
+        id: "customer_1",
+        createdAt: "2026-06-03T12:00:00.000Z",
+        subscriptions: [],
+        purchases: [],
+        auditEvents: [
+          {
+            type: "ACCOUNT_UPDATED",
+            actorName: "Bob Roberts",
+            metadata: {
+              paymentMethod: { brand: "Visa" },
+              resolvedPayments: 1,
+              recoveredRevenue: "29.99",
+            },
+            createdAt: "2026-06-05T12:00:00.000Z",
+          },
+        ],
+      },
+    ],
+    { months: 1, days: 7, now: new Date("2026-06-27T12:00:00.000Z") },
+  );
+
+  assert.deepEqual(charts.csrFixImpact.fixes, [0]);
+  assert.deepEqual(charts.csrFixImpact.recoveredRevenue, [0]);
 });

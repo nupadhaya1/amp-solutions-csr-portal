@@ -31,6 +31,10 @@ function hasOverdueIssue(row) {
 }
 
 function hasPaymentFailure(row) {
+  if (typeof row.hasPaymentFailure === "boolean") {
+    return row.hasPaymentFailure;
+  }
+
   return /FAILED|PAYMENT_FAILED|failed payment/i.test(
     [row.paymentSummary, row.searchText, row.subscriptionSummary].filter(Boolean).join(" "),
   );

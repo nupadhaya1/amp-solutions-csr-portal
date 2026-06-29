@@ -15,23 +15,23 @@ export function AddVehicleDialog({ action, customerId, onOpenChange, open }) {
         <div className="grid gap-4 sm:grid-cols-2">
           <Label>
             <span>Year</span>
-            <Input inputMode="numeric" name="year" placeholder="2025" />
+            <Input inputMode="numeric" max={2035} min={1980} name="year" placeholder="2025" required type="number" />
           </Label>
           <Label>
             <span>Make</span>
-            <Input name="make" placeholder="Toyota" />
+            <Input name="make" placeholder="Toyota" required />
           </Label>
           <Label>
             <span>Model</span>
-            <Input name="model" placeholder="Camry" />
+            <Input name="model" placeholder="Camry" required />
           </Label>
           <Label>
             <span>Color</span>
-            <Input name="color" placeholder="Silver" />
+            <Input name="color" placeholder="Silver" required />
           </Label>
           <Label className="sm:col-span-2">
             <span>License plate</span>
-            <Input className="uppercase" name="licensePlate" placeholder="DFX0396" />
+            <Input className="uppercase" minLength={2} name="licensePlate" placeholder="DFX0396" required />
           </Label>
         </div>
         <div className="flex justify-end">

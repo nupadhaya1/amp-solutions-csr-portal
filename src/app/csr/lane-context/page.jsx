@@ -1,6 +1,10 @@
+import { revalidatePath } from "next/cache";
+import { redirect } from "next/navigation";
+
 import { LaneContextWorkspace } from "@/components/lane-context-workspace";
 import { MotionPanel } from "@/components/motion-panel";
 import { listActiveLaneSessions } from "@/lib/data/lane-sessions";
+import { resetLaneContextData } from "../../../../prisma/seed.js";
 
 function serializeLaneSession(session) {
   return {
@@ -40,12 +44,22 @@ export default async function LaneContextPage({ searchParams }) {
   const params = await searchParams;
   const sessions = await listActiveLaneSessions();
 
+  async function resetLaneContext() {
+    "use server";
+
+    await resetLaneContextData();
+    revalidatePath("/csr/lane-context");
+    redirect("/csr/lane-context?reset=done");
+  }
+
   return (
     <MotionPanel>
       <LaneContextWorkspace
         initialCustomerId={String(params?.customerId || "")}
         initialFilter={String(params?.filter || "all")}
         initialPlate={String(params?.plate || "").trim()}
+        resetComplete={params?.reset === "done"}
+        resetLaneContextAction={resetLaneContext}
         sessions={sessions.map(serializeLaneSession)}
       />
     </MotionPanel>

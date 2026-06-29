@@ -16,16 +16,20 @@ import { Alert, Badge } from "./customer-ui.jsx";
 import { AddVehicleDialog } from "./dialogs/add-vehicle-dialog.jsx";
 import { AllActivityDialog } from "./dialogs/all-activity-dialog.jsx";
 import { AllNotesDialog } from "./dialogs/all-notes-dialog.jsx";
+import { AssignVehicleDialog } from "./dialogs/assign-vehicle-dialog.jsx";
 import { CancelMembershipDialog } from "./dialogs/cancel-membership-dialog.jsx";
 import { ChangePlanDialog } from "./dialogs/change-plan-dialog.jsx";
 import { EditAccountDialog } from "./dialogs/edit-account-dialog.jsx";
+import { StartMembershipDialog } from "./dialogs/start-membership-dialog.jsx";
 import { TransferVehicleDialog } from "./dialogs/transfer-vehicle-dialog.jsx";
 import { UpdatePaymentDialog } from "./dialogs/update-payment-dialog.jsx";
 
 const successMessages = {
   "account-updated": "Customer account updated and audit timeline refreshed.",
   "vehicle-added": "Vehicle added and audit timeline refreshed.",
+  "vehicle-assigned": "Vehicle assigned to membership coverage and audit timeline refreshed.",
   "subscription-cancelled": "Membership cancelled and audit timeline refreshed.",
+  "membership-started": "Membership started and audit timeline refreshed.",
   "subscription-transferred": "Vehicle coverage transferred and audit timeline refreshed.",
   "plan-changed": "Membership plan updated and audit timeline refreshed.",
   "payment-updated": "Payment method updated, failed membership payment retried, and audit timeline refreshed.",
@@ -78,6 +82,7 @@ function LaneContextBanner({ laneContext, onAction }) {
 
 export function CustomerDashboardLayout({
   addSupportNoteAction,
+  assignVehicleAction,
   addVehicleAction,
   backHref,
   customer,
@@ -87,6 +92,7 @@ export function CustomerDashboardLayout({
   updateAccountAction,
   updatePaymentAction,
   cancelSubscriptionAction,
+  startMembershipAction,
   changePlanAction,
   transferVehicleAction,
 }) {
@@ -95,6 +101,7 @@ export function CustomerDashboardLayout({
     () => customer.subscriptions.find((subscription) => ["ACTIVE", "OVERDUE"].includes(subscription.status)) || null,
     [customer.subscriptions],
   );
+  const startableSubscription = customer.startableSubscription || null;
 
   function handleWorkflowAction(action) {
     if (action === "open-billing-docs") {
@@ -110,9 +117,11 @@ export function CustomerDashboardLayout({
     const dialogMap = {
       "edit-account": "edit-account",
       "add-vehicle": "add-vehicle",
+      "assign-vehicle": "assign-vehicle",
       "change-plan": "change-plan",
       "transfer-vehicle": "transfer-vehicle",
       "cancel-membership": "cancel-membership",
+      "start-membership": "start-membership",
       "update-payment": "update-payment",
     };
 
@@ -164,7 +173,7 @@ export function CustomerDashboardLayout({
 
         <div className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,7fr)_minmax(320px,3fr)]">
           <main className="space-y-4">
-            <VehicleSubscriptionCard customer={customer} />
+            <VehicleSubscriptionCard customer={customer} onAction={handleWorkflowAction} />
             <PaymentBillingCard
               billing={customer.billing}
               onRetryPayment={handleRetryPayment}
@@ -203,6 +212,14 @@ export function CustomerDashboardLayout({
         onOpenChange={(nextOpen) => setOpenDialog(nextOpen ? "add-vehicle" : null)}
         open={openDialog === "add-vehicle"}
       />
+      <AssignVehicleDialog
+        action={assignVehicleAction}
+        customerId={customer.id}
+        onOpenChange={(nextOpen) => setOpenDialog(nextOpen ? "assign-vehicle" : null)}
+        open={openDialog === "assign-vehicle"}
+        subscriptions={customer.assignableSubscriptions}
+        vehicles={customer.assignableVehicles}
+      />
       <UpdatePaymentDialog
         action={updatePaymentAction}
         billing={customer.billing}
@@ -217,6 +234,14 @@ export function CustomerDashboardLayout({
         open={openDialog === "change-plan"}
         plans={plans}
         subscription={primarySubscription}
+      />
+      <StartMembershipDialog
+        action={startMembershipAction}
+        customerId={customer.id}
+        onOpenChange={(nextOpen) => setOpenDialog(nextOpen ? "start-membership" : null)}
+        open={openDialog === "start-membership"}
+        plans={plans}
+        subscription={startableSubscription}
       />
       <TransferVehicleDialog
         action={transferVehicleAction}

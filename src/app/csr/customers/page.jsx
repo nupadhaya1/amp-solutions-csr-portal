@@ -22,7 +22,7 @@ export default async function CustomerLookupPage({ searchParams }) {
   });
 
   return (
-    <MotionPanel className="grid gap-4">
+    <MotionPanel className="flex h-full min-h-0 flex-col gap-4">
       <CustomerWorkspaceTabs activeTab="customers" />
       <CustomerTable
         filters={filters}

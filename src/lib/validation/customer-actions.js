@@ -31,6 +31,15 @@ export const transferSubscriptionSchema = z
     path: ["toVehicleId"],
   });
 
+export const assignVehicleToSubscriptionSchema = z.object({
+  vehicleId: z.string().trim().min(1, "Select a vehicle."),
+});
+
 export const changeSubscriptionPlanSchema = z.object({
+  planId: z.string().trim().min(1, "Select a plan."),
+  keepVehicleIds: z.array(z.string().trim().min(1)).optional().default([]),
+});
+
+export const startMembershipSchema = z.object({
   planId: z.string().trim().min(1, "Select a plan."),
 });

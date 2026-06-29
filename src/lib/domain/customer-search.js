@@ -53,6 +53,20 @@ export function flattenCustomerForSearch(customer) {
   const auditEvents = customer.auditEvents || [];
   const laneSession = (customer.laneSessions || [])[0] || null;
   const primaryVehicle = vehicles[0];
+  const hasFailedMembershipPayment = purchases.some(
+    (purchase) => purchase.type === "MEMBERSHIP_PAYMENT" && purchase.status === "FAILED",
+  );
+  const latestMembershipPayment = purchases.find(
+    (purchase) => purchase.type === "MEMBERSHIP_PAYMENT",
+  );
+  const hasOverdueSubscription = subscriptions.some(
+    (subscription) => subscription.status === "OVERDUE",
+  );
+  const hasCurrentPaymentFailure =
+    customer.status === "OVERDUE" ||
+    hasOverdueSubscription ||
+    latestMembershipPayment?.status === "FAILED";
+  const resolvedPaymentHistory = hasFailedMembershipPayment && !hasCurrentPaymentFailure;
 
   return {
     id: customer.id,
@@ -71,9 +85,10 @@ export function flattenCustomerForSearch(customer) {
       subscriptions
         .map((subscription) => `${subscription.plan?.name} ${subscription.status}`)
         .join(" ") || "No subscription",
-    hasCriticalIssue: subscriptions.some(
-      (subscription) => subscription.status === "OVERDUE",
-    ),
+    hasCriticalIssue: hasCurrentPaymentFailure,
+    hasPaymentFailure: hasCurrentPaymentFailure,
+    hasPaymentHistory: hasFailedMembershipPayment,
+    resolvedPaymentHistory,
     laneSession,
     searchText: [
       customer.firstName,

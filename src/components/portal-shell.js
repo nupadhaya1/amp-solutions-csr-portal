@@ -282,7 +282,7 @@ export function PortalShell({ children }) {
               })}
             </nav>
 
-            <div className={`mt-auto grid gap-2 ${sidebarCollapsed ? "self-center" : "self-end"}`}>
+            <div className={`mt-auto flex items-center gap-2 ${sidebarCollapsed ? "flex-col self-center" : "self-end"}`}>
               <Link
                 aria-label="Open demo hub"
                 className="flex h-8 w-8 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground shadow-sm transition hover:border-primary/30 hover:text-primary"
@@ -308,7 +308,11 @@ export function PortalShell({ children }) {
           </div>
         </aside>
 
-        <section className="h-screen overflow-y-auto px-5 py-5 sm:px-8 lg:px-10">
+        <section
+          className={`h-screen px-5 py-5 sm:px-8 lg:px-10 ${
+            pathname === "/csr/customers" ? "overflow-hidden" : "overflow-y-auto"
+          }`}
+        >
           {children}
         </section>
       </div>

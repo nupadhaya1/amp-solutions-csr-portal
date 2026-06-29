@@ -4,6 +4,11 @@ import { fileURLToPath } from "node:url";
 import test from "node:test";
 
 const source = readFileSync(fileURLToPath(new URL("./customer-table.jsx", import.meta.url)), "utf8");
+const pageSource = readFileSync(
+  fileURLToPath(new URL("../app/csr/customers/page.jsx", import.meta.url)),
+  "utf8",
+);
+const shellSource = readFileSync(fileURLToPath(new URL("./portal-shell.js", import.meta.url)), "utf8");
 
 test("customer page uses compact header, stat cards, and a single grid search", () => {
   assert.match(source, /Current search/);
@@ -20,23 +25,13 @@ test("customer page uses compact header, stat cards, and a single grid search", 
   assert.doesNotMatch(source, /function FilterInput/);
 });
 
-test("customer grid exposes advanced field filters in a dropdown", () => {
-  assert.match(source, /Advanced filters/);
-  assert.match(source, /advancedFiltersOpen/);
-  assert.match(source, /columnFilters/);
-  assert.match(source, /aria-controls="advanced-customer-filters"/);
-  assert.match(source, /id="advanced-customer-filters"/);
-  assert.match(source, /getColumn\("fullName"\)/);
-  assert.match(source, /getColumn\("contactSummary"\)/);
-  assert.match(source, /getColumn\("vehicleSummary"\)/);
-  assert.match(source, /getColumn\("subscriptionSummary"\)/);
-  assert.match(source, /Filter name or member ID/);
-  assert.match(source, /Filter email or phone/);
-  assert.match(source, /Filter vehicle or plate/);
-  assert.match(source, /Filter plan/);
-  assert.doesNotMatch(source, /absolute right-0/);
-  assert.doesNotMatch(source, /shadow-xl/);
-  assert.doesNotMatch(source, /header\.column\.id === "fullName"/);
+test("customer grid relies on the global search instead of advanced filters", () => {
+  assert.doesNotMatch(source, /Advanced filters/);
+  assert.doesNotMatch(source, /advancedFiltersOpen/);
+  assert.doesNotMatch(source, /columnFilters/);
+  assert.doesNotMatch(source, /ColumnFilter/);
+  assert.doesNotMatch(source, /getColumn\("fullName"\)/);
+  assert.doesNotMatch(source, /id="advanced-customer-filters"/);
 });
 
 test("customer page restores and clears the shared remembered search query", () => {
@@ -64,4 +59,12 @@ test("customer grid default priority sorting is backed by an existing column", (
   assert.match(source, /useState\(\[\{ id: "statusLabel", desc: false \}\]\)/);
   assert.match(source, /sortingFn: \(left, right\) => left\.original\.priorityRank - right\.original\.priorityRank/);
   assert.doesNotMatch(source, /useState\(\[\{ id: "priorityRank"/);
+});
+
+test("customer page uses one scroll region for the data grid", () => {
+  assert.match(shellSource, /pathname === "\/csr\/customers" \? "overflow-hidden" : "overflow-y-auto"/);
+  assert.match(pageSource, /flex h-full min-h-0 flex-col gap-4/);
+  assert.match(source, /flex min-h-0 flex-1 flex-col gap-4/);
+  assert.match(source, /grid min-h-0 flex-1 grid-rows-\[minmax\(0,1fr\)_auto\] overflow-hidden/);
+  assert.match(source, /min-h-0 overflow-auto/);
 });

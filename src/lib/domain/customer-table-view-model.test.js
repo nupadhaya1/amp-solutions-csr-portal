@@ -27,12 +27,26 @@ test("summarizes customer table rows and attention counts", () => {
       licensePlate: "FAM2023",
       subscriptionSummary: "Family Unlimited ACTIVE",
       hasCriticalIssue: false,
+      hasPaymentFailure: false,
       searchText: "MEMBERSHIP_PAYMENT PAID",
       laneSession: {
         status: "IN_QUEUE",
         issueCode: "NONE",
         issueSeverity: "NONE",
       },
+    },
+    {
+      id: "customer_recovered",
+      fullName: "Recovered Customer",
+      email: "recovered@example.com",
+      phone: "404-555-0198",
+      customerStatus: "ACTIVE",
+      primaryVehicle: "2022 Honda Accord",
+      licensePlate: "PAID123",
+      subscriptionSummary: "Signature Wash ACTIVE",
+      hasCriticalIssue: false,
+      hasPaymentFailure: false,
+      searchText: "MEMBERSHIP_PAYMENT FAILED PAYMENT_FAILED recovered by CSR",
     },
   ];
 
@@ -48,7 +62,7 @@ test("summarizes customer table rows and attention counts", () => {
   });
 
   assert.equal(viewModel.summary.totalCustomers, 4);
-  assert.equal(viewModel.summary.resultCount, 2);
+  assert.equal(viewModel.summary.resultCount, 3);
   assert.equal(viewModel.summary.attentionCount, 1);
   assert.equal(viewModel.summary.overdueCount, 1);
   assert.equal(viewModel.summary.paymentFailureCount, 1);
@@ -78,6 +92,13 @@ test("summarizes customer table rows and attention counts", () => {
           tone: "success",
           searchText: "Lane context In queue No issue NONE NONE",
         },
+        paymentLabel: "Current",
+        statusLabel: "Active",
+      },
+      {
+        id: "customer_recovered",
+        initials: "RC",
+        laneBadge: null,
         paymentLabel: "Current",
         statusLabel: "Active",
       },

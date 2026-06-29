@@ -16,7 +16,14 @@ test("lane context search uses debounced local filtering with clear and result-o
   assert.match(workspaceSource, /LoaderCircle/);
   assert.match(workspaceSource, /aria-label="Clear detected plate search"/);
   assert.match(workspaceSource, /aria-busy=\{isFiltering\}/);
-  assert.doesNotMatch(pageSource, /<form/);
+});
+
+test("lane context exposes a lane-only reset action", () => {
+  assert.match(pageSource, /resetLaneContextData/);
+  assert.match(pageSource, /async function resetLaneContext/);
+  assert.match(workspaceSource, /Reset lane data/);
+  assert.match(workspaceSource, /resetLaneContextAction/);
+  assert.match(workspaceSource, /useFormStatus/);
 });
 
 test("lane context resolver guide links to CSR docs", () => {

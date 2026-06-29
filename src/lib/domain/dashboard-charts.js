@@ -1,5 +1,7 @@
 // @ts-check
 
+const CSR_FIX_ACTOR = "Nikhil Upadhaya";
+
 function monthKey(date) {
   const value = new Date(date);
   return `${value.getUTCFullYear()}-${String(value.getUTCMonth() + 1).padStart(2, "0")}`;
@@ -143,7 +145,7 @@ export function createDashboardCharts(customers, options = {}) {
     const metadata = event.metadata || {};
     const resolvedPayments = Number(metadata.resolvedPayments || 0);
     const isPaymentFix =
-      event.actorName === "Bob Roberts" &&
+      event.actorName === CSR_FIX_ACTOR &&
       event.type === "ACCOUNT_UPDATED" &&
       (metadata.paymentMethod || resolvedPayments > 0);
 

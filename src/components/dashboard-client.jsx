@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import * as Tabs from "@radix-ui/react-tabs";
 import { useQuery } from "@tanstack/react-query";
 import {
@@ -11,6 +12,8 @@ import {
   ArrowDownRight,
   ArrowUpRight,
   CarFront,
+  Check,
+  ChevronDown,
   CreditCard,
   Grid2X2,
   LoaderCircle,
@@ -228,19 +231,41 @@ function StatCard({ stat, delta = 0 }) {
 }
 
 function TimeframeControl({ timeframe, onTimeframeChange }) {
+  const selectedOption = timeframeOptions.find((option) => option.value === timeframe) || timeframeOptions[0];
+
   return (
     <div className="flex flex-wrap items-center justify-end gap-2">
-      <select
-        className="h-9 rounded-lg border border-border bg-surface px-2 text-xs font-semibold outline-none focus:border-primary"
-        onChange={(event) => onTimeframeChange(event.target.value)}
-        value={timeframe}
-      >
-        {timeframeOptions.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
+      <DropdownMenu.Root>
+        <DropdownMenu.Trigger asChild>
+          <button
+            className="inline-flex h-9 items-center justify-between gap-2 rounded-lg border border-border bg-surface px-3 text-xs font-semibold outline-none transition hover:border-primary focus-visible:border-primary focus-visible:ring-4 focus-visible:ring-primary/10"
+            type="button"
+          >
+            {selectedOption.label}
+            <ChevronDown className="text-muted" size={14} aria-hidden="true" />
+          </button>
+        </DropdownMenu.Trigger>
+        <DropdownMenu.Portal>
+          <DropdownMenu.Content
+            align="end"
+            className="z-50 min-w-40 overflow-hidden rounded-xl border border-border bg-card p-1 shadow-lg shadow-slate-200/80"
+            sideOffset={6}
+          >
+            {timeframeOptions.map((option) => (
+              <DropdownMenu.Item
+                className="flex cursor-pointer items-center justify-between gap-3 rounded-lg px-3 py-2 text-xs font-semibold outline-none transition hover:bg-primary/10 focus:bg-primary/10 data-[highlighted]:bg-primary/10"
+                key={option.value}
+                onSelect={() => onTimeframeChange(option.value)}
+              >
+                {option.label}
+                {option.value === timeframe ? (
+                  <Check className="text-primary" size={14} aria-hidden="true" />
+                ) : null}
+              </DropdownMenu.Item>
+            ))}
+          </DropdownMenu.Content>
+        </DropdownMenu.Portal>
+      </DropdownMenu.Root>
     </div>
   );
 }
@@ -589,7 +614,7 @@ function DashboardCharts({ charts }) {
           />
         </ChartCard>
 
-        <ChartCard title="Bob Roberts fix impact">
+        <ChartCard title="Nikhil Upadhaya fix impact">
           <Bar
             data={{
               labels: fixImpact.labels,

@@ -13,14 +13,16 @@ export function DocsSearchWorkspace({ initialQuery = "", initialResults = [] }) 
   const [error, setError] = useState("");
   const [isSearching, setIsSearching] = useState(false);
   const didAutoSearchMountRef = useRef(false);
+  const skipNextQueryEffectRef = useRef(false);
   const searchRequestRef = useRef(0);
 
-  const runSearch = useCallback((nextQuery, { syncInput = true } = {}) => {
+  const runSearch = useCallback((nextQuery, { syncInput = true, skipNextQueryEffect = true } = {}) => {
     const normalizedQuery = String(nextQuery || "").trim().replace(/\s+/g, " ");
     const requestId = searchRequestRef.current + 1;
     searchRequestRef.current = requestId;
 
     if (syncInput) {
+      skipNextQueryEffectRef.current = skipNextQueryEffect;
       setQuery(normalizedQuery);
     }
 
@@ -67,6 +69,11 @@ export function DocsSearchWorkspace({ initialQuery = "", initialResults = [] }) 
   useEffect(() => {
     if (!didAutoSearchMountRef.current) {
       didAutoSearchMountRef.current = true;
+      return undefined;
+    }
+
+    if (skipNextQueryEffectRef.current) {
+      skipNextQueryEffectRef.current = false;
       return undefined;
     }
 

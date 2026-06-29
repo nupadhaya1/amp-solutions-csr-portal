@@ -130,6 +130,9 @@ test("dashboard insights use one shared timeframe control and larger chart cards
   assert.match(chartCardSource, /h-\[300px\]/);
   assert.equal(timeframeSelectCount, 1);
   assert.match(chartsSource, /const \[timeframe, setTimeframe\]/);
+  assert.match(source, /@radix-ui\/react-dropdown-menu/);
+  assert.match(source, /DropdownMenu\.Root/);
+  assert.doesNotMatch(source, /<select/);
   assert.doesNotMatch(chartsSource, /const \[timeframes, setTimeframes\]/);
   assert.doesNotMatch(chartsSource, /updateTimeframe/);
   assert.doesNotMatch(chartsSource, /compact/);

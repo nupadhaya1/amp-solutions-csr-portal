@@ -19,7 +19,7 @@ except ImportError as exc:
 PROJECT_ROOT = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
 ENV_FILE = os.path.join(PROJECT_ROOT, ".env.development.local")
 
-CSR_ACTOR = "Bob Roberts"
+CSR_ACTOR = "Nikhil Upadhaya"
 SYSTEM_ACTOR = "AMP System"
 
 DASHBOARD_MEMBER_ID_OFFSET = 2000
@@ -480,7 +480,7 @@ def main():
                         )
                         inserted["failed_issue_events"] += 2
 
-                # Add month-level issue/fix events from Bob Roberts on separate demo
+                # Add month-level issue/fix events from the CSR on separate demo
                 # customers so CSR fix impact has a visible time series.
                 for issue_number in range(issue_count):
                     issue_customer_id = make_id("custdash")

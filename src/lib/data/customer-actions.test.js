@@ -3,13 +3,16 @@ import test from "node:test";
 
 import {
   addCustomerVehicle,
+  assignVehicleToSubscription,
   cancelCustomerSubscription,
   changeSubscriptionPlan,
+  startCustomerMembership,
   transferSubscriptionVehicle,
   updateCustomerAccount,
 } from "./customer-actions.js";
 
-function createPrismaStub() {
+function createPrismaStub(options = {}) {
+  const coveredVehicles = options.coveredVehicles || [{ id: "coverage_existing", vehicleId: "vehicle_existing" }];
   const calls = [];
   const tx = {
     customer: {
@@ -23,8 +26,34 @@ function createPrismaStub() {
         calls.push(["vehicle.create", args]);
         return { id: "vehicle_new", ...args.data };
       },
+      findFirst: async (args) => {
+        calls.push(["vehicle.findFirst", args]);
+        return {
+          id: args.where.id,
+          year: 2024,
+          make: "Toyota",
+          model: "Camry",
+          licensePlate: "CZR4821",
+        };
+      },
     },
     subscription: {
+      count: async (args) => {
+        calls.push(["subscription.count", args]);
+        return 0;
+      },
+      findFirst: async (args) => {
+        calls.push(["subscription.findFirst", args]);
+        return {
+          id: args.where.id,
+          customerId: args.where.customerId,
+          status: "ACTIVE",
+          plan: {
+            maxVehicles: 2,
+          },
+          vehicles: coveredVehicles,
+        };
+      },
       update: async (args) => {
         calls.push(["subscription.update", args]);
         return { id: args.where.id, customerId: args.data.customerId, ...args.data };
@@ -34,10 +63,23 @@ function createPrismaStub() {
         return { count: 1 };
       },
     },
+    subscriptionPlan: {
+      findUnique: async (args) => {
+        calls.push(["subscriptionPlan.findUnique", args]);
+        return {
+          id: args.where.id,
+          maxVehicles: args.where.id === "plan_single" ? 1 : 2,
+        };
+      },
+    },
     subscriptionVehicle: {
       create: async (args) => {
         calls.push(["subscriptionVehicle.create", args]);
         return { id: "coverage_new", ...args.data };
+      },
+      findFirst: async (args) => {
+        calls.push(["subscriptionVehicle.findFirst", args]);
+        return null;
       },
       updateMany: async (args) => {
         calls.push(["subscriptionVehicle.updateMany", args]);
@@ -136,8 +178,26 @@ test("cancels a subscription and records the CSR reason", async () => {
       data: { status: "CANCELLED" },
     },
   ]);
-  assert.equal(prisma.calls[1][1].data.type, "SUBSCRIPTION_CANCELLED");
-  assert.deepEqual(prisma.calls[1][1].data.metadata, {
+  assert.deepEqual(prisma.calls[1], [
+    "subscription.count",
+    {
+      where: {
+        customerId: "customer_1",
+        status: {
+          in: ["ACTIVE", "OVERDUE"],
+        },
+      },
+    },
+  ]);
+  assert.equal(prisma.calls[2][1].data.type, "SUBSCRIPTION_CANCELLED");
+  assert.deepEqual(prisma.calls[3], [
+    "customer.update",
+    {
+      where: { id: "customer_1" },
+      data: { status: "CANCELLED" },
+    },
+  ]);
+  assert.deepEqual(prisma.calls[2][1].data.metadata, {
     reason: "Customer sold the vehicle.",
   });
 });
@@ -175,6 +235,57 @@ test("transfers active subscription coverage between vehicles", async () => {
   });
 });
 
+test("assigns an uncovered vehicle to an active plan with open capacity", async () => {
+  const prisma = createPrismaStub();
+
+  await assignVehicleToSubscription({
+    prismaClient: prisma.client,
+    customerId: "customer_1",
+    subscriptionId: "subscription_1",
+    actorName: "Nikhil Upadhaya",
+    input: {
+      vehicleId: "vehicle_new",
+    },
+  });
+
+  assert.deepEqual(prisma.calls[0][1].where, {
+    id: "subscription_1",
+    customerId: "customer_1",
+    status: {
+      in: ["ACTIVE", "OVERDUE"],
+    },
+  });
+  assert.deepEqual(prisma.calls[1][1].where, {
+    id: "vehicle_new",
+    customerId: "customer_1",
+  });
+  assert.deepEqual(prisma.calls[2][1].where, {
+    vehicleId: "vehicle_new",
+    removedAt: null,
+    subscription: {
+      status: {
+        not: "CANCELLED",
+      },
+    },
+  });
+  assert.deepEqual(prisma.calls[3], [
+    "subscriptionVehicle.create",
+    {
+      data: {
+        subscriptionId: "subscription_1",
+        vehicleId: "vehicle_new",
+      },
+    },
+  ]);
+  assert.equal(prisma.calls[4][1].data.type, "SUBSCRIPTION_ADDED");
+  assert.deepEqual(prisma.calls[4][1].data.metadata, {
+    vehicleId: "vehicle_new",
+    vehicle: "2024 Toyota Camry",
+    licensePlate: "CZR4821",
+    subscriptionId: "subscription_1",
+  });
+});
+
 test("changes a subscription plan and records the selected plan", async () => {
   const prisma = createPrismaStub();
 
@@ -188,15 +299,107 @@ test("changes a subscription plan and records the selected plan", async () => {
     },
   });
 
-  assert.deepEqual(prisma.calls[0], [
+  assert.deepEqual(prisma.calls[0][0], "subscription.findFirst");
+  assert.deepEqual(prisma.calls[1], [
+    "subscriptionPlan.findUnique",
+    {
+      where: { id: "plan_signature" },
+    },
+  ]);
+  assert.deepEqual(prisma.calls[2], [
     "subscription.update",
     {
       where: { id: "subscription_1" },
       data: { planId: "plan_signature" },
     },
   ]);
-  assert.equal(prisma.calls[1][1].data.type, "SUBSCRIPTION_PLAN_CHANGED");
-  assert.deepEqual(prisma.calls[1][1].data.metadata, {
+  assert.equal(prisma.calls[3][1].data.type, "SUBSCRIPTION_PLAN_CHANGED");
+  assert.deepEqual(prisma.calls[3][1].data.metadata, {
+    planId: "plan_signature",
+    subscriptionId: "subscription_1",
+    removedVehicleIds: [],
+  });
+});
+
+test("downgrades a multi-vehicle plan by keeping the CSR-selected vehicle", async () => {
+  const prisma = createPrismaStub({
+    coveredVehicles: [
+      { id: "coverage_1", vehicleId: "vehicle_keep" },
+      { id: "coverage_2", vehicleId: "vehicle_remove" },
+    ],
+  });
+
+  await changeSubscriptionPlan({
+    prismaClient: prisma.client,
+    customerId: "customer_1",
+    subscriptionId: "subscription_1",
+    actorName: "Nikhil Upadhaya",
+    input: {
+      planId: "plan_single",
+      keepVehicleIds: ["vehicle_keep"],
+    },
+  });
+
+  assert.deepEqual(prisma.calls[2], [
+    "subscriptionVehicle.updateMany",
+    {
+      where: {
+        subscriptionId: "subscription_1",
+        vehicleId: {
+          in: ["vehicle_remove"],
+        },
+        removedAt: null,
+      },
+      data: {
+        removedAt: prisma.calls[2][1].data.removedAt,
+      },
+    },
+  ]);
+  assert.deepEqual(prisma.calls[3], [
+    "subscription.update",
+    {
+      where: { id: "subscription_1" },
+      data: { planId: "plan_single" },
+    },
+  ]);
+  assert.deepEqual(prisma.calls[4][1].data.metadata, {
+    planId: "plan_single",
+    subscriptionId: "subscription_1",
+    removedVehicleIds: ["vehicle_remove"],
+  });
+});
+
+test("starts a cancelled membership and records the selected plan", async () => {
+  const prisma = createPrismaStub();
+
+  await startCustomerMembership({
+    prismaClient: prisma.client,
+    customerId: "customer_1",
+    subscriptionId: "subscription_1",
+    actorName: "Nikhil Upadhaya",
+    input: {
+      planId: "plan_signature",
+    },
+  });
+
+  assert.deepEqual(prisma.calls[0], [
+    "subscription.updateMany",
+    {
+      where: { id: "subscription_1", customerId: "customer_1", status: "CANCELLED" },
+      data: {
+        status: "ACTIVE",
+        planId: "plan_signature",
+        nextBillingDate: prisma.calls[0][1].data.nextBillingDate,
+      },
+    },
+  ]);
+  assert.equal(prisma.calls[1][0], "customer.update");
+  assert.deepEqual(prisma.calls[1][1], {
+    where: { id: "customer_1" },
+    data: { status: "ACTIVE" },
+  });
+  assert.equal(prisma.calls[2][1].data.type, "SUBSCRIPTION_ADDED");
+  assert.deepEqual(prisma.calls[2][1].data.metadata, {
     planId: "plan_signature",
     subscriptionId: "subscription_1",
   });

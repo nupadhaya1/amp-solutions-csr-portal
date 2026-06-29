@@ -157,6 +157,18 @@ function getBilling(customer) {
   };
 }
 
+function getProfileStatus(customer, billing) {
+  if (customer.status === "CANCELLED") return "CANCELLED";
+  if (billing.paymentStatus === "OVERDUE") return "OVERDUE";
+  if (
+    (customer.subscriptions || []).some((subscription) => subscription.status === "OVERDUE")
+  ) {
+    return "OVERDUE";
+  }
+
+  return customer.status;
+}
+
 function buildVehiclesWithSubscriptions(customer) {
   const subscriptions = customer.subscriptions || [];
 
@@ -244,18 +256,52 @@ export async function createCustomerDashboardViewModel(customer, plans = [], opt
   const activeOrOverdueSubscriptions = subscriptions.filter((subscription) =>
     ["ACTIVE", "OVERDUE"].includes(subscription.status),
   );
+  const cancelledSubscriptions = subscriptions.filter((subscription) => subscription.status === "CANCELLED");
   const activePlanNames = [...new Set(activeOrOverdueSubscriptions.map((subscription) => subscription.plan?.name).filter(Boolean))];
+  const activelyCoveredVehicleIds = new Set(
+    activeOrOverdueSubscriptions.flatMap((subscription) =>
+      (subscription.vehicles || [])
+        .filter((coverage) => coverage.removedAt === null)
+        .map((coverage) => coverage.vehicle?.id)
+        .filter(Boolean),
+    ),
+  );
+  const uncoveredVehicles = (customer.vehicles || []).filter(
+    (vehicle) => !activelyCoveredVehicleIds.has(vehicle.id),
+  );
+  const assignableSubscriptions = activeOrOverdueSubscriptions
+    .map((subscription) => {
+      const coveredVehicles = (subscription.vehicles || []).filter(
+        (coverage) => coverage.removedAt === null,
+      );
+      const maxVehicles = Number(subscription.plan?.maxVehicles || 0);
+
+      return {
+        id: subscription.id,
+        planName: subscription.plan?.name || "Unknown plan",
+        coveredVehicleCount: coveredVehicles.length,
+        maxVehicles,
+        openSlots: Math.max(0, maxVehicles - coveredVehicles.length),
+      };
+    })
+    .filter((subscription) => subscription.openSlots > 0);
   const canAddVehicle = activeOrOverdueSubscriptions.some((subscription) => {
     const coveredVehicles = (subscription.vehicles || []).filter((coverage) => coverage.removedAt === null);
     return coveredVehicles.length < Number(subscription.plan?.maxVehicles || 0);
   });
+  const canAssignVehicleToPlan = assignableSubscriptions.length > 0 && uncoveredVehicles.length > 0;
   const canTransferVehicle = activeOrOverdueSubscriptions.some((subscription) => {
     const coveredVehicles = (subscription.vehicles || []).filter((coverage) => coverage.removedAt === null);
-    return coveredVehicles.length > 0 && (customer.vehicles || []).length > 1;
+    const coveredVehicleIds = new Set(coveredVehicles.map((coverage) => coverage.vehicle?.id).filter(Boolean));
+    const uncoveredVehicles = (customer.vehicles || []).filter((vehicle) => !coveredVehicleIds.has(vehicle.id));
+
+    return coveredVehicles.length > 0 && uncoveredVehicles.length > 0;
   });
   const canChangePlan = activeOrOverdueSubscriptions.length > 0 && plans !== null;
   const canCancelMembership = activeOrOverdueSubscriptions.length > 0;
+  const canStartMembership = cancelledSubscriptions.length > 0 && plans !== null;
   const billing = getBilling(customer);
+  const profileStatus = getProfileStatus(customer, billing);
 
   const profile = {
     id: customer.id,
@@ -268,21 +314,37 @@ export async function createCustomerDashboardViewModel(customer, plans = [], opt
     phone: customer.phone,
     joinedAt: formatDate(customer.createdAt),
     homeWashLocation: customer.homeWashLocation || "Not assigned",
-    status: customer.status,
+    status: profileStatus,
     planTags: activePlanNames,
     actionAvailability: {
       canEditAccount: true,
       canAddVehicle,
+      canAssignVehicleToPlan,
       canChangePlan,
       canTransferVehicle,
       canCancelMembership,
+      canStartMembership,
       disabledReasons: {
         addVehicle: canAddVehicle ? "" : "Add vehicle is only available when an active plan has open vehicle capacity.",
+        assignVehicleToPlan: canAssignVehicleToPlan ? "" : "Assign vehicle requires an uncovered vehicle and an active plan with open capacity.",
         changePlan: canChangePlan ? "" : "Change plan requires an active or overdue subscription.",
         transferVehicle: canTransferVehicle ? "" : "Transfer vehicle requires covered and uncovered vehicles on the account.",
         cancelMembership: canCancelMembership ? "" : "Cancel membership requires an active or overdue membership.",
+        startMembership: canStartMembership ? "" : "Start membership requires a cancelled membership to reactivate.",
       },
     },
+    startableSubscription: cancelledSubscriptions[0]
+      ? {
+          id: cancelledSubscriptions[0].id,
+          planId: cancelledSubscriptions[0].planId,
+        }
+      : null,
+    assignableSubscriptions,
+    assignableVehicles: uncoveredVehicles.map((vehicle) => ({
+      id: vehicle.id,
+      label: `${vehicle.year} ${vehicle.make} ${vehicle.model}`,
+      licensePlate: vehicle.licensePlate,
+    })),
     vehiclesWithSubscriptions,
     subscriptions: subscriptions.map((subscription) => ({
       id: subscription.id,

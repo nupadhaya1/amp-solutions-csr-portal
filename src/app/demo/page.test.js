@@ -4,22 +4,16 @@ import { fileURLToPath } from "node:url";
 import test from "node:test";
 
 const pageSource = readFileSync(fileURLToPath(new URL("./page.js", import.meta.url)), "utf8");
-const resetButtonSource = readFileSync(
-  fileURLToPath(new URL("./reset-mock-data-button.jsx", import.meta.url)),
-  "utf8",
-);
 const seedSource = readFileSync(fileURLToPath(new URL("../../../prisma/seed.js", import.meta.url)), "utf8");
 
-test("demo hub exposes a server action to reset seeded mock data", () => {
-  assert.match(seedSource, /export async function resetDemoData/);
+test("demo hub does not expose destructive mock data reset", () => {
+  assert.match(seedSource, /export async function resetFullDemoData/);
+  assert.match(seedSource, /async function seedDashboardTimeSeriesData/);
   assert.match(seedSource, /seedMemberIdCounter = 1/);
-  assert.match(pageSource, /resetDemoData/);
-  assert.match(pageSource, /async function resetMockData/);
-  assert.match(pageSource, /<form action=\{resetMockData\}/);
-  assert.match(pageSource, /<ResetMockDataButton \/>/);
-  assert.match(resetButtonSource, /useFormStatus/);
-  assert.match(resetButtonSource, /pending/);
-  assert.match(resetButtonSource, /LoaderCircle/);
-  assert.match(resetButtonSource, /Resetting\.\.\./);
-  assert.match(resetButtonSource, /Reset mock data/);
+  assert.doesNotMatch(seedSource, /execFile/);
+  assert.doesNotMatch(seedSource, /python3/);
+  assert.doesNotMatch(pageSource, /resetFullDemoData/);
+  assert.doesNotMatch(pageSource, /resetMockData/);
+  assert.doesNotMatch(pageSource, /ResetMockDataButton/);
+  assert.doesNotMatch(pageSource, /Reset mock data/);
 });

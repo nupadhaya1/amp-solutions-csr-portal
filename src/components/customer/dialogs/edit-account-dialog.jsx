@@ -15,19 +15,19 @@ export function EditAccountDialog({ action, customer, onOpenChange, open }) {
         <div className="grid gap-4 sm:grid-cols-2">
           <Label>
             <span>First name</span>
-            <Input defaultValue={customer.firstName} name="firstName" />
+            <Input defaultValue={customer.firstName} name="firstName" required />
           </Label>
           <Label>
             <span>Last name</span>
-            <Input defaultValue={customer.lastName} name="lastName" />
+            <Input defaultValue={customer.lastName} name="lastName" required />
           </Label>
           <Label>
             <span>Email</span>
-            <Input defaultValue={customer.email} name="email" type="email" />
+            <Input defaultValue={customer.email} name="email" required type="email" />
           </Label>
           <Label>
             <span>Phone</span>
-            <Input defaultValue={customer.phone} name="phone" />
+            <Input defaultValue={customer.phone} minLength={7} name="phone" required />
           </Label>
         </div>
         <div className="flex justify-end">

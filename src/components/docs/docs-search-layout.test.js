@@ -72,6 +72,14 @@ test("docs search runs while typing with a debounce", () => {
   assert.match(workspaceSource, /searchRequestRef\.current !== requestId/);
 });
 
+test("docs search skips the next debounced effect after an explicit search", () => {
+  assert.match(workspaceSource, /skipNextQueryEffectRef/);
+  assert.match(workspaceSource, /skipNextQueryEffect = true/);
+  assert.match(workspaceSource, /skipNextQueryEffectRef\.current = skipNextQueryEffect/);
+  assert.match(workspaceSource, /if \(skipNextQueryEffectRef\.current\)/);
+  assert.match(workspaceSource, /skipNextQueryEffectRef\.current = false/);
+});
+
 test("docs article index renders as nested subtabs under the Docs sidebar item", () => {
   assert.match(shellSource, /docs-subtabs/);
   assert.match(shellSource, /activeDocSlug/);
@@ -133,7 +141,7 @@ test("CSR sidebar can collapse to an icon rail", () => {
   assert.match(shellSource, /lg:grid-cols-\[76px_1fr\]/);
   assert.match(shellSource, /lg:grid-cols-\[272px_1fr\]/);
   assert.match(shellSource, /title=\{item\.label\}/);
-  assert.match(shellSource, /mt-auto grid gap-2/);
+  assert.match(shellSource, /mt-auto flex items-center gap-2/);
   assert.match(shellSource, /aria-label="Open demo hub"/);
   assert.match(shellSource, /href="\/demo"/);
   assert.match(shellSource, /SquareArrowOutUpRight/);

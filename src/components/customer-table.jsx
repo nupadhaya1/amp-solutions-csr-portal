@@ -22,7 +22,6 @@ import {
   CreditCard,
   FilterX,
   Search,
-  SlidersHorizontal,
   UserRound,
   UsersRound,
 } from "lucide-react";
@@ -73,52 +72,6 @@ function HeaderButton({ header, children }) {
   );
 }
 
-function ColumnFilter({ column, placeholder }) {
-  if (!column?.getCanFilter()) return null;
-
-  return (
-    <input
-      aria-label={placeholder}
-      className="h-9 w-full min-w-0 rounded-lg border border-border bg-card px-3 text-sm font-medium normal-case tracking-normal text-foreground outline-none placeholder:text-muted focus:border-primary focus:ring-2 focus:ring-primary/10"
-      onChange={(event) => column.setFilterValue(event.target.value)}
-      placeholder={placeholder}
-      value={column.getFilterValue() ?? ""}
-    />
-  );
-}
-
-function AdvancedFilters({ open, onOpenChange, table }) {
-  return (
-    <div className="grid gap-3">
-      <button
-        aria-controls="advanced-customer-filters"
-        aria-expanded={open}
-        className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-semibold transition hover:border-primary hover:text-primary"
-        onClick={() => onOpenChange(!open)}
-        type="button"
-      >
-        <SlidersHorizontal size={16} aria-hidden="true" />
-        Advanced filters
-      </button>
-      {open ? (
-        <div
-          className="rounded-xl border border-border bg-surface p-3"
-          id="advanced-customer-filters"
-        >
-          <div className="grid gap-3 sm:grid-cols-2">
-            <ColumnFilter column={table.getColumn("fullName")} placeholder="Filter name or member ID" />
-            <ColumnFilter column={table.getColumn("contactSummary")} placeholder="Filter email or phone" />
-            <ColumnFilter column={table.getColumn("vehicleSummary")} placeholder="Filter vehicle or plate" />
-            <ColumnFilter column={table.getColumn("subscriptionSummary")} placeholder="Filter plan" />
-            <ColumnFilter column={table.getColumn("statusLabel")} placeholder="Filter status" />
-            <ColumnFilter column={table.getColumn("paymentLabel")} placeholder="Filter payment" />
-          </div>
-        </div>
-      ) : null}
-    </div>
-  );
-}
-
 function StatCard({ icon: Icon, label, tone, value }) {
   return (
     <article className="rounded-2xl border border-border bg-card p-3 shadow-sm shadow-slate-200/70">
@@ -162,8 +115,6 @@ function Pill({ children, tone = "success" }) {
 
 export function CustomerTable({ rows, summary, filters }) {
   const [sorting, setSorting] = useState([{ id: "statusLabel", desc: false }]);
-  const [advancedFiltersOpen, setAdvancedFiltersOpen] = useState(false);
-  const [columnFilters, setColumnFilters] = useState([]);
   const [globalFilter, setGlobalFilter] = useState(filters.q || "");
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
   const currentSearch = String(globalFilter || "").trim();
@@ -273,17 +224,10 @@ export function CustomerTable({ rows, summary, filters }) {
     columns,
     state: {
       sorting,
-      columnFilters,
       globalFilter,
       pagination,
     },
     onSortingChange: setSorting,
-    onColumnFiltersChange: (updater) => {
-      setColumnFilters((current) =>
-        typeof updater === "function" ? updater(current) : updater,
-      );
-      setPagination((current) => ({ ...current, pageIndex: 0 }));
-    },
     onGlobalFilterChange: setGlobalFilter,
     onPaginationChange: setPagination,
     globalFilterFn: (row, _columnId, value) => {
@@ -323,8 +267,8 @@ export function CustomerTable({ rows, summary, filters }) {
   const filteredRows = table.getFilteredRowModel().rows;
 
   return (
-    <section className="grid min-h-0 gap-4">
-      <div className="rounded-2xl border border-border bg-card p-4 shadow-sm shadow-slate-200/70">
+    <section className="flex min-h-0 flex-1 flex-col gap-4">
+      <div className="shrink-0 rounded-2xl border border-border bg-card p-4 shadow-sm shadow-slate-200/70">
         <div className="flex flex-col gap-3 lg:flex-row lg:items-end lg:justify-between">
           <div className="min-w-0">
             <p className="text-xs font-semibold uppercase tracking-wide text-muted">Current search</p>
@@ -343,7 +287,7 @@ export function CustomerTable({ rows, summary, filters }) {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-border bg-card p-4 shadow-sm shadow-slate-200/70">
+      <div className="shrink-0 rounded-2xl border border-border bg-card p-4 shadow-sm shadow-slate-200/70">
         <div className="grid gap-3">
           <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
             <label className="flex min-h-12 min-w-0 flex-1 items-center gap-3 rounded-xl border border-border bg-surface px-4 focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10">
@@ -359,19 +303,12 @@ export function CustomerTable({ rows, summary, filters }) {
                 value={globalFilter ?? ""}
               />
             </label>
-            <AdvancedFilters
-              onOpenChange={setAdvancedFiltersOpen}
-              open={advancedFiltersOpen}
-              table={table}
-            />
             <button
               aria-label="Clear search"
-              className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-semibold transition hover:border-primary hover:text-primary"
+              className="inline-flex min-h-12 w-fit shrink-0 items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-semibold transition hover:border-primary hover:text-primary"
               onClick={() => {
                 clearRememberedCustomerSearch();
-                setAdvancedFiltersOpen(false);
                 setGlobalFilter("");
-                setColumnFilters([]);
                 table.setPageIndex(0);
               }}
               type="button"
@@ -383,8 +320,8 @@ export function CustomerTable({ rows, summary, filters }) {
         </div>
       </div>
 
-      <section className="min-h-0 overflow-hidden rounded-2xl border border-border bg-card shadow-sm shadow-slate-200/70">
-        <div className="overflow-x-auto">
+      <section className="grid min-h-0 flex-1 grid-rows-[minmax(0,1fr)_auto] overflow-hidden rounded-2xl border border-border bg-card shadow-sm shadow-slate-200/70">
+        <div className="min-h-0 overflow-auto">
           <table className="w-full min-w-[1100px] text-left text-sm">
             <thead className="border-b border-border bg-surface text-xs uppercase tracking-wide text-muted">
               {table.getHeaderGroups().map((headerGroup) => (

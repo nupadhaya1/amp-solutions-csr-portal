@@ -17,19 +17,19 @@ export function UpdatePaymentDialog({ action, billing, customerId, onOpenChange,
           <div className="grid gap-4 sm:grid-cols-2">
             <Label>
               <span>Card brand</span>
-              <Input defaultValue={billing.paymentMethod.brand} name="brand" placeholder="Visa" />
+              <Input defaultValue={billing.paymentMethod.brand} name="brand" placeholder="Visa" required />
             </Label>
             <Label>
               <span>Last four</span>
-              <Input defaultValue={billing.paymentMethod.last4} inputMode="numeric" maxLength={4} name="last4" placeholder="4242" />
+              <Input defaultValue={billing.paymentMethod.last4} inputMode="numeric" maxLength={4} name="last4" pattern="[0-9]{4}" placeholder="4242" required />
             </Label>
             <Label>
               <span>Expiration</span>
-              <Input defaultValue={billing.paymentMethod.expiry} name="expiry" placeholder="09/27" />
+              <Input defaultValue={billing.paymentMethod.expiry} name="expiry" placeholder="09/27" required />
             </Label>
             <Label>
               <span>Billing ZIP</span>
-              <Input inputMode="numeric" maxLength={5} name="postalCode" placeholder="30328" />
+              <Input inputMode="numeric" maxLength={5} name="postalCode" pattern="[0-9]{5}" placeholder="30328" required />
             </Label>
           </div>
           <div className="flex justify-end">

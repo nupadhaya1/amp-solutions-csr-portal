@@ -6,7 +6,7 @@ import { pathToFileURL } from "node:url";
 const prisma = new PrismaClient();
 
 const CSR_ACTOR = {
-  actorName: "Bob Roberts",
+  actorName: "Nikhil Upadhaya",
   actorType: "CSR",
 };
 
@@ -24,6 +24,46 @@ const HOME_WASH_LOCATIONS = [
   "AMP Decatur",
   "AMP Alpharetta",
 ];
+const DASHBOARD_MEMBER_ID_OFFSET = 2000;
+const DASHBOARD_FIRST_NAMES = [
+  "Avery",
+  "Jordan",
+  "Taylor",
+  "Morgan",
+  "Riley",
+  "Casey",
+  "Quinn",
+  "Parker",
+  "Jamie",
+  "Reese",
+  "Cameron",
+  "Drew",
+];
+const DASHBOARD_LAST_NAMES = [
+  "Adams",
+  "Brooks",
+  "Carter",
+  "Diaz",
+  "Evans",
+  "Foster",
+  "Garcia",
+  "Hayes",
+  "Irwin",
+  "Jones",
+  "Kim",
+  "Lewis",
+];
+const DASHBOARD_VEHICLES = [
+  ["Honda", "Civic"],
+  ["Toyota", "Camry"],
+  ["Ford", "Escape"],
+  ["Nissan", "Altima"],
+  ["Jeep", "Cherokee"],
+  ["Hyundai", "Tucson"],
+  ["Kia", "Telluride"],
+  ["Subaru", "Outback"],
+];
+const DASHBOARD_COLORS = ["Blue", "Black", "White", "Silver", "Gray", "Red"];
 
 let seedMemberIdCounter = 1;
 
@@ -1081,10 +1121,306 @@ export async function resetDemoData() {
   await seedFaqArticles();
 }
 
+function createSeededRandom(seed = 42) {
+  let value = seed;
+  return () => {
+    value = (value * 1664525 + 1013904223) % 4294967296;
+    return value / 4294967296;
+  };
+}
+
+function pick(items, random) {
+  return items[Math.floor(random() * items.length)];
+}
+
+function dashboardMemberId(index) {
+  return `AMP-${DASHBOARD_MEMBER_ID_OFFSET + index}`;
+}
+
+function dashboardEmail(firstName, lastName, index) {
+  const clean = (value) => value.toLowerCase().replace(/[^a-z0-9]+/g, "") || "customer";
+  return `${clean(firstName)}.${clean(lastName)}${DASHBOARD_MEMBER_ID_OFFSET + index}@example.com`;
+}
+
+function monthStart(monthsAgo, now = new Date()) {
+  return new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - monthsAgo, 1, 12));
+}
+
+function addDays(value, days) {
+  const next = new Date(value);
+  next.setUTCDate(next.getUTCDate() + days);
+  return next;
+}
+
+function randomDateInMonth(start, random) {
+  const value = addDays(start, Math.floor(random() * 26));
+  value.setUTCHours(12 + Math.floor(random() * 8), 0, 0, 0);
+  return value;
+}
+
+async function createDashboardCustomer({
+  customerIndex,
+  createdAt,
+  isFixed = false,
+  isIssue = false,
+  plan,
+  random,
+}) {
+  const firstName = pick(DASHBOARD_FIRST_NAMES, random);
+  const lastName = pick(DASHBOARD_LAST_NAMES, random);
+  const [make, model] = pick(DASHBOARD_VEHICLES, random);
+  const issuePrefix = isIssue ? "FIX" : "DSH";
+  const licensePlate = `${issuePrefix}${String(customerIndex).padStart(4, "0")}`.slice(-7);
+  const status = isIssue && !isFixed ? "OVERDUE" : "ACTIVE";
+  const customer = await prisma.customer.create({
+    data: {
+      memberId: dashboardMemberId(customerIndex),
+      firstName,
+      lastName,
+      email: dashboardEmail(firstName, lastName, customerIndex),
+      phone: `${isIssue ? "470" : "404"}-555-${String(1000 + customerIndex).padStart(4, "0")}`,
+      status,
+      homeWashLocation: HOME_WASH_LOCATIONS[customerIndex % HOME_WASH_LOCATIONS.length],
+      createdAt,
+      updatedAt: createdAt,
+    },
+  });
+  const vehicle = await prisma.vehicle.create({
+    data: {
+      customerId: customer.id,
+      year: 2017 + Math.floor(random() * 10),
+      make,
+      model,
+      color: pick(DASHBOARD_COLORS, random),
+      licensePlate,
+      createdAt,
+      updatedAt: createdAt,
+    },
+  });
+  const subscription = await prisma.subscription.create({
+    data: {
+      customerId: customer.id,
+      planId: plan.id,
+      status,
+      startedAt: createdAt,
+      nextBillingDate: addDays(createdAt, 30),
+      createdAt,
+      updatedAt: createdAt,
+    },
+  });
+
+  await prisma.subscriptionVehicle.create({
+    data: {
+      subscriptionId: subscription.id,
+      vehicleId: vehicle.id,
+      assignedAt: createdAt,
+    },
+  });
+
+  return { customer, licensePlate, subscription, vehicle };
+}
+
+async function createDashboardIssueEvents({
+  amount,
+  createdAt,
+  customer,
+  isFixed,
+  licensePlate,
+  random,
+  subscription,
+  vehicle,
+}) {
+  await prisma.purchase.create({
+    data: {
+      customerId: customer.id,
+      vehicleId: vehicle.id,
+      subscriptionId: subscription.id,
+      type: "MEMBERSHIP_PAYMENT",
+      status: "FAILED",
+      amount,
+      description: "Monthly membership payment failed.",
+      purchasedAt: createdAt,
+      createdAt,
+      updatedAt: createdAt,
+    },
+  });
+  await prisma.auditEvent.createMany({
+    data: [
+      {
+        customerId: customer.id,
+        type: "PAYMENT_FAILED",
+        message: "Membership payment failed.",
+        metadata: { amount: String(amount), rootCause: "FAILED_MEMBERSHIP_PAYMENT" },
+        ...SYSTEM_ACTOR,
+        createdAt,
+      },
+      {
+        customerId: customer.id,
+        type: "SUBSCRIPTION_OVERDUE",
+        message: "Subscription marked overdue after failed membership payment.",
+        metadata: { licensePlate },
+        ...SYSTEM_ACTOR,
+        createdAt: new Date(createdAt.getTime() + 60 * 60 * 1000),
+      },
+    ],
+  });
+
+  if (!isFixed) return;
+
+  const fixedAt = addDays(createdAt, 1 + Math.floor(random() * 5));
+  await prisma.purchase.create({
+    data: {
+      customerId: customer.id,
+      vehicleId: vehicle.id,
+      subscriptionId: subscription.id,
+      type: "MEMBERSHIP_PAYMENT",
+      status: "PAID",
+      amount,
+      description: "Recovered membership payment after CSR payment update.",
+      purchasedAt: fixedAt,
+      createdAt: fixedAt,
+      updatedAt: fixedAt,
+    },
+  });
+  await prisma.auditEvent.create({
+    data: {
+      customerId: customer.id,
+      type: "ACCOUNT_UPDATED",
+      message: "Payment method updated and failed membership payment retried.",
+      metadata: {
+        paymentMethod: {
+          brand: pick(["Visa", "Mastercard", "Amex"], random),
+          last4: String(1000 + Math.floor(random() * 9000)),
+          expiry: "12/29",
+        },
+        resolvedPayments: 1,
+        recoveredRevenue: String(amount),
+      },
+      ...CSR_ACTOR,
+      createdAt: fixedAt,
+    },
+  });
+}
+
+async function seedDashboardTimeSeriesData() {
+  const random = createSeededRandom();
+  const plans = await prisma.subscriptionPlan.findMany({ orderBy: { monthlyPrice: "asc" } });
+  let customerIndex = 0;
+
+  for (const month of Array.from({ length: 12 }, (_item, index) => monthStart(11 - index))) {
+    const monthNumber = month.getUTCMonth() + 1;
+    const customerCount = 28 + monthNumber + Math.floor(random() * 4);
+    const issueCount = 5 + Math.floor(random() * 5);
+    const fixCount = Math.max(2, Math.floor(issueCount * (0.5 + random() * 0.35)));
+
+    for (let index = 0; index < customerCount; index += 1) {
+      customerIndex += 1;
+      const plan = pick(plans, random);
+      const createdAt = randomDateInMonth(month, random);
+      const isUnresolvedIssue = random() < 0.12;
+      const record = await createDashboardCustomer({
+        customerIndex,
+        createdAt,
+        isFixed: !isUnresolvedIssue,
+        isIssue: isUnresolvedIssue,
+        plan,
+        random,
+      });
+      let paymentDate = new Date(createdAt);
+      const paymentRows = [];
+
+      while (paymentDate < new Date()) {
+        paymentRows.push({
+          customerId: record.customer.id,
+          vehicleId: record.vehicle.id,
+          subscriptionId: record.subscription.id,
+          type: "MEMBERSHIP_PAYMENT",
+          status: "PAID",
+          amount: plan.monthlyPrice,
+          description: `${plan.name} monthly membership payment.`,
+          purchasedAt: paymentDate,
+          createdAt: paymentDate,
+          updatedAt: paymentDate,
+        });
+        paymentDate = addDays(paymentDate, 30);
+      }
+
+      if (paymentRows.length > 0) {
+        await prisma.purchase.createMany({ data: paymentRows });
+      }
+
+      if (isUnresolvedIssue) {
+        await createDashboardIssueEvents({
+          amount: plan.monthlyPrice,
+          createdAt: randomDateInMonth(month, random),
+          isFixed: false,
+          random,
+          ...record,
+        });
+      }
+    }
+
+    for (let index = 0; index < issueCount; index += 1) {
+      customerIndex += 1;
+      const plan = pick(plans, random);
+      const createdAt = randomDateInMonth(month, random);
+      const isFixed = index < fixCount;
+      const record = await createDashboardCustomer({
+        customerIndex,
+        createdAt,
+        isFixed,
+        isIssue: true,
+        plan,
+        random,
+      });
+      await createDashboardIssueEvents({
+        amount: plan.monthlyPrice,
+        createdAt,
+        isFixed,
+        random,
+        ...record,
+      });
+    }
+  }
+
+  for (let offset = 29; offset >= 0; offset -= 1) {
+    customerIndex += 1;
+    const createdAt = addDays(new Date(), -offset);
+    createdAt.setUTCHours(12, 0, 0, 0);
+    const plan = pick(plans, random);
+    const isFixed = offset % 3 !== 0;
+    const record = await createDashboardCustomer({
+      customerIndex,
+      createdAt,
+      isFixed,
+      isIssue: true,
+      plan,
+      random,
+    });
+    await createDashboardIssueEvents({
+      amount: plan.monthlyPrice,
+      createdAt,
+      isFixed,
+      random,
+      ...record,
+    });
+  }
+}
+
+export async function resetFullDemoData() {
+  await resetDemoData();
+  await seedDashboardTimeSeriesData();
+}
+
+export async function resetLaneContextData() {
+  await prisma.laneSession.deleteMany();
+  await seedLaneSessions();
+}
+
 const isSeedCli = process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href;
 
 if (isSeedCli) {
-  resetDemoData()
+  resetFullDemoData()
     .then(async () => {
       await prisma.$disconnect();
     })

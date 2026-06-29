@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useFormStatus } from "react-dom";
 import {
   AlertTriangle,
   ArrowRight,
@@ -66,6 +67,21 @@ function SummaryCard({ icon: Icon, label, tone, value }) {
         </div>
       </div>
     </article>
+  );
+}
+
+function ResetLaneDataButton() {
+  const { pending } = useFormStatus();
+
+  return (
+    <button
+      className="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-border bg-card px-4 text-sm font-semibold transition hover:border-primary hover:text-primary disabled:cursor-wait disabled:opacity-70"
+      disabled={pending}
+      type="submit"
+    >
+      {pending ? <LoaderCircle className="animate-spin" size={16} aria-hidden="true" /> : null}
+      {pending ? "Resetting lane data..." : "Reset lane data"}
+    </button>
   );
 }
 
@@ -217,6 +233,8 @@ export function LaneContextWorkspace({
   initialCustomerId = "",
   initialFilter = "all",
   initialPlate = "",
+  resetComplete = false,
+  resetLaneContextAction,
   sessions = [],
 }) {
   const scopedSessions = useMemo(
@@ -272,29 +290,41 @@ export function LaneContextWorkspace({
                 : "Operational view of vehicles currently moving through AMP wash lanes."}
             </p>
           </div>
-          <label className="flex min-h-11 min-w-0 items-center gap-2 rounded-xl border border-border bg-surface px-3 focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10">
-            <Search size={17} className="text-muted" aria-hidden="true" />
-            <input
-              className="min-w-0 bg-transparent text-sm font-medium outline-none placeholder:text-muted"
-              onChange={(event) => setPlateInput(event.target.value)}
-              placeholder="Search detected plate"
-              value={plateInput}
-            />
-            {isFiltering ? (
-              <LoaderCircle className="shrink-0 animate-spin text-muted" size={16} aria-hidden="true" />
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+            {resetLaneContextAction ? (
+              <form action={resetLaneContextAction}>
+                <ResetLaneDataButton />
+              </form>
             ) : null}
-            {plateInput ? (
-              <button
-                aria-label="Clear detected plate search"
-                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-muted transition hover:bg-card hover:text-foreground"
-                onClick={clearSearch}
-                type="button"
-              >
-                <X size={16} aria-hidden="true" />
-              </button>
-            ) : null}
-          </label>
+            <label className="flex min-h-11 min-w-0 items-center gap-2 rounded-xl border border-border bg-surface px-3 focus-within:border-primary focus-within:ring-4 focus-within:ring-primary/10">
+              <Search size={17} className="text-muted" aria-hidden="true" />
+              <input
+                className="min-w-0 bg-transparent text-sm font-medium outline-none placeholder:text-muted"
+                onChange={(event) => setPlateInput(event.target.value)}
+                placeholder="Search detected plate"
+                value={plateInput}
+              />
+              {isFiltering ? (
+                <LoaderCircle className="shrink-0 animate-spin text-muted" size={16} aria-hidden="true" />
+              ) : null}
+              {plateInput ? (
+                <button
+                  aria-label="Clear detected plate search"
+                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-muted transition hover:bg-card hover:text-foreground"
+                  onClick={clearSearch}
+                  type="button"
+                >
+                  <X size={16} aria-hidden="true" />
+                </button>
+              ) : null}
+            </label>
+          </div>
         </div>
+        {resetComplete ? (
+          <p className="mt-3 rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm font-semibold text-emerald-800">
+            Lane context data reset to the seeded demo state.
+          </p>
+        ) : null}
       </section>
 
       <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">

@@ -3,33 +3,35 @@
 import { DialogShell } from "../customer-ui.jsx";
 import { PlanChangeControl } from "@/components/plan-change-control";
 
-export function ChangePlanDialog({
+export function StartMembershipDialog({
   action,
+  customerId,
   onOpenChange,
   open,
   plans,
   subscription,
-  customerId,
 }) {
   return (
     <DialogShell
-      description="Select a replacement membership plan for the currently selected subscription."
+      description="Select the membership plan to restart for this customer."
       onOpenChange={onOpenChange}
       open={open}
-      title="Change plan"
+      title="Start membership"
       widthClass="sm:max-w-2xl"
     >
       {subscription ? (
         <PlanChangeControl
           action={action}
+          alwaysShowSubmit
           customerId={customerId}
-          coveredVehicles={subscription.coveredVehicles}
           plans={plans}
+          submitLabel="Start membership"
           subscriptionId={subscription.id}
           subscriptionPlanId={subscription.planId}
+          title="Membership plan"
         />
       ) : (
-        <p className="text-sm text-muted">No active or overdue subscription is available for a plan change.</p>
+        <p className="text-sm text-muted">No cancelled membership is available to restart.</p>
       )}
     </DialogShell>
   );

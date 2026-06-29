@@ -4,8 +4,10 @@ import { notFound, redirect } from "next/navigation";
 import { CustomerDashboardLayout } from "@/components/customer/customer-dashboard-layout.jsx";
 import {
   addCustomerVehicle,
+  assignVehicleToSubscription,
   cancelCustomerSubscription,
   changeSubscriptionPlan,
+  startCustomerMembership,
   transferSubscriptionVehicle,
   updateCustomerAccount,
 } from "@/lib/data/customer-actions";
@@ -15,7 +17,7 @@ import { createCustomerDashboardViewModel } from "@/lib/domain/customer-dashboar
 import { prisma } from "@/lib/prisma";
 import { supportNoteSchema } from "@/lib/validation/support-note";
 
-const CSR_NAME = "Bob Roberts";
+const CSR_NAME = "Nikhil Upadhaya";
 
 async function addSupportNote(formData) {
   "use server";
@@ -273,6 +275,32 @@ async function cancelSubscription(formData) {
   redirect(`/csr/customers/${customerId}?action=subscription-cancelled`);
 }
 
+async function startMembership(formData) {
+  "use server";
+
+  const customerId = String(formData.get("customerId") || "");
+  const subscriptionId = String(formData.get("subscriptionId") || "");
+
+  try {
+    await startCustomerMembership({
+      prismaClient: prisma,
+      customerId,
+      subscriptionId,
+      actorName: CSR_NAME,
+      input: {
+        planId: String(formData.get("planId") || ""),
+        keepVehicleIds: formData.getAll("keepVehicleIds").map((value) => String(value)),
+      },
+    });
+  } catch {
+    redirect(`/csr/customers/${customerId}?action=invalid-start`);
+  }
+
+  revalidatePath(`/csr/customers/${customerId}`);
+  revalidatePath("/csr/lane-context");
+  redirect(`/csr/customers/${customerId}?action=membership-started`);
+}
+
 async function transferVehicleCoverage(formData) {
   "use server";
 
@@ -296,6 +324,31 @@ async function transferVehicleCoverage(formData) {
 
   revalidatePath(`/csr/customers/${customerId}`);
   redirect(`/csr/customers/${customerId}?action=subscription-transferred`);
+}
+
+async function assignVehicleToPlan(formData) {
+  "use server";
+
+  const customerId = String(formData.get("customerId") || "");
+  const subscriptionId = String(formData.get("subscriptionId") || "");
+
+  try {
+    await assignVehicleToSubscription({
+      prismaClient: prisma,
+      customerId,
+      subscriptionId,
+      actorName: CSR_NAME,
+      input: {
+        vehicleId: String(formData.get("vehicleId") || ""),
+      },
+    });
+  } catch {
+    redirect(`/csr/customers/${customerId}?action=invalid-assignment`);
+  }
+
+  revalidatePath(`/csr/customers/${customerId}`);
+  revalidatePath("/csr/lane-context");
+  redirect(`/csr/customers/${customerId}?action=vehicle-assigned`);
 }
 
 async function changePlan(formData) {
@@ -345,6 +398,7 @@ export default async function CustomerProfilePage({ params, searchParams }) {
     <CustomerDashboardLayout
       addSupportNoteAction={addSupportNote}
       addVehicleAction={addVehicle}
+      assignVehicleAction={assignVehicleToPlan}
       backHref={backHref}
       cancelSubscriptionAction={cancelSubscription}
       changePlanAction={changePlan}
@@ -357,8 +411,10 @@ export default async function CustomerProfilePage({ params, searchParams }) {
         id: plan.id,
         name: plan.name,
         monthlyPrice: plan.monthlyPrice.toString(),
+        maxVehicles: plan.maxVehicles,
       }))}
       retryFailedChargeAction={retryFailedCharge}
+      startMembershipAction={startMembership}
       transferVehicleAction={transferVehicleCoverage}
       updateAccountAction={updateAccount}
       updatePaymentAction={updatePaymentMethod}

@@ -11,6 +11,9 @@ export function TransferVehicleDialog({
   subscription,
   vehicles,
 }) {
+  const coveredVehicleIds = new Set(subscription?.coveredVehicles.map((vehicle) => vehicle.id) || []);
+  const uncoveredVehicles = vehicles.filter((vehicle) => !coveredVehicleIds.has(vehicle.id));
+
   return (
     <DialogShell
       description="Transfer subscription coverage between vehicles on the same customer account."
@@ -19,20 +22,20 @@ export function TransferVehicleDialog({
       title="Transfer vehicle"
       widthClass="sm:max-w-3xl"
     >
-      {subscription && subscription.coveredVehicles.length > 0 ? (
+      {subscription && subscription.coveredVehicles.length > 0 && uncoveredVehicles.length > 0 ? (
         <VehicleTransferControl
           action={action}
           coveredVehicles={subscription.coveredVehicles}
           customerId={customerId}
           subscriptionId={subscription.id}
-          vehicles={vehicles.map((vehicle) => ({
+          vehicles={uncoveredVehicles.map((vehicle) => ({
             id: vehicle.id,
             label: vehicle.label,
             licensePlate: vehicle.licensePlate,
           }))}
         />
       ) : (
-        <p className="text-sm text-muted">No subscription coverage is available to transfer.</p>
+        <p className="text-sm text-muted">Transfer requires one covered vehicle and one uncovered vehicle on this account.</p>
       )}
     </DialogShell>
   );
