@@ -1,8 +1,9 @@
 # AMP CSR Command Center
 
-> **Deployed URL:** https://amp-csr-portal.nupadhaya.com  
-> **Presentation:** https://amp-csr-portal.nupadhaya.com/demo/presentation  
-> **System Design:** https://amp-csr-portal.nupadhaya.com/demo/systemDesign  
+> **Deployed URL:** https://amp-csr-portal.nupadhaya.com
+> **Demo Hub:** https://amp-csr-portal.nupadhaya.com/demo
+> **Presentation:** https://amp-csr-portal.nupadhaya.com/demo/presentation
+> **System Design:** https://amp-csr-portal.nupadhaya.com/demo/systemDesign
 > **GitHub:** https://github.com/nupadhaya1/amp-solutions-csr-portal
 
 A full-stack customer service representative portal for AMP car wash memberships. The app helps a CSR quickly find a customer, understand their account/payment/vehicle/lane context, resolve common membership issues, and leave an audit trail.

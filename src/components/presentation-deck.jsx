@@ -18,6 +18,7 @@ import {
   Sparkles,
   Workflow,
 } from "lucide-react";
+import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
@@ -36,12 +37,279 @@ const requirements = [
   "Helpful extras: lane context, docs search, recommended next steps",
 ];
 
-const tradeoffs = [
-  "Mock CSR identity instead of real auth",
-  "No real payment processor",
-  "Seeded lane context rather than real gate/kiosk integration",
-  "Mobile app is a demo companion",
-  "Dashboard data is seeded",
+const prismaSchema = `generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
+}
+
+enum CustomerStatus {
+  ACTIVE
+  OVERDUE
+  CANCELLED
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  OVERDUE
+  CANCELLED
+  PAUSED
+}
+
+enum PurchaseType {
+  SINGLE_WASH
+  MEMBERSHIP_PAYMENT
+  COUPON_REDEMPTION
+}
+
+enum PurchaseStatus {
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum AuditEventType {
+  ACCOUNT_UPDATED
+  VEHICLE_ADDED
+  VEHICLE_UPDATED
+  SUBSCRIPTION_ADDED
+  SUBSCRIPTION_CANCELLED
+  SUBSCRIPTION_TRANSFERRED
+  SUBSCRIPTION_PLAN_CHANGED
+  SUPPORT_NOTE_ADDED
+  PAYMENT_FAILED
+  SUBSCRIPTION_OVERDUE
+}
+
+enum ActorType {
+  CSR
+  SYSTEM
+}
+
+model Customer {
+  id            String         @id @default(cuid())
+  memberId      String         @unique
+  firstName     String
+  lastName      String
+  email         String         @unique
+  phone         String
+  status        CustomerStatus @default(ACTIVE)
+  homeWashLocation String      @default("AMP Buckhead")
+  vehicles      Vehicle[]
+  subscriptions Subscription[]
+  purchases     Purchase[]
+  supportNotes  SupportNote[]
+  auditEvents   AuditEvent[]
+  laneSessions  LaneSession[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model Vehicle {
+  id                   String                @id @default(cuid())
+  customerId           String
+  year                 Int
+  make                 String
+  model                String
+  color                String
+  licensePlate         String                @unique
+  customer             Customer              @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  subscriptionVehicles SubscriptionVehicle[]
+  purchases            Purchase[]
+  laneSessions         LaneSession[]
+  createdAt            DateTime              @default(now())
+  updatedAt            DateTime              @updatedAt
+
+  @@index([customerId])
+  @@index([licensePlate])
+}
+
+model SubscriptionPlan {
+  id            String         @id @default(cuid())
+  name          String         @unique
+  description   String
+  monthlyPrice  Decimal
+  maxVehicles   Int
+  cleaningTier  String
+  subscriptions Subscription[]
+  createdAt     DateTime       @default(now())
+  updatedAt     DateTime       @updatedAt
+}
+
+model Subscription {
+  id              String                @id @default(cuid())
+  customerId      String
+  planId          String
+  status          SubscriptionStatus    @default(ACTIVE)
+  startedAt       DateTime
+  nextBillingDate DateTime?
+  customer        Customer              @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  plan            SubscriptionPlan      @relation(fields: [planId], references: [id])
+  vehicles        SubscriptionVehicle[]
+  purchases       Purchase[]
+  createdAt       DateTime              @default(now())
+  updatedAt       DateTime              @updatedAt
+
+  @@index([customerId])
+  @@index([planId])
+  @@index([status])
+}
+
+model SubscriptionVehicle {
+  id             String       @id @default(cuid())
+  subscriptionId String
+  vehicleId      String
+  subscription   Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  vehicle        Vehicle      @relation(fields: [vehicleId], references: [id], onDelete: Cascade)
+  assignedAt     DateTime     @default(now())
+  removedAt      DateTime?
+
+  @@index([subscriptionId])
+  @@index([vehicleId])
+}
+
+model Purchase {
+  id             String         @id @default(cuid())
+  customerId     String
+  vehicleId      String?
+  subscriptionId String?
+  type           PurchaseType
+  status         PurchaseStatus
+  amount         Decimal
+  description    String
+  purchasedAt    DateTime
+  customer       Customer       @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  vehicle        Vehicle?       @relation(fields: [vehicleId], references: [id])
+  subscription   Subscription?  @relation(fields: [subscriptionId], references: [id])
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+
+  @@index([customerId])
+  @@index([vehicleId])
+  @@index([subscriptionId])
+  @@index([status])
+  @@index([type])
+}
+
+model SupportNote {
+  id         String   @id @default(cuid())
+  customerId String
+  note       String
+  csrName    String
+  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  createdAt  DateTime @default(now())
+
+  @@index([customerId])
+}
+
+model AuditEvent {
+  id         String         @id @default(cuid())
+  customerId String
+  type       AuditEventType
+  message    String
+  metadata   Json?
+  actorName  String
+  actorType  ActorType
+  customer   Customer       @relation(fields: [customerId], references: [id], onDelete: Cascade)
+  createdAt  DateTime       @default(now())
+
+  @@index([customerId])
+  @@index([type])
+}
+
+model LaneSession {
+  id            String    @id @default(cuid())
+  customerId    String?
+  vehicleId     String?
+  locationName  String
+  laneName      String
+  status        String
+  detectedPlate String
+  detectedAt    DateTime
+  confidence    Float?
+  issueCode     String    @default("NONE")
+  issueSeverity String    @default("NONE")
+  resolvedAt    DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  customer      Customer? @relation(fields: [customerId], references: [id])
+  vehicle       Vehicle?  @relation(fields: [vehicleId], references: [id])
+
+  @@index([customerId])
+  @@index([vehicleId])
+  @@index([status])
+  @@index([issueCode])
+  @@index([detectedPlate])
+}
+
+model FaqArticle {
+  id        String   @id @default(cuid())
+  title     String
+  question  String
+  answer    String
+  category  String
+  keywords  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([category])
+}
+
+model SupportDoc {
+  id              String            @id @default(cuid())
+  slug            String            @unique
+  title           String
+  category        String
+  severity        String
+  tags            String            @default("[]")
+  customerPhrases String            @default("[]")
+  summary         String
+  body            String
+  source          String            @default("docs/csr")
+  version         Int               @default(1)
+  isPublished     Boolean           @default(true)
+  chunks          SupportDocChunk[]
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+
+  @@index([category])
+  @@index([severity])
+  @@index([isPublished])
+}
+
+model SupportDocChunk {
+  id         String     @id @default(cuid())
+  docId      String
+  chunkIndex Int
+  heading    String
+  content    String
+  tokenCount Int        @default(0)
+  doc        SupportDoc @relation(fields: [docId], references: [id], onDelete: Cascade)
+  createdAt  DateTime   @default(now())
+
+  @@unique([docId, chunkIndex])
+  @@index([docId])
+}`;
+
+const awsServices = [
+  ["Route 53", "DNS", "/aws-icons/route-53.svg"],
+  ["CloudFront", "CDN edge", "/aws-icons/cloudfront.svg"],
+  ["AWS WAF", "Edge protection", "/aws-icons/waf.svg"],
+  ["Application Load Balancer", "Ingress", "/aws-icons/application-load-balancer.svg"],
+  ["Amazon ECS", "Orchestration", "/aws-icons/ecs.svg"],
+  ["AWS Fargate", "Serverless compute", "/aws-icons/fargate.svg"],
+  ["Amazon ECR", "Image registry", "/aws-icons/ecr.svg"],
+  ["Amazon RDS PostgreSQL", "Relational data", "/aws-icons/rds.svg"],
+  ["Amazon ElastiCache", "Redis cache", "/aws-icons/elasticache.svg"],
+  ["AWS Secrets Manager", "Runtime secrets", "/aws-icons/secrets-manager.svg"],
+  ["Amazon CloudWatch", "Logs and metrics", "/aws-icons/cloudwatch.svg"],
+  ["VPC", "Private network", "/aws-icons/vpc.svg"],
+  ["IAM", "Access control", "/aws-icons/iam.svg"],
 ];
 
 function cn(...classes) {
@@ -107,11 +375,11 @@ function MockPhone({ children, label = "Customer mobile view" }) {
 
 function FlowStep({ icon: Icon, label }) {
   return (
-    <div className="flex min-h-24 flex-1 items-center gap-4 rounded-2xl border border-border bg-card p-5 shadow-sm shadow-slate-200/70">
+    <div className="flex min-h-28 min-w-0 flex-1 flex-col items-start justify-between gap-3 rounded-2xl border border-border bg-card p-4 shadow-sm shadow-slate-200/70">
       <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-surface-muted text-primary">
         <Icon size={22} aria-hidden="true" />
       </span>
-      <span className="text-lg font-semibold leading-6">{label}</span>
+      <span className="min-w-0 text-base font-semibold leading-6">{label}</span>
     </div>
   );
 }
@@ -127,12 +395,15 @@ function ProblemFlow() {
 
   return (
     <div className="rounded-3xl border border-border bg-card p-6 shadow-sm shadow-slate-200/70">
-      <div className="grid items-center gap-4 xl:grid-cols-[1fr_auto_1fr_auto_1fr_auto_1fr_auto_1fr]">
+      <div className="grid min-w-0 items-stretch gap-3 lg:grid-cols-[1fr_auto_1fr_auto_1fr_auto_1fr_auto_1fr]">
         {steps.map((step, index) => (
           <div className="contents" key={step.label}>
-            <FlowStep {...step} />
+            <div className="min-w-0">
+              <p className="mb-2 text-sm font-semibold text-primary">{index + 1}</p>
+              <FlowStep {...step} />
+            </div>
             {index < steps.length - 1 ? (
-              <ArrowRight className="mx-auto hidden text-primary xl:block" size={30} aria-hidden="true" />
+              <ArrowRight className="mx-auto hidden self-center text-primary lg:block" size={24} aria-hidden="true" />
             ) : null}
           </div>
         ))}
@@ -143,17 +414,15 @@ function ProblemFlow() {
 
 function ScenarioFlowPanel({ headline, steps }) {
   return (
-    <div className="rounded-3xl border border-border bg-card p-6 shadow-sm shadow-slate-200/70">
-      <h2 className="text-2xl font-semibold tracking-tight">{headline}</h2>
-      <div className="mt-6 grid gap-3">
+    <div className="flex min-h-0 flex-1 flex-col rounded-3xl border border-border bg-card p-5 shadow-sm shadow-slate-200/70">
+      <h2 className="text-xl font-semibold tracking-tight">{headline}</h2>
+      <div className="mt-4 grid min-h-0 flex-1 auto-rows-fr gap-3 lg:grid-cols-4">
         {steps.map((step, index) => (
-          <div className="grid grid-cols-[42px_minmax(0,1fr)] gap-3" key={step}>
-            <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-primary text-sm font-semibold text-primary-foreground">
+          <div className="flex min-h-32 flex-col justify-between rounded-2xl border border-border bg-surface p-4" key={step}>
+            <span className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary text-sm font-semibold text-primary-foreground">
               {index + 1}
             </span>
-            <div className="rounded-2xl border border-border bg-surface p-4 text-lg font-semibold leading-7">
-              {step}
-            </div>
+            <p className="mt-4 text-lg font-semibold leading-7">{step}</p>
           </div>
         ))}
       </div>
@@ -161,16 +430,33 @@ function ScenarioFlowPanel({ headline, steps }) {
   );
 }
 
-function ScenarioSlide({ children, flowHeadline, flowSteps, phoneTitle, title, subtitle }) {
+function ScenarioSlide({ children, context, flowHeadline, flowSteps, phoneTitle, title, subtitle }) {
   return (
-    <section className="grid h-[calc(100vh-76px)] content-center overflow-hidden px-5 py-5 sm:px-8 lg:px-10">
-      <div className="mx-auto w-full max-w-[1600px]">
+    <section className="grid h-[calc(100vh-76px)] overflow-hidden px-5 py-4 sm:px-8 lg:px-10">
+      <div className="mx-auto flex min-h-0 w-full max-w-[1600px] flex-col">
         <div className="mb-5">
           <h1 className="text-3xl font-semibold tracking-tight text-foreground lg:text-4xl">{title}</h1>
           {subtitle ? <p className="mt-2 text-base leading-7 text-muted">{subtitle}</p> : null}
         </div>
-        <div className="grid items-start gap-8 lg:grid-cols-[390px_minmax(0,1fr)]">
-          <MockPhone label={phoneTitle}>{children}</MockPhone>
+        <div className="grid min-h-0 flex-1 gap-5">
+          <div className="grid min-h-0 items-start gap-5 lg:grid-cols-[320px_minmax(0,1fr)]">
+            <div className="max-h-[34vh] overflow-hidden">
+              <MockPhone label={phoneTitle}>{children}</MockPhone>
+            </div>
+            <div className="rounded-3xl border border-border bg-card p-5 shadow-sm shadow-slate-200/70">
+              <p className="text-xs font-semibold uppercase tracking-wide text-primary">Mock customer / car context</p>
+              <p className="mt-3 text-2xl font-semibold leading-8">{context.title}</p>
+              <p className="mt-2 max-w-4xl text-base leading-7 text-muted">{context.body}</p>
+              <div className="mt-4 grid gap-3 sm:grid-cols-3">
+                {context.stats.map(([label, value]) => (
+                  <div className="rounded-2xl border border-border bg-surface p-4" key={label}>
+                    <p className="text-xs font-semibold uppercase tracking-wide text-muted">{label}</p>
+                    <p className="mt-2 text-lg font-semibold">{value}</p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
           <ScenarioFlowPanel headline={flowHeadline} steps={flowSteps} />
         </div>
       </div>
@@ -324,38 +610,41 @@ function ChecklistGrid({ items }) {
 
 function IntroSlide() {
   return (
-    <SlideShell
-      eyebrow="Intro"
-      title="AMP CSR Command Center"
-      subtitle="A full-stack support portal for resolving car wash membership, payment, vehicle, lane, and subscription issues."
-    >
-      <div className="grid gap-6 lg:grid-cols-[1fr_420px]">
-        <div className="rounded-3xl border border-border bg-card p-7 shadow-sm shadow-slate-200/70">
+    <section className="grid h-[calc(100vh-76px)] overflow-hidden px-5 py-4 sm:px-8 lg:px-12">
+      <div className="mx-auto flex min-h-0 w-full max-w-7xl flex-col gap-5">
+        <div className="rounded-3xl border border-border bg-card p-6 shadow-sm shadow-slate-200/70">
+          <p className="text-xs font-semibold uppercase tracking-wide text-primary">Intro</p>
+          <h1 className="mt-2 max-w-5xl text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
+            AMP CSR Command Center
+          </h1>
+          <p className="mt-3 max-w-4xl text-base leading-7 text-muted">
+            A full-stack support portal for resolving car wash membership, payment, vehicle, lane, and subscription issues.
+          </p>
           <div className="flex flex-wrap gap-2">
             {stack.map((item) => (
               <Pill key={item} tone="primary">{item}</Pill>
             ))}
           </div>
-          <div className="mt-10 grid gap-4 sm:grid-cols-3">
+          <div className="mt-6 grid gap-4 sm:grid-cols-3">
             {[
               ["Search fast", Search],
               ["Diagnose clearly", ShieldCheck],
               ["Act safely", BadgeCheck],
             ].map(([label, Icon]) => (
-              <div className="rounded-2xl border border-border bg-surface p-4" key={label}>
-                <Icon className="text-primary" size={24} aria-hidden="true" />
-                <p className="mt-4 font-semibold">{label}</p>
+              <div className="rounded-2xl border border-border bg-surface p-5" key={label}>
+                <Icon className="text-primary" size={28} aria-hidden="true" />
+                <p className="mt-4 text-xl font-semibold">{label}</p>
               </div>
             ))}
           </div>
         </div>
         <div className="rounded-3xl border border-primary/20 bg-primary p-7 text-primary-foreground shadow-xl shadow-blue-200/70">
           <Sparkles size={30} aria-hidden="true" />
-          <p className="mt-8 text-2xl font-semibold leading-9">
+          <p className="mt-5 text-2xl font-semibold leading-9">
             Built around the real CSR call flow: find the member, understand the blocker,
             take the action, and leave a trace.
           </p>
-          <div className="mt-8 flex flex-wrap gap-3">
+          <div className="mt-6 flex flex-wrap gap-3">
             {[
               ["Open portal", "/csr/dashboard"],
               ["System design", "/demo/systemDesign"],
@@ -372,7 +661,7 @@ function IntroSlide() {
           </div>
         </div>
       </div>
-    </SlideShell>
+    </section>
   );
 }
 
@@ -383,21 +672,7 @@ function ProblemSlide() {
       title="A normal wash should not turn into a support scavenger hunt."
       subtitle="When a member is blocked, the CSR needs the account, car, payment, lane, and subscription story in one place."
     >
-      <div className="grid gap-5 lg:grid-cols-[340px_1fr]">
-        <div className="grid gap-2">
-          {[
-            "Payment failed",
-            "New car needs coverage",
-            "Charge or refund question",
-            "Cancel or change plan",
-          ].map((item) => (
-            <div className="rounded-2xl border border-border bg-card px-4 py-3 shadow-sm shadow-slate-200/70" key={item}>
-              <p className="text-xl font-semibold leading-7">{item}</p>
-            </div>
-          ))}
-        </div>
-        <ProblemFlow />
-      </div>
+      <ProblemFlow />
     </SlideShell>
   );
 }
@@ -406,7 +681,7 @@ function MvpSlide() {
   return (
     <SlideShell
       eyebrow="MVP coverage"
-      title="The demo covers the required CSR workflow end to end."
+      title="CSR Workflows cover the required support paths end to end."
       subtitle="The portal keeps the high-value actions inside the customer profile so subscription and billing context stays attached to the caller."
     >
       <ChecklistGrid items={requirements} />
@@ -424,8 +699,17 @@ function DocsSearchSlide() {
       <div className="grid gap-5 lg:grid-cols-[1fr_380px]">
         <div className="rounded-3xl border border-border bg-card p-6 shadow-sm shadow-slate-200/70">
           <div className="rounded-2xl border border-border bg-surface p-5">
-            <p className="text-sm font-semibold text-muted">Search example</p>
-            <p className="mt-2 text-2xl font-semibold">gate denied but app says active</p>
+            <label className="text-sm font-semibold text-muted" htmlFor="docs-query-demo">Elastic-style query</label>
+            <div className="mt-3 flex min-h-14 items-center gap-3 rounded-xl border border-primary/30 bg-card px-4 shadow-inner">
+              <Search className="shrink-0 text-primary" size={21} aria-hidden="true" />
+              <input
+                id="docs-query-demo"
+                aria-label="Support docs query"
+                className="min-w-0 flex-1 bg-transparent text-xl font-semibold outline-none"
+                readOnly
+                value={'"gate denied but app says active"'}
+              />
+            </div>
           </div>
           <div className="mt-5 grid gap-3">
             {[
@@ -455,43 +739,6 @@ function DocsSearchSlide() {
   );
 }
 
-function CurrentArchitectureSlide() {
-  return (
-    <SlideShell
-      eyebrow="Architecture"
-      title="A simple full-stack path from browser action to persisted audit event."
-      subtitle="The implementation keeps UI, server actions, domain logic, and Prisma data access easy to inspect."
-    >
-      <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_360px]">
-        <div className="rounded-3xl border border-border bg-card p-6 shadow-sm shadow-slate-200/70">
-          <div className="grid items-center gap-3 xl:grid-cols-[1fr_auto_1fr_auto_1fr_auto_1fr]">
-            {["CSR browser", "Next.js app", "Server actions", "Postgres"].map((item, index) => (
-              <div className="contents" key={item}>
-                <div className="rounded-2xl border border-border bg-surface p-5 text-center text-xl font-semibold">
-                  {item}
-                </div>
-                {index < 3 ? <ArrowRight className="mx-auto hidden text-primary xl:block" size={28} aria-hidden="true" /> : null}
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="grid gap-3">
-          {[
-            "Server actions own mutations",
-            "View models shape CSR-friendly data",
-            "Prisma persists support state",
-            "Docs search uses local embeddings and pgvector",
-          ].map((item) => (
-            <div className="rounded-2xl border border-border bg-card p-4 shadow-sm shadow-slate-200/70" key={item}>
-              <p className="text-sm font-semibold leading-6">{item}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </SlideShell>
-  );
-}
-
 function DataModelSlide() {
   return (
     <SlideShell
@@ -499,37 +746,124 @@ function DataModelSlide() {
       title="The customer record connects account, vehicle, payment, lane, and support context."
       subtitle="The schema is centered on the entities a CSR actually needs during a call."
     >
-      <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
-        {[
-          ["Customer", "Profile, status, contact info"],
-          ["Vehicle", "Plate, make, model, coverage"],
-          ["Subscription", "Plan, status, billing cycle"],
-          ["Purchase", "Payments, washes, coupons, refunds"],
-          ["LaneSession", "Gate, queue, blocked, plate mismatch"],
-          ["SupportNote", "CSR notes and follow-up context"],
-          ["AuditEvent", "Every support action is traceable"],
-          ["SupportDoc", "Searchable playbooks for CSRs"],
-        ].map(([name, detail]) => (
-          <div className="rounded-2xl border border-border bg-card p-5 shadow-sm shadow-slate-200/70" key={name}>
-            <p className="text-2xl font-semibold">{name}</p>
-            <p className="mt-2 text-base font-medium leading-6 text-muted">{detail}</p>
-          </div>
-        ))}
+      <div className="grid max-h-[64vh] gap-4 overflow-hidden lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)]">
+        <div className="grid gap-4 overflow-auto pr-1">
+          {[
+            ["Customer", "Profile, status, contact info"],
+            ["Vehicle", "Plate, make, model, coverage"],
+            ["Subscription", "Plan, status, billing cycle"],
+            ["Purchase", "Payments, washes, coupons, refunds"],
+            ["LaneSession", "Gate, queue, blocked, plate mismatch"],
+            ["SupportNote", "CSR notes and follow-up context"],
+            ["AuditEvent", "Every support action is traceable"],
+            ["SupportDoc", "Searchable playbooks for CSRs"],
+          ].map(([name, detail]) => (
+            <div className="rounded-2xl border border-border bg-card p-4 shadow-sm shadow-slate-200/70" key={name}>
+              <p className="text-xl font-semibold">{name}</p>
+              <p className="mt-1 text-sm font-medium leading-6 text-muted">{detail}</p>
+            </div>
+          ))}
+        </div>
+        <details className="min-h-0 rounded-3xl border border-border bg-card p-5 shadow-sm shadow-slate-200/70" open>
+          <summary className="cursor-pointer text-lg font-semibold">View actual Prisma schema</summary>
+          <pre className="mt-4 max-h-[52vh] overflow-auto rounded-2xl border border-border bg-slate-950 p-4 text-xs leading-5 text-slate-100">
+            <code>{prismaSchema}</code>
+          </pre>
+        </details>
       </div>
     </SlideShell>
   );
 }
 
-function AwsServiceCard({ name, detail }) {
+function AwsServiceCard({ detail, icon, name }) {
   return (
     <div className="rounded-2xl border border-border bg-card p-4 shadow-sm shadow-slate-200/70">
       <div className="flex items-center gap-3">
-        <span className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#ff9900] text-sm font-black text-slate-950">
-          AWS
+        <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-surface-muted">
+          {icon ? (
+            <Image alt="" aria-hidden="true" className="h-11 w-11" height={44} src={icon} width={44} />
+          ) : (
+            <span className="h-5 w-5 rounded-full bg-[#ff9900]" aria-hidden="true" />
+          )}
         </span>
         <div>
           <p className="text-lg font-semibold">{name}</p>
           <p className="text-sm font-medium text-muted">{detail}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DiagramNode({ detail, icon, name }) {
+  return (
+    <div className="rounded-2xl border border-border bg-card p-3 text-center shadow-sm shadow-slate-200/70">
+      {icon ? (
+        <Image alt="" aria-hidden="true" className="mx-auto h-11 w-11" height={44} src={icon} width={44} />
+      ) : (
+        <span className="mx-auto flex h-11 w-11 items-center justify-center rounded-xl bg-primary text-xs font-black text-primary-foreground">
+          {name
+            .split(" ")
+            .map((word) => word[0])
+            .join("")
+            .slice(0, 3)}
+        </span>
+      )}
+      <p className="mt-2 text-sm font-semibold leading-5">{name}</p>
+      {detail ? <p className="text-xs font-medium text-muted">{detail}</p> : null}
+    </div>
+  );
+}
+
+function DiagramArrow() {
+  return <ArrowRight className="mx-auto hidden self-center text-primary xl:block" size={22} aria-hidden="true" />;
+}
+
+function AwsArchitectureDiagram() {
+  const edge = [
+    ["CSR Browser", "User"],
+    ["Route 53", "DNS", "/aws-icons/route-53.svg"],
+    ["CloudFront", "CDN", "/aws-icons/cloudfront.svg"],
+    ["AWS WAF", "Protection", "/aws-icons/waf.svg"],
+    ["Application Load Balancer", "Ingress", "/aws-icons/application-load-balancer.svg"],
+    ["ECS Fargate Next.js Service", "App", "/aws-icons/fargate.svg"],
+  ];
+
+  const dependencies = [
+    ["RDS PostgreSQL Multi-AZ", "Data", "/aws-icons/rds.svg"],
+    ["ElastiCache Redis", "Cache", "/aws-icons/elasticache.svg"],
+    ["Secrets Manager", "Secrets", "/aws-icons/secrets-manager.svg"],
+    ["CloudWatch Logs/Metrics", "Observe", "/aws-icons/cloudwatch.svg"],
+  ];
+
+  return (
+    <div className="rounded-3xl border border-border bg-surface p-5">
+      <div className="grid items-stretch gap-3 xl:grid-cols-[1fr_auto_1fr_auto_1fr_auto_1fr_auto_1fr_auto_1fr]">
+        {edge.map(([name, detail, icon], index) => (
+          <div className="contents" key={name}>
+            <DiagramNode detail={detail} icon={icon} name={name} />
+            {index < edge.length - 1 ? <DiagramArrow /> : null}
+          </div>
+        ))}
+      </div>
+      <div className="mt-4 grid gap-3 md:grid-cols-[1fr_1fr]">
+        <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4">
+          <p className="text-sm font-semibold text-primary">Service dependencies</p>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2">
+            {dependencies.map(([name, detail, icon]) => (
+              <DiagramNode detail={detail} icon={icon} key={name} name={name} />
+            ))}
+          </div>
+        </div>
+        <div className="rounded-2xl border border-primary/20 bg-primary/5 p-4">
+          <p className="text-sm font-semibold text-primary">Deploy path</p>
+          <div className="mt-3 grid items-stretch gap-3 sm:grid-cols-[1fr_auto_1fr_auto_1fr]">
+            <DiagramNode detail="CI/CD" name="GitHub Actions" />
+            <DiagramArrow />
+            <DiagramNode detail="Image registry" icon="/aws-icons/ecr.svg" name="Amazon ECR" />
+            <DiagramArrow />
+            <DiagramNode detail="Rolling service" icon="/aws-icons/ecs.svg" name="Amazon ECS" />
+          </div>
         </div>
       </div>
     </div>
@@ -543,76 +877,13 @@ function ScaleSlide() {
       title="The MVP can move cleanly from Vercel/Neon to an AWS production architecture."
       subtitle="The same boundaries map to CDN, WAF, containers, RDS, secrets, logs, and CI/CD."
     >
-      <div className="grid gap-4 lg:grid-cols-[1fr_1fr]">
-        <div className="rounded-3xl border border-border bg-card p-6 shadow-sm shadow-slate-200/70">
-          <div className="grid gap-3">
-            {[
-              ["Route 53", "DNS"],
-              ["CloudFront + WAF", "edge + protection"],
-              ["ALB + ECS Fargate", "Next.js service"],
-              ["RDS Postgres", "customer/support data"],
-            ].map(([name, detail]) => (
-              <AwsServiceCard detail={detail} key={name} name={name} />
-            ))}
-          </div>
+      <div className="grid max-h-[64vh] gap-4 overflow-auto">
+        <AwsArchitectureDiagram />
+        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {awsServices.map(([name, detail, icon]) => (
+            <AwsServiceCard detail={detail} icon={icon} key={name} name={name} />
+          ))}
         </div>
-        <div className="rounded-3xl border border-border bg-card p-6 shadow-sm shadow-slate-200/70">
-          <div className="grid gap-3">
-            {[
-              ["Secrets Manager", "database and provider keys"],
-              ["CloudWatch", "logs, metrics, alarms"],
-              ["ECR", "container registry"],
-              ["GitHub Actions", "test, build, deploy"],
-            ].map(([name, detail]) => (
-              <AwsServiceCard detail={detail} key={name} name={name} />
-            ))}
-          </div>
-        </div>
-      </div>
-    </SlideShell>
-  );
-}
-
-function TradeoffsSlide() {
-  return (
-    <SlideShell
-      eyebrow="Tradeoffs / next steps"
-      title="The take-home stays focused on the CSR workflow, not production integrations."
-      subtitle="These are deliberate MVP boundaries and the next pieces I would harden first."
-    >
-      <div className="grid gap-4 lg:grid-cols-2">
-        <div className="rounded-3xl border border-border bg-card p-6 shadow-sm shadow-slate-200/70">
-          <h2 className="text-xl font-semibold">MVP tradeoffs</h2>
-          <div className="mt-5 grid gap-3">
-            {tradeoffs.map((item) => (
-              <div className="flex items-start gap-3 rounded-2xl border border-border bg-surface p-4" key={item}>
-                <ArrowRight className="mt-0.5 shrink-0 text-primary" size={18} aria-hidden="true" />
-                <p className="text-sm font-semibold leading-6">{item}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="rounded-3xl border border-border bg-card p-6 shadow-sm shadow-slate-200/70">
-          <h2 className="text-xl font-semibold">Next hardening steps</h2>
-          <div className="mt-5 grid gap-3">
-            {[
-              "Auth/RBAC",
-              "Real payments and webhooks",
-              "Production lane event stream",
-              "Stronger server-action authorization",
-              "More workflow state-transition tests",
-              "Observability dashboards",
-            ].map((item) => (
-              <div className="flex items-start gap-3 rounded-2xl border border-border bg-surface p-4" key={item}>
-                <CheckCircle2 className="mt-0.5 shrink-0 text-success" size={18} aria-hidden="true" />
-                <p className="text-sm font-semibold leading-6">{item}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-      <div className="mt-5 rounded-3xl border border-primary/20 bg-primary/5 p-5 text-center text-xl font-semibold text-primary">
-        Search fast. Diagnose clearly. Act safely. Leave an audit trail.
       </div>
     </SlideShell>
   );
@@ -628,12 +899,21 @@ function createSlides() {
       label: "Blocked wash",
       render: () => (
         <ScenarioSlide
+          context={{
+            title: "Overdue member at the gate",
+            body: "Mock customer Maria Chen is at AMP Buckhead in a Honda Civic. The lane sees plate CZR4821, but the membership is blocked by a failed card charge.",
+            stats: [
+              ["Member", "Maria Chen"],
+              ["Plate", "CZR4821"],
+              ["Blocker", "Payment failed"],
+            ],
+          }}
           flowHeadline="What the CSR does"
           flowSteps={[
-            "Search by plate CZR4821",
-            "See the failed payment and blocked lane status",
-            "Update the card or retry the charge",
-            "Confirm the customer can wash again",
+            "Search by plate CZR4821.",
+            "See the failed payment and blocked lane status.",
+            "Update the card or retry the charge.",
+            "Confirm the customer can wash again.",
           ]}
           phoneTitle="Customer mobile view"
           title="Unable to get a wash"
@@ -644,36 +924,25 @@ function createSlides() {
       ),
     },
     {
-      id: "lane-context",
-      label: "Lane context",
-      render: () => (
-        <ScenarioSlide
-          flowHeadline="How lane context helps"
-          flowSteps={[
-            "Spot blocked cars before the call gets messy",
-            "Open the linked customer profile",
-            "Use the recommended fix path",
-            "Move the car back into the queue",
-          ]}
-          phoneTitle="Operational lane view"
-          title="Lane context shows what is happening at the wash."
-          subtitle="The CSR can see whether the car is at the gate, blocked, in queue, or cleared."
-        >
-          <LaneContextPhone />
-        </ScenarioSlide>
-      ),
-    },
-    {
       id: "vehicle-transfer",
       label: "Vehicle transfer",
       render: () => (
         <ScenarioSlide
+          context={{
+            title: "Existing subscriber bought a replacement car",
+            body: "The mock customer has an active plan attached to an older vehicle and needs coverage moved to a newly added Subaru before the next wash.",
+            stats: [
+              ["Old vehicle", "2019 Camry"],
+              ["New vehicle", "2024 Outback"],
+              ["Action", "Transfer coverage"],
+            ],
+          }}
           flowHeadline="Coverage transfer flow"
           flowSteps={[
-            "Find the member by name, plate, or issue",
-            "Confirm old and new vehicles",
-            "Transfer coverage to the new car",
-            "Leave an audit trail on the account",
+            "Find the member by name, plate, or issue.",
+            "Confirm old and new vehicles.",
+            "Transfer coverage to the new car.",
+            "Leave an audit trail on the account.",
           ]}
           phoneTitle="Customer mobile view"
           title="New vehicle transfer"
@@ -688,12 +957,21 @@ function createSlides() {
       label: "Billing",
       render: () => (
         <ScenarioSlide
+          context={{
+            title: "Purchase history answers the money question",
+            body: "The mock billing view keeps successful payments, failed renewals, coupons, refunds, and notes together so the CSR can explain the account state.",
+            stats: [
+              ["Plan", "Unlimited Wash"],
+              ["Last receipt", "Jun 20, 2026"],
+              ["Failed charge", "Jun 26, 2026"],
+            ],
+          }}
           flowHeadline="Billing question flow"
           flowSteps={[
-            "Open purchase history from the profile",
-            "Check payments, failed charges, coupons, and refunds",
-            "Explain what happened in plain language",
-            "Add a note if follow-up is needed",
+            "Open purchase history from the profile.",
+            "Check payments, failed charges, coupons, and refunds.",
+            "Explain what happened in plain language.",
+            "Add a note if follow-up is needed.",
           ]}
           phoneTitle="Customer billing view"
           title="Purchase history is right where the CSR needs it."
@@ -703,11 +981,38 @@ function createSlides() {
         </ScenarioSlide>
       ),
     },
+    {
+      id: "lane-context",
+      label: "Lane context",
+      render: () => (
+        <ScenarioSlide
+          context={{
+            title: "Worker view at the wash",
+            body: "Lane context represents what an on-site worker sees at the wash: vehicle at gate, detected plate, blocker, and recommended CSR action.",
+            stats: [
+              ["Location", "AMP Buckhead"],
+              ["Lane", "Gate 2"],
+              ["Recommendation", "Resolve blocker"],
+            ],
+          }}
+          flowHeadline="How lane context helps"
+          flowSteps={[
+            "Spot blocked cars before the call gets messy.",
+            "Open the linked customer profile.",
+            "Use the recommended fix path.",
+            "Move the car back into the queue.",
+          ]}
+          phoneTitle="Operational lane view"
+          title="Lane context shows the worker's view at the wash."
+          subtitle="The CSR can see whether the car is at the gate, blocked, in queue, or cleared."
+        >
+          <LaneContextPhone />
+        </ScenarioSlide>
+      ),
+    },
     { id: "docs-search", label: "Docs", render: () => <DocsSearchSlide /> },
-    { id: "architecture", label: "Architecture", render: () => <CurrentArchitectureSlide /> },
     { id: "data-model", label: "Data model", render: () => <DataModelSlide /> },
     { id: "production", label: "Production", render: () => <ScaleSlide /> },
-    { id: "tradeoffs", label: "Tradeoffs", render: () => <TradeoffsSlide /> },
   ];
 }
 
